@@ -11,6 +11,8 @@ package api
 
 import (
 	"net/http"
+
+	"github.com/lukechannings/gesha/internal/config"
 )
 
 // DefaultAPIRouter defines the required methods for binding the api requests to a responses for the DefaultApi
@@ -41,7 +43,7 @@ type DefaultAPIServicer interface {
 	GetStreamTempCurrent(w http.ResponseWriter, r *http.Request)
 	GetTemp(string) (interface{}, error)
 	GetTempTarget() (interface{}, error)
-	PostConfig(Config) (interface{}, error)
+	PostConfig(config.Config) (interface{}, error)
 	PostPidEnabled(PidEnabled) (interface{}, error)
 	PostTempTarget(TemperatureTarget) (interface{}, error)
 }

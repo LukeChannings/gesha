@@ -13,6 +13,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+
+	"github.com/lukechannings/gesha/internal/config"
 )
 
 // A DefaultApiController binds http requests to an api service and writes the service results to the http response
@@ -160,7 +162,7 @@ func (c *DefaultApiController) GetTempTarget(w http.ResponseWriter, r *http.Requ
 
 // PostConfig -
 func (c *DefaultApiController) PostConfig(w http.ResponseWriter, r *http.Request) {
-	config := &Config{}
+	config := &config.Config{}
 	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
 		w.WriteHeader(500)
 		return

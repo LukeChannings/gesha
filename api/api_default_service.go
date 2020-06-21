@@ -115,7 +115,7 @@ func (s *DefaultAPIService) GetTempTarget() (interface{}, error) {
 }
 
 // PostConfig -
-func (s *DefaultAPIService) PostConfig(config Config) (interface{}, error) {
+func (s *DefaultAPIService) PostConfig(config config.Config) (interface{}, error) {
 	// TODO - update PostConfig with the required logic for this service method.
 	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 	return nil, errors.New("service method 'PostConfig' not implemented")
