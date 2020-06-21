@@ -1,6 +1,7 @@
 package temp
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/LukeChannings/max31855"
@@ -8,17 +9,27 @@ import (
 	"periph.io/x/periph/host"
 )
 
-type Temp struct {
+// Handle keeps hold of the SPI device and port
+type Handle struct {
 	spiPort string
 	dev     *max31855.Dev
 }
 
-type TempValue struct {
-	Time int64   `json:"time"`
-	Temp float64 `json:"temp"`
+type TempTime time.Time
+
+func (t TempTime) MarshalText() ([]byte, error) {
+	tf := time.Time(t).UnixNano() / 1e6
+	return []byte(strconv.FormatInt(tf, 10)), nil
 }
 
-func New(spiPort string) (*Temp, error) {
+// Temp is a tuple of the current temperature and the time it was read
+type Temp struct {
+	Time TempTime `json:"time"`
+	Temp float64  `json:"temp"`
+}
+
+// New connects to the SPI device and returns a handle
+func New(spiPort string) (*Handle, error) {
 
 	if _, err := host.Init(); err != nil {
 		return nil, err
@@ -36,24 +47,26 @@ func New(spiPort string) (*Temp, error) {
 		return nil, err
 	}
 
-	return &Temp{spiPort: spiPort, dev: dev}, nil
+	return &Handle{spiPort: spiPort, dev: dev}, nil
 }
 
-func (t *Temp) Get() (*TempValue, error) {
+// Get - the current temperature
+func (t *Handle) Get() (*Temp, error) {
 	te, err := t.dev.GetTemp()
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &TempValue{time.Now().UnixNano() / 1e6, te}, nil
+	return &Temp{TempTime(time.Now()), te}, nil
 }
 
-func (t *Temp) Stream() (chan TempValue, error) {
-	c := make(chan TempValue)
+// Stream - sample the temperature on a timer
+func (t *Handle) Stream(sampleRate time.Duration) (chan Temp, error) {
+	c := make(chan Temp)
 
 	go func() {
-		ticker := time.NewTicker(10 * time.Millisecond)
+		ticker := time.NewTicker(sampleRate)
 		defer ticker.Stop()
 
 		for {

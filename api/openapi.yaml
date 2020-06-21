@@ -295,22 +295,24 @@ components:
       type: object
     PidOutput:
       description: The PID output
-      items:
-        type: number
-      title: PidOutput
-      type: array
-      x-examples:
-        Example:
-        - 1592742657024
-        - -1
+      type: object
+      properties:
+        time:
+          type: number
+          description: The time at which the output was read in unix epoch millis
+        output:
+          type: number
+          description: The current output of the PID
     PidEnabled:
       example:
         enabled: true
+      title: PidEnabled
+      type: object
       properties:
         enabled:
           type: boolean
-      title: PidEnabled
-      type: object
+        heating:
+          type: boolean
     TemperatureTarget:
       description: The target temperature of the boiler
       example:

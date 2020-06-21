@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/lukechannings/gesha/internal/config"
+	"github.com/lukechannings/gesha/internal/pid"
 	"github.com/lukechannings/gesha/internal/temp"
 )
 
@@ -17,13 +17,15 @@ import (
 // This service should implement the business logic for every endpoint for the DefaultApi API.
 // Include any external packages or services that will be required by this service.
 type DefaultAPIService struct {
-	c *config.Config
-	t *temp.Temp
+	c  *config.Config
+	t  *temp.Handle
+	p  *pid.Handle
+	ts *chan temp.Temp
 }
 
 // NewDefaultAPIService creates a default api service
-func NewDefaultAPIService(c *config.Config, t *temp.Temp) DefaultAPIServicer {
-	return &DefaultAPIService{c: c, t: t}
+func NewDefaultAPIService(c *config.Config, t *temp.Handle, p *pid.Handle, ts *chan temp.Temp) DefaultAPIServicer {
+	return &DefaultAPIService{c: c, t: t, p: p, ts: ts}
 }
 
 // GetConfig - Returns the running config
@@ -33,16 +35,13 @@ func (s *DefaultAPIService) GetConfig() (interface{}, error) {
 
 // GetPidEnabled - Your GET endpoint
 func (s *DefaultAPIService) GetPidEnabled() (interface{}, error) {
-	// TODO - update GetPidEnabled with the required logic for this service method.
-	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-	return nil, errors.New("service method 'GetPidEnabled' not implemented")
+	return PIDEnabled{Enabled: s.p.Enabled, Heating: s.p.Heating}, nil
 }
 
 // GetPidOutput - Your GET endpoint
 func (s *DefaultAPIService) GetPidOutput() (interface{}, error) {
-	// TODO - update GetPidOutput with the required logic for this service method.
-	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-	return nil, errors.New("service method 'GetPidOutput' not implemented")
+	output := <-*s.p.Output
+	return output, nil
 }
 
 // GetStreamPidOutput - Your GET endpoint
@@ -54,7 +53,6 @@ func (s *DefaultAPIService) GetStreamPidOutput(w http.ResponseWriter, r *http.Re
 func (s *DefaultAPIService) GetStreamTempCurrent(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	var sampleRate time.Duration
-	// unit := query.Get("unit")
 
 	if sampleRateMsQuery, ok := query["sampleRateMs"]; ok {
 		parsedSampleRate, err := strconv.ParseInt(sampleRateMsQuery[0], 10, 32)
@@ -66,14 +64,6 @@ func (s *DefaultAPIService) GetStreamTempCurrent(w http.ResponseWriter, r *http.
 
 	if sampleRate == 0 {
 		sampleRate = 100 * time.Millisecond
-	}
-
-	temp, err := s.t.Stream()
-
-	if err != nil {
-		http.Error(w, "Error getting temperature stream", http.StatusInternalServerError)
-		log.Println("Error getting a temperature stream")
-		return
 	}
 
 	flusher, ok := w.(http.Flusher)
@@ -91,7 +81,7 @@ func (s *DefaultAPIService) GetStreamTempCurrent(w http.ResponseWriter, r *http.
 	defer ticker.Stop()
 
 	for {
-		t := <-temp
+		t := <-*s.ts
 		tJSON, err := json.Marshal(t)
 		if err != nil {
 			http.Error(w, "Could not marshal temperature data to JSON", http.StatusInternalServerError)
@@ -123,9 +113,9 @@ func (s *DefaultAPIService) PostConfig(config config.Config) (interface{}, error
 
 // PostPidEnabled -
 func (s *DefaultAPIService) PostPidEnabled(pidEnabled PIDEnabled) (interface{}, error) {
-	// TODO - update PostPidEnabled with the required logic for this service method.
-	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-	return nil, errors.New("service method 'PostPidEnabled' not implemented")
+	fmt.Println("Enabling the PID!")
+	s.p.Start(s.c)
+	return nil, nil
 }
 
 // PostTempTarget -

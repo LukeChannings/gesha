@@ -16,9 +16,10 @@ type Config struct {
 	SpiPort               string        `json:"spiPort,omitempty"`
 	TemperatureSampleRate time.Duration `json:"temperatureSampleRate,omitempty"`
 	TemperatureUnit       string        `json:"temperatureUnit,omitempty"`
-	P                     float32       `json:"p,omitempty"`
-	I                     float32       `json:"i,omitempty"`
-	D                     float32       `json:"d,omitempty"`
+	TemperatureTarget     float64       `json:"temperatureTarget,omitempty"`
+	P                     float64       `json:"p,omitempty"`
+	I                     float64       `json:"i,omitempty"`
+	D                     float64       `json:"d,omitempty"`
 }
 
 // New creates a config with defaults and based on the environment file
@@ -36,29 +37,29 @@ func New() Config {
 		c.TemperatureUnit = "C"
 	}
 
-	P, err := strconv.ParseFloat(util.GetEnv("P", "2.9"), 32)
+	P, err := strconv.ParseFloat(util.GetEnv("P", "2.9"), 64)
 
 	if err != nil {
 		log.Fatalf("P (%s) could not be parsed as a float.", util.GetEnv("P", "2.9"))
 	}
 
-	c.P = float32(P)
+	c.P = P
 
-	I, err := strconv.ParseFloat(util.GetEnv("I", "0.3"), 32)
+	I, err := strconv.ParseFloat(util.GetEnv("I", "0.3"), 64)
 
 	if err != nil {
 		log.Fatalf("I (%s) could not be parsed as a float.", util.GetEnv("I", "0.3"))
 	}
 
-	c.I = float32(I)
+	c.I = I
 
-	D, err := strconv.ParseFloat(util.GetEnv("D", "40.0"), 32)
+	D, err := strconv.ParseFloat(util.GetEnv("D", "40.0"), 64)
 
 	if err != nil {
 		log.Fatalf("D (%s) could not be parsed as a float.", util.GetEnv("D", "40.0"))
 	}
 
-	c.D = float32(D)
+	c.D = D
 
 	tempSampleRate, hasTempSampleRate := os.LookupEnv("TEMPERATURE_SAMPLE_RATE_MS")
 
@@ -71,6 +72,19 @@ func New() Config {
 		c.TemperatureSampleRate = time.Duration(tempSampleRateMs) * time.Millisecond
 	} else {
 		c.TemperatureSampleRate = 100 * time.Millisecond
+	}
+
+	targetTemp, hasTargetTemp := os.LookupEnv("TEMPERATURE_TARGET")
+
+	if hasTargetTemp {
+		parsedTargetTemp, err := strconv.ParseFloat(targetTemp, 64)
+		if err != nil {
+			log.Fatalf("TEMPERATURE_TARGET (%s) could not be parsed", targetTemp)
+		}
+
+		c.TemperatureTarget = parsedTargetTemp
+	} else {
+		c.TemperatureTarget = 90.0
 	}
 
 	return c

@@ -15,4 +15,7 @@ pkged.go:
 clean:
 	rm -rf build pkged.go
 
-.PHONY: clean linux-arm darwin all generate-api
+pi: clean pkged.go linux-arm
+	scp ./build/arm/gesha coffee-machine:~
+
+.PHONY: clean linux-arm darwin all generate-api pi
