@@ -12,7 +12,7 @@ const temp$ = new Observable(observer => {
 const tempEl = document.querySelector('#temp')
 const lagEl = document.querySelector('#lag')
 
-temp$.subscribe(([time, temp]) => {
+temp$.subscribe(({time, temp}) => {
   tempEl.innerHTML = temp.toFixed(2)
   lagEl.innerHTML = Date.now() - time
 })

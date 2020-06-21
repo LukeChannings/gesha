@@ -1,4 +1,3 @@
----
 openapi: 3.0.0
 info:
   contact:
@@ -7,7 +6,7 @@ info:
   license:
     name: MIT
   title: gesha
-  version: "1.0.0"
+  version: 1.0.0
 servers:
 - url: http://coffee-machine/api
 paths:
@@ -208,6 +207,13 @@ paths:
           - f
           type: string
         style: form
+      - explode: true
+        in: query
+        name: sampleRateMs
+        required: false
+        schema:
+          type: number
+        style: form
       responses:
         "200":
           content:
@@ -263,14 +269,15 @@ components:
       title: Config
       type: object
     TemperatureItem:
-      description: The temperature and the time at which it was read
-      items:
-        type: number
-      maxItems: 2
-      minItems: 2
       title: TemperatureItem
-      type: array
-      uniqueItems: true
+      type: object
+      properties:
+        time:
+          type: number
+          description: The time at which the temperature was read in unix epoch millis
+        temp:
+          type: number
+          description: The current temperature in the preferred units
     OperationResult:
       description: Indicates if the operation succeeded, and if not, what the error
         was.

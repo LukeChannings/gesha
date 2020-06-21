@@ -1,8 +1,5 @@
 html {
-  background-color: rgba(236, 236, 236, 0.9254901960784314);
-  background-image: repeating-linear-gradient(rgba(221, 221, 221, 0.058823529411764705), rgba(221, 221, 221, 0.12549019607843137) -3px, rgba(204, 204, 204, 0.25098039215686274) 10px, rgba(204, 204, 204, 0.12549019607843137) 40px, rgba(204, 204, 204, 0.6274509803921569) 5px);
-  background-size: 50px;
-  background-repeat: repeat;
+  background-color: #f9f9f9;
 }
 
 body {
