@@ -2,6 +2,8 @@ package config
 
 import (
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -34,11 +36,42 @@ func New() Config {
 		c.TemperatureUnit = "C"
 	}
 
-	c.P = 2.9
-	c.I = 0.3
-	c.D = 40.0
+	P, err := strconv.ParseFloat(util.GetEnv("P", "2.9"), 32)
 
-	c.TemperatureSampleRate = 100 * time.Millisecond
+	if err != nil {
+		log.Fatalf("P (%s) could not be parsed as a float.", util.GetEnv("P", "2.9"))
+	}
+
+	c.P = float32(P)
+
+	I, err := strconv.ParseFloat(util.GetEnv("I", "0.3"), 32)
+
+	if err != nil {
+		log.Fatalf("I (%s) could not be parsed as a float.", util.GetEnv("I", "0.3"))
+	}
+
+	c.I = float32(I)
+
+	D, err := strconv.ParseFloat(util.GetEnv("D", "40.0"), 32)
+
+	if err != nil {
+		log.Fatalf("D (%s) could not be parsed as a float.", util.GetEnv("D", "40.0"))
+	}
+
+	c.D = float32(D)
+
+	tempSampleRate, hasTempSampleRate := os.LookupEnv("TEMPERATURE_SAMPLE_RATE_MS")
+
+	if hasTempSampleRate {
+		tempSampleRateMs, err := strconv.ParseUint(tempSampleRate, 10, 64)
+		if err != nil {
+			log.Fatalf("TEMPERATURE_SAMPLE_RATE_MS (%s) could not be parsed as a number", tempSampleRate)
+		}
+
+		c.TemperatureSampleRate = time.Duration(tempSampleRateMs) * time.Millisecond
+	} else {
+		c.TemperatureSampleRate = 100 * time.Millisecond
+	}
 
 	return c
 }
