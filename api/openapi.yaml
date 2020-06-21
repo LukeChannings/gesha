@@ -1,0 +1,316 @@
+---
+openapi: 3.0.0
+info:
+  contact:
+    name: Luke Channings
+  description: An API for controlling your expresso machine
+  license:
+    name: MIT
+  title: gesha
+  version: "1.0.0"
+servers:
+- url: http://coffee-machine/api
+paths:
+  /pid/enabled:
+    get:
+      operationId: get-pid-enabled
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PidEnabled'
+          description: OK
+          headers:
+            access-control-allow-origin:
+              explode: false
+              schema:
+                type: string
+              style: simple
+      summary: Your GET endpoint
+      tags: []
+    post:
+      operationId: post-pid-enabled
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PidEnabled'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationResult'
+          description: OK
+          headers:
+            access-control-allow-origin:
+              explode: false
+              schema:
+                type: string
+              style: simple
+  /pid/output:
+    get:
+      operationId: get-pid-output
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PidOutput'
+          description: OK
+          headers:
+            access-control-allow-origin:
+              explode: false
+              schema:
+                type: string
+              style: simple
+      summary: Your GET endpoint
+      tags: []
+  /temp/current:
+    get:
+      operationId: get-temp
+      parameters:
+      - explode: true
+        in: query
+        name: unit
+        required: true
+        schema:
+          enum:
+          - c
+          - f
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemperatureItem'
+          description: OK
+          headers:
+            access-control-allow-origin:
+              explode: false
+              schema:
+                type: string
+              style: simple
+      summary: Your GET endpoint
+      tags: []
+  /stream/pid/output:
+    get:
+      operationId: get-stream-pid-output
+      responses:
+        "200":
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/PidOutput'
+          description: OK
+          headers:
+            access-control-allow-origin:
+              explode: false
+              schema:
+                type: string
+              style: simple
+            connection:
+              explode: false
+              schema:
+                type: string
+              style: simple
+      summary: Your GET endpoint
+      tags: []
+  /temp/target:
+    get:
+      operationId: get-temp-target
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemperatureTarget'
+          description: OK
+      summary: Your GET endpoint
+      tags: []
+    post:
+      operationId: post-temp-target
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemperatureTarget'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationResult'
+          description: OK
+          headers:
+            access-control-allow-origin:
+              explode: false
+              schema:
+                type: string
+              style: simple
+  /config:
+    get:
+      description: Get the running app configuration
+      operationId: get-config
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              examples: {}
+              schema:
+                $ref: '#/components/schemas/Config'
+          description: OK
+          headers:
+            access-control-allow-origin:
+              description: CORS
+              explode: false
+              schema:
+                type: string
+              style: simple
+      summary: Your GET endpoint
+      tags: []
+    post:
+      description: Update the running app configuration
+      operationId: post-config
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Config'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationResult'
+          description: OK
+          headers:
+            access-control-allow-origin:
+              explode: false
+              schema:
+                type: string
+              style: simple
+  /stream/temp/current:
+    get:
+      operationId: get-stream-temp-current
+      parameters:
+      - explode: true
+        in: query
+        name: unit
+        required: true
+        schema:
+          enum:
+          - c
+          - f
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            text/event-stream:
+              examples:
+                CurrentTemperature:
+                  value:
+                  - 1592685123287
+                  - 65.5
+              schema:
+                $ref: '#/components/schemas/TemperatureItem'
+          description: OK
+          headers:
+            connection:
+              explode: false
+              schema:
+                type: string
+              style: simple
+            access-control-allow-origin:
+              explode: false
+              schema:
+                type: string
+              style: simple
+      summary: Your GET endpoint
+      tags: []
+components:
+  schemas:
+    Config:
+      description: The runtime configuration for the app
+      example:
+        p: p
+        spiPort: spiPort
+        d: d
+        temperatureUnit: temperatureUnit
+        i: i
+        boilerPin: boilerPin
+        temperatureSampleRate: temperatureSampleRate
+      properties:
+        boilerPin:
+          type: string
+        spiPort:
+          type: string
+        temperatureSampleRate:
+          type: string
+        temperatureUnit:
+          type: string
+        p:
+          type: string
+        i:
+          type: string
+        d:
+          type: string
+      title: Config
+      type: object
+    TemperatureItem:
+      description: The temperature and the time at which it was read
+      items:
+        type: number
+      maxItems: 2
+      minItems: 2
+      title: TemperatureItem
+      type: array
+      uniqueItems: true
+    OperationResult:
+      description: Indicates if the operation succeeded, and if not, what the error
+        was.
+      example:
+        errorMessage: errorMessage
+        ok: true
+      properties:
+        ok:
+          type: boolean
+        errorMessage:
+          type: string
+      required:
+      - ok
+      title: OperationResult
+      type: object
+    PidOutput:
+      description: The PID output
+      items:
+        type: number
+      title: PidOutput
+      type: array
+      x-examples:
+        Example:
+        - 1592742657024
+        - -1
+    PidEnabled:
+      example:
+        enabled: true
+      properties:
+        enabled:
+          type: boolean
+      title: PidEnabled
+      type: object
+    TemperatureTarget:
+      description: The target temperature of the boiler
+      example:
+        target: 0.8008281904610115
+      properties:
+        target:
+          type: number
+      title: TemperatureTarget
+      type: object
+  securitySchemes: {}

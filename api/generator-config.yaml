@@ -1,0 +1,4 @@
+---
+featureCORS: true
+packageName: "api"
+sourceFolder: "api"
