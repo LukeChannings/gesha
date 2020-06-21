@@ -33,9 +33,9 @@ func main() {
 	fmt.Printf("Current Temperature: %f", temp.Temp)
 
 	DefaultAPIService := api.NewDefaultAPIService(&c, t)
-	DefaultApiController := api.NewDefaultApiController(DefaultAPIService)
+	DefaultAPIController := api.NewDefaultAPIController(DefaultAPIService)
 
-	r := api.NewRouter(DefaultApiController)
+	r := api.NewRouter(DefaultAPIController)
 	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(pkger.Dir("/web"))))
 
 	log.Fatal(http.ListenAndServe(":"+port, r))

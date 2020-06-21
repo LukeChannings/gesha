@@ -122,7 +122,7 @@ func (s *DefaultAPIService) PostConfig(config config.Config) (interface{}, error
 }
 
 // PostPidEnabled -
-func (s *DefaultAPIService) PostPidEnabled(pidEnabled PidEnabled) (interface{}, error) {
+func (s *DefaultAPIService) PostPidEnabled(pidEnabled PIDEnabled) (interface{}, error) {
 	// TODO - update PostPidEnabled with the required logic for this service method.
 	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
 	return nil, errors.New("service method 'PostPidEnabled' not implemented")
