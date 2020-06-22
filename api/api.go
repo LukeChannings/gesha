@@ -11,14 +11,14 @@ import (
 // pass the data to a DefaultAPIServicer to perform the required actions, then write the service results to the http response.
 type DefaultAPIRouter interface {
 	GetConfig(http.ResponseWriter, *http.Request)
-	GetPidEnabled(http.ResponseWriter, *http.Request)
+	GetPidRunning(http.ResponseWriter, *http.Request)
 	GetPidOutput(http.ResponseWriter, *http.Request)
 	GetStreamPidOutput(http.ResponseWriter, *http.Request)
 	GetStreamTempCurrent(http.ResponseWriter, *http.Request)
 	GetTemp(http.ResponseWriter, *http.Request)
 	GetTempTarget(http.ResponseWriter, *http.Request)
 	PostConfig(http.ResponseWriter, *http.Request)
-	PostPidEnabled(http.ResponseWriter, *http.Request)
+	PostPidRunning(http.ResponseWriter, *http.Request)
 	PostTempTarget(http.ResponseWriter, *http.Request)
 }
 
@@ -28,13 +28,13 @@ type DefaultAPIRouter interface {
 // and updated with the logic required for the API.
 type DefaultAPIServicer interface {
 	GetConfig() (interface{}, error)
-	GetPidEnabled() (interface{}, error)
+	GetPidRunning() (interface{}, error)
 	GetPidOutput() (interface{}, error)
 	GetStreamPidOutput(w http.ResponseWriter, r *http.Request)
 	GetStreamTempCurrent(w http.ResponseWriter, r *http.Request)
 	GetTemp(string) (interface{}, error)
 	GetTempTarget() (interface{}, error)
 	PostConfig(config.Config) (interface{}, error)
-	PostPidEnabled(PIDEnabled) (interface{}, error)
+	PostPidRunning(PIDEnabled) (interface{}, error)
 	PostTempTarget(TemperatureTarget) (interface{}, error)
 }

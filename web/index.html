@@ -6,12 +6,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gesha</title>
   <link rel="stylesheet" href="main.css">
+  <script type="module" src="main.js"></script>
 </head>
 
 <body>
-  <h1><strong>Temperature:</strong> <span id="temp">x</span> &#176;C</h1>
-  <p><strong>Lag:</strong> <span id="lag">x</span> ms</p>
-  <script type="module" src="main.js"></script>
+  <h1><span id="temp">0</span> &#176;C</h1>
+  <p><strong>Heating:</strong> <span id="heating"></span></p>
+  <p><strong>PID Running:</strong> <span id="pidRunning"></span></p>
+  <p><strong>Lag:</strong> <span id="lag">∞</span>ms</p>
+
+  <fieldset>
+    <legend>PID</legend>
+
+    <div>
+      <button id="startPID">Start</button>
+      <button id="stopPID">Stop</button>
+    </div>
+
+    <div>
+      <label>Target Temperature <input type="number" id="targetTemp"></label>
+
+      <button id="setTargetTemp">Set</button>
+    </div>
+  </fieldset>
+
+  <div id="toast" class="toast"></div>
 </body>
 
 </html>

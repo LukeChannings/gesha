@@ -11,14 +11,20 @@ import (
 	"periph.io/x/periph/conn/gpio/gpioreg"
 )
 
+type PidProc struct {
+	t    *time.Ticker
+	done *chan bool
+}
+
 // Handle - a handle for the PID instance
 type Handle struct {
-	Enabled           bool
+	Running           bool
 	Heating           bool
 	Output            *chan float64
 	temperatureStream *chan temp.Temp
 	heatPin           gpio.PinIO
 	pid               *pidctrl.PIDController
+	pidProc           *PidProc
 }
 
 // New creates a Handle and gets the GPIO pin
@@ -28,31 +34,30 @@ func New(pinName string, temperatureStream *chan temp.Temp) Handle {
 	h.heatPin = gpioreg.ByName(pinName)
 	h.temperatureStream = temperatureStream
 	h.Heating = false
-	h.Enabled = false
+	h.Running = false
 
 	return h
 }
 
 func (h *Handle) Start(c *config.Config) {
-	fmt.Println("asdsds")
-	if !h.Enabled {
-		fmt.Println("Enabling PID...")
+	if !h.Running {
+		ticker := time.NewTicker(c.PidFrequency)
+		output := make(chan float64)
+
+		h.pidProc = &PidProc{
+			t: ticker,
+		}
+
+		h.Output = &output
+
 		go func() {
-			output := make(chan float64)
-			h.Output = &output
-			fmt.Println("Starting PID")
-			h.Enabled = true
-
 			pid := pidctrl.NewPIDController(c.P, c.I, c.D)
-			h.pid = pid
-
 			pid.Set(c.TemperatureTarget)
 			pid.SetOutputLimits(-1.0, 1.0)
 
-			var a, b temp.Temp = <-*h.temperatureStream, <-*h.temperatureStream
+			h.Running = true
 
-			ticker := time.NewTicker(time.Second)
-			defer ticker.Stop()
+			var a, b temp.Temp = <-*h.temperatureStream, <-*h.temperatureStream
 
 			for {
 				a = b
@@ -67,15 +72,26 @@ func (h *Handle) Start(c *config.Config) {
 					h.heatPin.Out(gpio.High)
 					h.Heating = true
 				}
-
 				<-ticker.C
 			}
 		}()
 	}
 }
 
+func (h *Handle) Stop() {
+	if h.Running && h.pidProc != nil {
+		fmt.Println("Sending quit signal to PID")
+		h.pidProc.t.Stop()
+		h.Running = false
+		h.pidProc = nil
+		h.heatPin.Out(gpio.Low)
+	} else {
+		fmt.Println("PID not running")
+	}
+}
+
 func (h *Handle) SetTarget(targetTemp float64) {
-	if h.Enabled {
+	if h.Running {
 		h.pid.Set(targetTemp)
 	}
 }

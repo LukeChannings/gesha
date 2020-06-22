@@ -1,6 +1,6 @@
 package api
 
 type PIDEnabled struct {
-	Enabled bool `json:"enabled"`
+	Running bool `json:"running"`
 	Heating bool `json:"heating"`
 }

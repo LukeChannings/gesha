@@ -33,20 +33,58 @@ func (s *DefaultAPIService) GetConfig() (interface{}, error) {
 	return s.c, nil
 }
 
-// GetPidEnabled - Your GET endpoint
-func (s *DefaultAPIService) GetPidEnabled() (interface{}, error) {
-	return PIDEnabled{Enabled: s.p.Enabled, Heating: s.p.Heating}, nil
+//  GetPidRunning - Your GET endpoint
+func (s *DefaultAPIService) GetPidRunning() (interface{}, error) {
+	return PIDEnabled{Running: s.p.Running, Heating: s.p.Heating}, nil
 }
 
 // GetPidOutput - Your GET endpoint
 func (s *DefaultAPIService) GetPidOutput() (interface{}, error) {
-	output := <-*s.p.Output
-	return output, nil
+	if s.p.Running {
+		output := <-*s.p.Output
+		return output, nil
+	} else {
+		return nil, errors.New("PID is not running")
+	}
 }
 
 // GetStreamPidOutput - Your GET endpoint
 func (s *DefaultAPIService) GetStreamPidOutput(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Not Implemented", http.StatusInternalServerError)
+	sampleRate := s.c.PidFrequency
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
+		return
+	}
+
+	if !s.p.Running {
+		http.Error(w, "PID not running", http.StatusInternalServerError)
+		return
+	}
+
+	h := w.Header()
+	h.Set("connection", "keep-alive")
+	h.Set("cache-control", "no-cache")
+	h.Set("content-type", "text/event-stream")
+	h.Set("access-control-allow-origin", "*")
+
+	ticker := time.NewTicker(sampleRate)
+	defer ticker.Stop()
+
+	for {
+		if !s.p.Running {
+			ticker.Stop()
+			return
+		}
+		t := <-*s.p.Output
+		tJSON, err := json.Marshal(t)
+		if err != nil {
+			http.Error(w, "Could not marshal temperature data to JSON", http.StatusInternalServerError)
+		}
+		fmt.Fprintf(w, "data: %s\n\n", string(tJSON))
+		flusher.Flush()
+		<-ticker.C
+	}
 }
 
 // GetStreamTempCurrent - Your GET endpoint
@@ -99,9 +137,7 @@ func (s *DefaultAPIService) GetTemp(unit string) (interface{}, error) {
 
 // GetTempTarget - Your GET endpoint
 func (s *DefaultAPIService) GetTempTarget() (interface{}, error) {
-	// TODO - update GetTempTarget with the required logic for this service method.
-	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-	return nil, errors.New("service method 'GetTempTarget' not implemented")
+	return TemperatureTarget{Target: s.c.TemperatureTarget}, nil
 }
 
 // PostConfig -
@@ -111,16 +147,24 @@ func (s *DefaultAPIService) PostConfig(config config.Config) (interface{}, error
 	return nil, errors.New("service method 'PostConfig' not implemented")
 }
 
-// PostPidEnabled -
-func (s *DefaultAPIService) PostPidEnabled(pidEnabled PIDEnabled) (interface{}, error) {
-	fmt.Println("Enabling the PID!")
-	s.p.Start(s.c)
-	return nil, nil
+// PostPidRunning -
+func (s *DefaultAPIService) PostPidRunning(pidEnabled PIDEnabled) (interface{}, error) {
+	if pidEnabled.Running {
+		s.p.Start(s.c)
+	} else {
+		s.p.Stop()
+	}
+
+	return OperationResult{Ok: true}, nil
 }
 
 // PostTempTarget -
 func (s *DefaultAPIService) PostTempTarget(temperatureTarget TemperatureTarget) (interface{}, error) {
-	// TODO - update PostTempTarget with the required logic for this service method.
-	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-	return nil, errors.New("service method 'PostTempTarget' not implemented")
+	s.c.TemperatureTarget = temperatureTarget.Target
+
+	if s.p.Running {
+		s.p.SetTarget(temperatureTarget.Target)
+	}
+
+	return OperationResult{Ok: true}, nil
 }

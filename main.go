@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -18,21 +17,14 @@ import (
 func main() {
 	c := config.New()
 
-	config, _ := json.MarshalIndent(c, "", "  ")
-
 	t, err := temp.New(c.SpiPort)
 
 	if err != nil {
-		// log.Fatalf("Could not set up thermocouple. %s", err.Error())
-		fmt.Println("No thermocouple connected!")
+		log.Fatalf("Could not set up thermocouple. %s", err.Error())
 	}
 
 	port := util.GetEnv("PORT", "3000")
-	fmt.Printf("Running on port %s\n\nRunning Config: %s\n", port, string(config))
-
-	temp, err := t.Get()
-
-	fmt.Printf("Current Temperature: %f", temp.Temp)
+	fmt.Printf("Running on port %s\n\nConfig: %+v\n", port, c)
 
 	ts, err := t.Stream(10 * time.Millisecond)
 

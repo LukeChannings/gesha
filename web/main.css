@@ -10,3 +10,26 @@ body {
 #lag {
   font-variant-numeric: slashed-zero tabular-nums;
 }
+
+.toast {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: lightgreen;
+  color: #333;
+  transition: bottom ease-in-out 150ms;
+  font-size: 1.5rem;
+}
+
+.toast.\-\-error {
+  background-color: rgb(235, 126, 126);
+}
+
+.toast:empty {
+  bottom: -3rem;
+}

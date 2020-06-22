@@ -28,10 +28,10 @@ func (c *DefaultAPIController) Routes() Routes {
 			c.GetConfig,
 		},
 		{
-			"GetPidEnabled",
+			" GetPidRunning",
 			strings.ToUpper("Get"),
-			"/api/pid/enabled",
-			c.GetPidEnabled,
+			"/api/pid/running",
+			c.GetPidRunning,
 		},
 		{
 			"GetPidOutput",
@@ -70,10 +70,10 @@ func (c *DefaultAPIController) Routes() Routes {
 			c.PostConfig,
 		},
 		{
-			"PostPidEnabled",
+			"PostPidRunning",
 			strings.ToUpper("Post"),
-			"/api/pid/enabled",
-			c.PostPidEnabled,
+			"/api/pid/running",
+			c.PostPidRunning,
 		},
 		{
 			"PostTempTarget",
@@ -95,9 +95,9 @@ func (c *DefaultAPIController) GetConfig(w http.ResponseWriter, r *http.Request)
 	EncodeJSONResponse(result, nil, w)
 }
 
-// GetPidEnabled - Your GET endpoint
-func (c *DefaultAPIController) GetPidEnabled(w http.ResponseWriter, r *http.Request) {
-	result, err := c.service.GetPidEnabled()
+//  GetPidRunning - Your GET endpoint
+func (c *DefaultAPIController) GetPidRunning(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.GetPidRunning()
 	if err != nil {
 		w.WriteHeader(500)
 		return
@@ -168,15 +168,15 @@ func (c *DefaultAPIController) PostConfig(w http.ResponseWriter, r *http.Request
 	EncodeJSONResponse(result, nil, w)
 }
 
-// PostPidEnabled -
-func (c *DefaultAPIController) PostPidEnabled(w http.ResponseWriter, r *http.Request) {
+//  PostPidRunning -
+func (c *DefaultAPIController) PostPidRunning(w http.ResponseWriter, r *http.Request) {
 	pidEnabled := &PIDEnabled{}
 	if err := json.NewDecoder(r.Body).Decode(&pidEnabled); err != nil {
 		w.WriteHeader(500)
 		return
 	}
 
-	result, err := c.service.PostPidEnabled(*pidEnabled)
+	result, err := c.service.PostPidRunning(*pidEnabled)
 	if err != nil {
 		w.WriteHeader(500)
 		return

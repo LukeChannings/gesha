@@ -20,6 +20,7 @@ type Config struct {
 	P                     float64       `json:"p,omitempty"`
 	I                     float64       `json:"i,omitempty"`
 	D                     float64       `json:"d,omitempty"`
+	PidFrequency          time.Duration `json:"pidFrequency,omitempty"`
 }
 
 // New creates a config with defaults and based on the environment file
@@ -85,6 +86,19 @@ func New() Config {
 		c.TemperatureTarget = parsedTargetTemp
 	} else {
 		c.TemperatureTarget = 90.0
+	}
+
+	pidFrequency, hasPidFrequency := os.LookupEnv("PID_FREQUENCY_MS")
+
+	if hasPidFrequency {
+		pidFrequencyMs, err := strconv.ParseUint(pidFrequency, 10, 64)
+		if err != nil {
+			log.Fatalf("PID_FREQUENCY_MS (%s) could not be parsed as a number", pidFrequency)
+		}
+
+		c.PidFrequency = time.Duration(pidFrequencyMs) * time.Millisecond
+	} else {
+		c.PidFrequency = 1000 * time.Millisecond
 	}
 
 	return c
