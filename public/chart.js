@@ -1,8 +1,5 @@
 let chartEl, series = []
 
-// debugging
-globalThis.series = series
-
 const x = (d, ref, range) => {
   const msSinceRef = d - ref
   const f = msSinceRef / range
@@ -17,12 +14,11 @@ const y = (d) => {
 
 const draw = () => {
   if (series.length > 2) {
-    const sortedSeries = series.slice(0, 70)
-    const now = sortedSeries[sortedSeries.length - 1][0]
-    const then = sortedSeries[0][0]
+    const now = series[series.length - 1][0]
+    const then = series[0][0]
     const xRange = then - now
 
-    chartEl.innerHTML = sortedSeries
+    chartEl.innerHTML = series
       .map(xy => {
         return [x(xy[0], now, xRange), y(xy[1])]
       })
@@ -40,6 +36,8 @@ let loopRunning
 
 export default d => {
   series.unshift(d)
+  series = series.slice(0, 70)
+
   if (!loopRunning) {
     chartEl = document.querySelector('#chart')
     window.requestAnimationFrame(draw)
