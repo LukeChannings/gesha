@@ -1,0 +1,17 @@
+{
+  "TemperatureCurrentTitle": "Current",
+  "TemperatureSubtextLag": "s ago",
+  "TemperatureTargetTitle": "Target",
+  "TemperatureTargetButton": "Set",
+  "PidTitle": "PID",
+  "PidButton": "Toggle",
+  "HeatTitle": "Heat",
+  "GlobalOn": "On",
+  "GlobalOff": "Off",
+  "MessageTargetTempSetSuccess": "The temperature target was set to ${target} &deg;${temperatureUnit}",
+  "MessageTargetTempSetFailure": "There was a problem setting a new target temperature",
+  "MessageStartPidSuccess": "Successfully started the PID",
+  "MessageStartPidFailure": "There was a problem starting the PID",
+  "MessageStopPidSuccess": "Successfully stopped the PID",
+  "MessageStopPidFailure": "There was a problem stopping the PID"
+}

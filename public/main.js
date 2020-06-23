@@ -1,4 +1,9 @@
 import { Observable } from "https://cdn.pika.dev/zen-observable-ts@^0.8.21";
+import chart from "./chart.js";
+
+const API_HOST = 'http://192.168.20.24:3000'
+
+const { tr } = globalThis
 
 const tempEl = el("#temp");
 const lagEl = el("#tempLag");
@@ -7,12 +12,13 @@ const heatingEl = el("#heating");
 const toastEl = el("#toast");
 const pidRunningEl = el("#pidRunning");
 
+const getConfig = get('/config')
 const getPIDRunning = get("/pid/running");
 const setPID = post("/pid/running");
 const setTemp = post("/temp/target");
 const getTemp = get("/temp/target");
 
-let pidOutputSubscription, tempSubscription, isPIDRunning, isHeating;
+let pidOutputSubscription, tempSubscription, isPIDRunning, isHeating, config;
 
 (async () => {
 
@@ -21,8 +27,8 @@ let pidOutputSubscription, tempSubscription, isPIDRunning, isHeating;
 
   targetTempEl.addEventListener("focus", () => targetTempEl.select());
 
-  window.addEventListener('blur', () => suspend())
-  window.addEventListener('focus', () => resume())
+  // window.addEventListener('blur', () => suspend())
+  // window.addEventListener('focus', () => resume())
 
   await resume()
 })();
@@ -39,10 +45,16 @@ async function suspend() {
 }
 
 async function resume() {
+  config = await getConfig()
+  tempEl.classList.add('--deg-' + config.temperatureUnit.toLowerCase())
+
   const pid = await getPIDRunning();
   if (pid.running) trackPIDOutput();
-  heatingEl.innerHTML = pid.heating ? "On" : "Off";
-  pidRunningEl.innerHTML = pid.running ? "On" : "Off";
+  heatingEl.innerHTML = onOffText(pid.heating)
+  pidRunningEl.innerHTML = onOffText(pid.running)
+
+  isPIDRunning = pid.running
+  isHeating = pid.heating
 
   const { target } = await getTemp();
   targetTempEl.value = target;
@@ -87,7 +99,7 @@ async function setTargetTemp() {
 
   try {
     const result = await setTemp({ target });
-    toast(`The temperature target was set to ${target} &deg;C`);
+    toast(`The temperature target was set to ${target} &deg;${config.temperatureUnit}`);
   } catch (err) {
     toast(new Error(`Something went wrong setting new target`));
   }
@@ -96,16 +108,19 @@ async function setTargetTemp() {
 function trackPIDOutput() {
   pidOutputSubscription = makeStream("/api/stream/pid/output").subscribe(
     (result) => {
-      heatingEl.innerHTML = result === 1 ? "On" : "Off";
+      heatingEl.innerHTML = onOffText(result === 1)
     }
   );
 }
 
 function trackTemp() {
-  tempSubscription = makeStream("/api/stream/temp/current").subscribe(
+  const temp$ = makeStream("/api/stream/temp/current?sampleRateMs=100")
+  tempSubscription = temp$.subscribe(
     ({ time, temp }) => {
       tempEl.innerHTML = temp.toFixed(2);
-      lagEl.innerHTML = Date.now() - +time;
+      lagEl.innerHTML = ((Date.now() - +time) / 1000).toFixed(2);
+
+      chart([time, temp])
     }
   );
 }
@@ -118,7 +133,7 @@ function el(...args) {
 
 function makeStream(path) {
   return new Observable((observer) => {
-    const es = new EventSource(path);
+    const es = new EventSource(API_HOST + path);
 
     es.addEventListener("message", (e) => observer.next(JSON.parse(e.data)));
     es.addEventListener("error", () => {
@@ -132,7 +147,7 @@ function makeStream(path) {
 
 function apiCall(path, method = "GET", body = {}) {
   return async (bodyOverride = {}) => {
-    const res = await fetch("/api" + path, {
+    const res = await fetch(API_HOST + "/api" + path, {
       method,
       ...(method === "POST"
         ? {
@@ -145,7 +160,7 @@ function apiCall(path, method = "GET", body = {}) {
     if (res.ok) {
       return await res.json();
     } else {
-      throw new APIFetchError(
+      throw new Error(
         `Server responded ${res.status}. ${await res.text()}`
       );
     }
@@ -166,20 +181,15 @@ function onClick(node, handler) {
   );
 }
 
-class APIFetchError extends Error {}
-
 function toast(message, displayTimeMs = 3000) {
+  toastEl.setAttribute('class', `Toast ${message instanceof Error ? '--error' : ''}`)
+
+  toastEl.innerHTML = message;
+
   clearTimeout(toast.timeout);
+  toast.timeout = setTimeout(() => { toastEl.innerHTML = "" }, displayTimeMs);
+}
 
-  if (message instanceof Error) {
-    toastEl.classList.add("--error");
-  } else {
-    toastEl.classList.remove("--error");
-  }
-
-  toastEl.innerHTML = `<p>${message}</p>`;
-
-  toast.timeout = setTimeout(() => {
-    toastEl.innerHTML = "";
-  }, displayTimeMs);
+function onOffText(bool) {
+  return bool ? tr['global.on'] : tr['global.off']
 }

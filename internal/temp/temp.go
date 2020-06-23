@@ -51,8 +51,12 @@ func New(spiPort string) (*Handle, error) {
 }
 
 // Get - the current temperature
-func (t *Handle) Get() (*Temp, error) {
+func (t *Handle) Get(unit string) (*Temp, error) {
 	te, err := t.dev.GetTemp()
+
+	if unit == "F" {
+		te = (te * 1.8) + 32
+	}
 
 	if err != nil {
 		return nil, err
@@ -62,7 +66,7 @@ func (t *Handle) Get() (*Temp, error) {
 }
 
 // Stream - sample the temperature on a timer
-func (t *Handle) Stream(sampleRate time.Duration) (chan Temp, error) {
+func (t *Handle) Stream(sampleRate time.Duration, unit string) (chan Temp, error) {
 	c := make(chan Temp)
 
 	go func() {
@@ -71,7 +75,7 @@ func (t *Handle) Stream(sampleRate time.Duration) (chan Temp, error) {
 
 		for {
 			<-ticker.C
-			t, err := t.Get()
+			t, err := t.Get(unit)
 
 			if err == nil {
 				c <- *t

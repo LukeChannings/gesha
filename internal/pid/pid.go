@@ -55,6 +55,8 @@ func (h *Handle) Start(c *config.Config) {
 			pid.Set(c.TemperatureTarget)
 			pid.SetOutputLimits(-1.0, 1.0)
 
+			h.pid = pid
+
 			h.Running = true
 
 			var a, b temp.Temp = <-*h.temperatureStream, <-*h.temperatureStream

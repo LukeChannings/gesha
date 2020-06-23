@@ -83,7 +83,14 @@ func (s *DefaultAPIService) GetStreamPidOutput(w http.ResponseWriter, r *http.Re
 		}
 		fmt.Fprintf(w, "data: %s\n\n", string(tJSON))
 		flusher.Flush()
-		<-ticker.C
+
+		select {
+		case <-r.Context().Done():
+			ticker.Stop()
+			return
+		default:
+			<-ticker.C
+		}
 	}
 }
 
@@ -126,13 +133,20 @@ func (s *DefaultAPIService) GetStreamTempCurrent(w http.ResponseWriter, r *http.
 		}
 		fmt.Fprintf(w, "data: %s\n\n", string(tJSON))
 		flusher.Flush()
-		<-ticker.C
+
+		select {
+		case <-r.Context().Done():
+			ticker.Stop()
+			return
+		default:
+			<-ticker.C
+		}
 	}
 }
 
 // GetTemp - Your GET endpoint
 func (s *DefaultAPIService) GetTemp(unit string) (interface{}, error) {
-	return s.t.Get()
+	return s.t.Get(s.c.TemperatureUnit)
 }
 
 // GetTempTarget - Your GET endpoint

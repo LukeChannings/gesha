@@ -9,5 +9,6 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/joho/godotenv v1.3.0
 	github.com/markbates/pkger v0.17.0
+	golang.org/x/text v0.3.3
 	periph.io/x/periph v3.6.4+incompatible
 )
