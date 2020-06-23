@@ -15,22 +15,40 @@ const getTemp = get("/temp/target");
 let pidOutputSubscription, tempSubscription, isPIDRunning, isHeating;
 
 (async () => {
-  const { target } = await getTemp();
-  const pid = await getPIDRunning();
 
   onClick("#togglePID", togglePID);
   onClick("#setTargetTemp", setTargetTemp);
 
   targetTempEl.addEventListener("focus", () => targetTempEl.select());
 
-  trackTemp();
+  window.addEventListener('blur', () => suspend())
+  window.addEventListener('focus', () => resume())
 
+  await resume()
+})();
+
+async function suspend() {
+  if (tempSubscription) {
+    tempSubscription.unsubscribe()
+    tempSubscription = null
+  }
+  if (pidOutputSubscription) {
+    pidOutputSubscription.unsubscribe()
+    pidOutputSubscription = null
+  }
+}
+
+async function resume() {
+  const pid = await getPIDRunning();
   if (pid.running) trackPIDOutput();
   heatingEl.innerHTML = pid.heating ? "On" : "Off";
   pidRunningEl.innerHTML = pid.running ? "On" : "Off";
 
+  const { target } = await getTemp();
   targetTempEl.value = target;
-})();
+
+  trackTemp();
+}
 
 async function togglePID() {
   if (isPIDRunning) {
