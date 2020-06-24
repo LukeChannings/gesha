@@ -4,8 +4,6 @@ Gesha is a PID app for your espresso machine that uses a [MAX31855](https://www.
 
 > My specific use case is with a Rancilio Silvia, modified roughly according to [this excellent project](https://github.com/brycesub/silvia-pi), but Gesha will work with any espresso machine with similar modifications.
 
-![Mobile](./screenshots/mobile.png)
-
 ## Features
 
 - [x] Fat binary with zero dependencies
@@ -16,6 +14,13 @@ Gesha is a PID app for your espresso machine that uses a [MAX31855](https://www.
 - [x] Fast and Accessible Web UI
 - [x] Add to Home Screen
 - [ ] Dark Mode
+
+## Screenshots
+
+| Mobile                              | Tablet                              | Desktop                               |
+|-------------------------------------|-------------------------------------|---------------------------------------|
+| ![Mobile](./screenshots/mobile.png) | ![Tablet](./screenshots/tablet.png) | ![Desktop](./screenshots/desktop.png) |
+
 
 ## Installation
 
@@ -32,7 +37,7 @@ The install command will move the binary into `/usr/local/` and install a system
 Gesha is configured with environment variables, and an env file is also read from `/etc/gesha/config.env`.
 
 | Env variable               | Description                                                                          | Default | Example                                                                     |
-| -------------------------- | ------------------------------------------------------------------------------------ | ------- | --------------------------------------------------------------------------- |
+|----------------------------|--------------------------------------------------------------------------------------|---------|-----------------------------------------------------------------------------|
 | TEMPERATURE_UNIT           | The preferred temperature unit for display purposes                                  | C       | C or F                                                                      |
 | BOILER_PIN                 | The pin to use to toggle the boiler on/off.                                          | GPIO7   | See [gpio-list](https://github.com/google/periph/tree/master/cmd/gpio-list) |
 | SPI_PORT                   | The SPI port to use for temperature data. Empty will default to the first available. | ""      | See [spi-list](https://github.com/google/periph/tree/master/cmd/spi-list)   |
