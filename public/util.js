@@ -4,19 +4,26 @@ import { Observable } from 'https://cdn.pika.dev/zen-observable-ts@^0.8.21'
 const API_HOST = __DEBUG__ ? 'http://192.168.20.24:3000' : ''
 
 // api
-export const makeStream = path =>
-  new Observable(observer => {
-    const es = new EventSource(API_HOST + path)
+export const makeStream = path => {
+  let ess = {}
+  return new Observable(observer => {
+    const es = ess[path] ? ess[path] : new EventSource(API_HOST + path)
+    ess[path] = es
 
     es.addEventListener('message', e => observer.next(JSON.parse(e.data)))
     es.addEventListener('error', () => {
       console.log('ERROR in stream ' + path)
+      ess[path] = null
       observer.complete()
       toast(new Error('Connection lost'), null)
     })
 
-    return () => es.close()
+    return () => {
+      ess[path] = null
+      es.close()
+    }
   })
+}
 
 const apiCall = (path, method = 'GET', body = {}) => async (
   bodyOverride = {}
