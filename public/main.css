@@ -2,8 +2,36 @@
   --colorText1: #333;
   --colorText2: #646464;
   --colorText3: #fff;
+  --colorBackgroundPrimary: #f0eff2;
+  --colorBackgroundSecondary: #b6b0bb;
+  --colorPrimary: #9d61a9;
+  --colorSuccess: #3aa64e;
+  --colorWarning: #a33333;
+  --colorTileBackground: #e2dfe2;
+  --darkenGradient: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1));
+  --darkenGradientInverted: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.1),
+    transparent
+  );
 
   --fontSizeDivisor: 1;
+
+  /* g: Graph, c: Current Temp, t: Target Temp, p: PID, h: Heating */
+
+  /* prettier-ignore */
+  --mobileGridAreas:
+    'g g'
+    'c t'
+    'p h';
+  /* prettier-ignore */
+  --tabletGridAreas:
+    'g g c t'
+    'g g p h';
+  /* prettier-ignore */
+  --desktopGridAreas:
+    'g g g g c t'
+    'g g g g p h';
 }
 
 * {
@@ -16,8 +44,12 @@
 html {
   font-family: system-ui;
 
-  background-color: #b6b0bb;
-  background-image: linear-gradient(to bottom, #f0eff2, #b6b0bb);
+  background-color: var(--colorBackgroundSecondary);
+  background-image: linear-gradient(
+    to bottom,
+    var(--colorBackgroundPrimary),
+    var(--colorBackgroundSecondary)
+  );
 }
 
 body {
@@ -38,7 +70,8 @@ body {
 .Header {
   width: 100vw;
   margin-left: calc(50% - 50vw);
-  background-image: linear-gradient(to bottom, #9d61a9, #834294);
+  background-color: var(--colorPrimary);
+  background-image: var(--darkenGradient);
   padding-top: max(0.75rem, env(safe-area-inset-top));
   padding-bottom: 0.75rem;
   text-align: center;
@@ -55,15 +88,13 @@ body {
 
 .TileContainer {
   display: grid;
-  grid-template-areas:
-    'a a'
-    'b b';
+  grid-template-areas: var(--mobileGridAreas);
   gap: 2rem;
   margin-top: 2rem;
 }
 
 .Tile {
-  background-color: #e2dfe2;
+  background-color: var(--colorTileBackground);
   border-radius: 1em;
   box-shadow: 0 0 20px 5px #aca4afaa;
   padding-top: 100%;
@@ -125,7 +156,6 @@ body {
 }
 
 .Tile.\-\-full {
-  grid-area: a;
   padding-top: 60%;
 }
 
@@ -134,7 +164,8 @@ body {
   left: 0;
   bottom: 0;
   width: 100%;
-  background-image: linear-gradient(to bottom, #9d61a9, #834294);
+  background-color: var(--colorPrimary);
+  background-image: var(--darkenGradient);
   color: var(--colorText3);
   padding: 0.5rem 0;
   font-size: calc(3.5vw / var(--fontSizeDivisor));
@@ -147,7 +178,7 @@ body {
     padding: 0.75rem 0;
   }
   .Tile_Button:hover {
-    background-image: linear-gradient(to bottom, #834294, #9d61a9);
+    background-image: var(--darkenGradientInverted);
   }
 }
 
@@ -163,6 +194,22 @@ body {
 
 .Tile_Form {
   display: contents;
+}
+
+.Tile.\-\-graph {
+  grid-area: g;
+}
+.Tile.\-\-currentTemperature {
+  grid-area: c;
+}
+.Tile.\-\-targetTemperature {
+  grid-area: t;
+}
+.Tile.\-\-pid {
+  grid-area: p;
+}
+.Tile.\-\-heat {
+  grid-area: h;
 }
 
 .Chart {
@@ -182,7 +229,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: linear-gradient(to bottom, #3aa64e, #258d33);
+  background-color: var(--colorSuccess);
+  background-image: var(--darkenGradient);
   color: var(--colorText3);
   transition: bottom ease-in-out 150ms;
   font-size: 1rem;
@@ -191,7 +239,8 @@ body {
 }
 
 .Toast.\-\-error {
-  background-image: linear-gradient(to bottom, #a33333, #842929);
+  background-color: var(--colorWarning);
+  background-image: var(--darkenGradient);
 }
 
 .Toast:empty {
@@ -200,9 +249,7 @@ body {
 
 @media screen and (min-width: 48em) {
   .TileContainer {
-    grid-template-areas:
-      'a a b c'
-      'd e . .';
+    grid-template-areas: var(--tabletGridAreas);
     gap: 2rem;
   }
 
@@ -213,9 +260,7 @@ body {
 
 @media screen and (min-width: 76em) {
   .TileContainer {
-    grid-template-areas:
-      'a a a a b c'
-      'a a a a d e';
+    grid-template-areas: var(--desktopGridAreas);
   }
 
   :root {

@@ -45,17 +45,17 @@
       <h1 class="Header_Heading">Gesha</h1>
     </header>
     <div class="TileContainer">
-       <section class="Tile --full">
+       <section class="Tile --full --graph">
         <svg class="Chart" id="chart" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 300"></svg>
       </section>
-      <section class="Tile">
+      <section class="Tile --currentTemperature">
         <p class="Tile_Title">{{.T.TemperatureCurrentTitle}}</p>
         <p class="Tile_Value --deg-{{if .IsTempF}}f{{else}}c{{end}}" id="temp">{{.CurrentTemp}}</p>
         <p class="Tile_Subtext">
           <span class="Tile_Subtext_number" id="tempLag">0.00</span>{{.T.TemperatureSubtextLag}}
         </p>
       </section>
-      <section class="Tile">
+      <section class="Tile --targettTemperature">
         <form id="setTargetTemp" class="Tile_Form">
           <p class="Tile_Title">{{.T.TemperatureTargetTitle}}</p>
           <input
@@ -68,12 +68,12 @@
           <button class="Tile_Button">{{.T.TemperatureTargetButton}}</button>
         </form>
       </section>
-      <section class="Tile">
+      <section class="Tile --pid">
         <p class="Tile_Title">{{.T.PidTitle}}</p>
         <p class="Tile_Value" id="pidRunning">{{ if .Running}}{{ .T.GlobalOn }}{{else}}{{.T.GlobalOff}}{{end}}</p>
         <button type="button" class="Tile_Button" id="togglePID">{{.T.PidButton}}</button>
       </section>
-      <section class="Tile">
+      <section class="Tile --heating">
         <p class="Tile_Title">{{.T.HeatTitle}}</p>
         <p class="Tile_Value" id="heating">{{ if .Heating}}{{ .T.GlobalOn }}{{else}}{{.T.GlobalOff}}{{end}}</p>
       </section>
