@@ -38,6 +38,7 @@ Gesha is configured with environment variables, and an env file is also read fro
 
 | Env variable               | Description                                                                          | Default | Example                                                                     |
 |----------------------------|--------------------------------------------------------------------------------------|---------|-----------------------------------------------------------------------------|
+| PORT                       | The port the web server should run on                                                | 3000    | integer                                                                     |
 | TEMPERATURE_UNIT           | The preferred temperature unit for display purposes                                  | C       | C or F                                                                      |
 | BOILER_PIN                 | The pin to use to toggle the boiler on/off.                                          | GPIO7   | See [gpio-list](https://github.com/google/periph/tree/master/cmd/gpio-list) |
 | SPI_PORT                   | The SPI port to use for temperature data. Empty will default to the first available. | ""      | See [spi-list](https://github.com/google/periph/tree/master/cmd/spi-list)   |
@@ -47,5 +48,6 @@ Gesha is configured with environment variables, and an env file is also read fro
 | P                          | PID's Proportional variable                                                          | 2.9     | float                                                                       |
 | I                          | PID's Integral variable                                                              | 0.3     | float                                                                       |
 | D                          | PID's Derivative variable                                                            | 40.0    | float                                                                       |
+
 
 > In case this table is out of date, all config options can be found in [config.go](./internal/config/config.go)
