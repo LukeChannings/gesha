@@ -1,55 +1,92 @@
-let chartEl,
-  series = [],
-  targetTemp
+import { el } from './util.js'
 
-const x = (d, ref, range) => {
-  const msSinceRef = d - ref
-  const f = msSinceRef / range
+export class Chart {
+  constructor(temp$, targetTemp, range = 30) {
+    this.node = el('#chart')
+    this.targetTemp = targetTemp
+    this.series = []
 
-  return 500 - f * 500
-}
+    this.subscribe(temp$)
 
-const y = d => {
-  const f = d / 200
-  return 300 - f * 300
-}
+    this.range = range
+    this.yRange = [0, 200]
+    this.getXRange = () => {
+      const t = Date.now()
+      return [t - 1000 * range, t]
+    }
 
-const draw = () => {
-  if (series.length > 2) {
-    const now = series[series.length - 1][0]
-    const then = series[0][0]
-    const xRange = then - now
-
-    const targetY = y(targetTemp)
-
-    chartEl.innerHTML =
-      series
-        .map(xy => {
-          return [x(xy[0], now, xRange), y(xy[1])]
-        })
-        .map(([x, y]) => {
-          return `<circle cx="${x}" cy="${y}" r="2" fill="#000" />`
-        })
-        .join('\n') +
-      `<text x="430" y="300" style="font-size: 12px">${(xRange / 1000).toFixed(
-        2
-      )} seconds</text>
-      <line x1="0" y1="${targetY}" x2="500" y2="${targetY}" stroke="#f00" />`
+    requestAnimationFrame(this.render)
   }
 
-  requestAnimationFrame(draw)
-}
+  handleReceiveData = ({ time, temp }) => {
+    // Store 35 seconds worth of data, assuming it's sampled every 100ms. Could be less.
+    const maxItems = (35 * 1000) / 100
 
-let loopRunning
+    // TODO: Use an ArrayBuffer for this or something?
+    this.series = [[+time, temp], ...this.series.slice(0, maxItems - 1)]
+  }
 
-export default (d, target) => {
-  series = [d, ...series.slice(0, 70)]
+  handleDisconnection = err => {
+    console.log('disconnected', err)
+    this.destroy()
+  }
 
-  targetTemp = target
+  subscribe = temp$ => {
+    if (this.subscription) {
+      this.subscription.unsubscribe()
+    }
 
-  if (!loopRunning) {
-    chartEl = document.querySelector('#chart')
-    window.requestAnimationFrame(draw)
-    loopRunning = true
+    this.subscription = temp$.subscribe(
+      this.handleReceiveData,
+      this.handleDisconnection,
+      this.handleDisconnection
+    )
+  }
+
+  setTargetTemp = t => {
+    this.targetTemp = t
+  }
+
+  // compute the value of a timestamp within the bounds
+  x = (t, now) => {
+    t - now
+    return 500
+  }
+
+  // compute the value of a temperature within the chart bounds
+  y = t => {
+    const f = t / 200
+
+    return 300 - f * 300
+  }
+  render = () => {
+    const now = Date.now()
+    const then = now - 1000 * this.range
+    const s = this.series.filter(([x]) => x >= then)
+
+    const xPos = x => ((x - then) / (now - then)) * 500
+
+    const targetY = (this.targetTemp / 200) * 300
+
+    this.node.innerHTML =
+      s
+        .map(
+          ([x, y]) =>
+            `<circle cx="${xPos(x)}" cy="${this.y(y)}" r="1" fill="#333" />`
+        )
+        .join('') +
+      `<line x1="0" y1="${targetY}" x2="500" y2="${targetY}" stroke="#f00" />`
+
+    this.animationId = requestAnimationFrame(this.render)
+  }
+
+  destroy = () => {
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId)
+      this.animationId = null
+    }
+    this.subscription.unsubscribe()
+    this.subscription = null
+    this.series = []
   }
 }

@@ -1,5 +1,5 @@
 import { el, on, get, post, tr, trBool, toast, makeStream } from './util.js'
-import chart from './chart.js'
+import { Chart } from './chart.js'
 
 const tempEl = el('#temp')
 const lagEl = el('#tempLag')
@@ -12,7 +12,14 @@ const setPID = post('/pid/running')
 const setTemp = post('/temp/target')
 const getTemp = get('/temp/target')
 
-let pidOutputSubscription, tempSubscription, isPIDRunning, isHeating, targetTemp
+const temp$ = makeStream('/api/stream/temp/current?sampleRateMs=100')
+
+let pidOutputSubscription,
+  tempSubscription,
+  isPIDRunning,
+  isHeating,
+  targetTemp,
+  chart
 ;(async () => {
   on('click', '#togglePID', togglePID)
   on('submit', '#setTargetTemp', setTargetTemp)
@@ -70,32 +77,40 @@ async function togglePID() {
 }
 
 async function startPID() {
-  const result = await setPID({ running: true })
-  if (result.ok) {
-    toast(tr('messageStartPidSuccess'))
-    trackPIDOutput()
-    pidRunningEl.innerHTML = tr('globalOn')
-    isPIDRunning = true
-  } else {
+  try {
+    const result = await setPID({ running: true })
+    if (result.ok) {
+      toast(tr('messageStartPidSuccess'))
+      trackPIDOutput()
+      pidRunningEl.innerHTML = tr('globalOn')
+      isPIDRunning = true
+    } else {
+      toast(new Error(tr('messageStartPidFailure')))
+    }
+  } catch (err) {
     toast(new Error(tr('messageStartPidFailure')))
   }
 }
 
 async function stopPID() {
-  const result = await setPID({ running: false })
+  try {
+    const result = await setPID({ running: false })
+    toast(
+      result.ok
+        ? tr('messageStopPidSuccess')
+        : new Error(tr('messageStopPidFailure'))
+    )
 
-  toast(
-    result.ok
-      ? tr('messageStopPidSuccess')
-      : new Error(tr('messageStopPidFailure'))
-  )
-
-  if (result.ok) {
-    if (pidOutputSubscription) pidOutputSubscription.unsubscribe()
+    if (pidOutputSubscription) {
+      pidOutputSubscription.unsubscribe()
+      pidOutputSubscription = null
+    }
 
     heatingEl.innerHTML = tr('globalOff')
     pidRunningEl.innerHTML = tr('globalOff')
     isPIDRunning = false
+  } catch (err) {
+    toast(new Error(tr('messageStopPidFailure')))
   }
 }
 
@@ -123,14 +138,10 @@ function trackPIDOutput() {
 }
 
 function trackTemp() {
-  tempSubscription = makeStream(
-    '/api/stream/temp/current?sampleRateMs=100'
-  ).subscribe(
+  tempSubscription = temp$.subscribe(
     ({ time, temp }) => {
       tempEl.innerHTML = temp.toFixed(2)
       lagEl.innerHTML = ((Date.now() - +time) / 1000).toFixed(2)
-
-      chart([time, temp], targetTemp)
     },
     // TODO: Implement retry
     err => {
@@ -142,4 +153,10 @@ function trackTemp() {
       toast(new Error('Disconnected'), null)
     }
   )
+
+  if (!chart) {
+    chart = new Chart(temp$, targetTemp)
+  } else {
+    chart.subscribe(temp$)
+  }
 }
