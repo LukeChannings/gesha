@@ -33,7 +33,7 @@ func (s *DefaultAPIService) GetConfig() (interface{}, error) {
 	return s.c, nil
 }
 
-//  GetPidRunning - Your GET endpoint
+// GetPidRunning - Your GET endpoint
 func (s *DefaultAPIService) GetPidRunning() (interface{}, error) {
 	return PIDEnabled{Running: s.p.Running, Heating: s.p.Heating}, nil
 }

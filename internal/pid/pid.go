@@ -44,7 +44,7 @@ func convTempC(value float64, unit string) float64 {
 		return value
 	}
 
-	return -32 * 5 / 9
+	return value - 32*5/9
 }
 
 // Start - starts a new PID
