@@ -3,3 +3,4 @@ pkged.go
 .env
 .DS_Store
 *.sketch
+public/index.html

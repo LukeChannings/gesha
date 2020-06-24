@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-title" content="Gesha" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <link rel="apple-touch-icon" href="icons/gesha.svg" />
+    <link rel="apple-touch-icon" sizes="256x256" href="icons/gesha@1x.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icons/gesha@2x.png" />
+    <link rel="apple-touch-icon" sizes="768x768" href="icons/gesha@3x.png" />
+    <link rel="icon" sizes="256x256" href="icons/gesha@1x.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#9d61a9" />
+    <title>Gesha</title>
+    <link rel="stylesheet" href="main.css" />
+    <script>
+      globalThis.__DEBUG__ = false
+      globalThis.ctx = {
+        tempUnit: "{{.C.TemperatureUnit}}",
+        pidRunning: {{.Running}},
+        heating: {{.Heating}},
+        tr: {
+          globalOn: "{{.T.GlobalOn}}",
+          globalOff: "{{.T.GlobalOff}}",
+          messageTargetTempSetSuccess: "{{.T.MessageTargetTempSetSuccess}}",
+          messageTargetTempSetFailure: "{{.T.MessageTargetTempSetFailure}}",
+          messageStartPidSuccess: "{{.T.MessageStartPidSuccess}}",
+          messageStartPidFailure: "{{.T.MessageStartPidFailure}}",
+          messageStopPidSuccess: "{{.T.MessageStopPidSuccess}}",
+          messageStopPidFailure: "{{.T.MessageStopPidFailure}}",
+        }
+      }
+    </script>
+    <script type="module" src="main.js"></script>
+  </head>
+
+  <body>
+    <header class="Header">
+      <h1 class="Header_Heading">Gesha</h1>
+    </header>
+    <div class="TileContainer">
+       <section class="Tile --full">
+        <svg class="Chart" id="chart" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 300"></svg>
+      </section>
+      <section class="Tile">
+        <p class="Tile_Title">{{.T.TemperatureCurrentTitle}}</p>
+        <p class="Tile_Value --deg-{{if .IsTempF}}f{{else}}c{{end}}" id="temp">{{.CurrentTemp}}</p>
+        <p class="Tile_Subtext">
+          <span class="Tile_Subtext_number" id="tempLag">0.00</span>{{.T.TemperatureSubtextLag}}
+        </p>
+      </section>
+      <section class="Tile">
+        <form id="setTargetTemp" class="Tile_Form">
+          <p class="Tile_Title">{{.T.TemperatureTargetTitle}}</p>
+          <input
+            type="number"
+            pattern="\d*"
+            class="Tile_Value --editable"
+            id="targetTemp"
+            value="{{.TargetTemp}}"
+          />
+          <button class="Tile_Button">{{.T.TemperatureTargetButton}}</button>
+        </form>
+      </section>
+      <section class="Tile">
+        <p class="Tile_Title">{{.T.PidTitle}}</p>
+        <p class="Tile_Value" id="pidRunning">{{ if .Running}}{{ .T.GlobalOn }}{{else}}{{.T.GlobalOff}}{{end}}</p>
+        <button type="button" class="Tile_Button" id="togglePID">{{.T.PidButton}}</button>
+      </section>
+      <section class="Tile">
+        <p class="Tile_Title">{{.T.HeatTitle}}</p>
+        <p class="Tile_Value" id="heating">{{ if .Heating}}{{ .T.GlobalOn }}{{else}}{{.T.GlobalOff}}{{end}}</p>
+      </section>
+    </div>
+    <div class="Toast" id="toast"><!-- For pop-up toast message --></div>
+  </body>
+</html>

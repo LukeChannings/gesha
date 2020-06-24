@@ -12,15 +12,15 @@ import (
 
 // Config defines the runtime configuration for the application
 type Config struct {
-	BoilerPin             string        `json:"boilerPin,omitempty"`
-	SpiPort               string        `json:"spiPort,omitempty"`
-	TemperatureSampleRate time.Duration `json:"temperatureSampleRate,omitempty"`
-	TemperatureUnit       string        `json:"temperatureUnit,omitempty"`
-	TemperatureTarget     float64       `json:"temperatureTarget,omitempty"`
-	P                     float64       `json:"p,omitempty"`
-	I                     float64       `json:"i,omitempty"`
-	D                     float64       `json:"d,omitempty"`
-	PidFrequency          time.Duration `json:"pidFrequency,omitempty"`
+	BoilerPin             string        `json:"boilerPin,omitempty" env:"BOILER_PIN"`
+	SpiPort               string        `json:"spiPort,omitempty" env:"SPI_PORT"`
+	TemperatureSampleRate time.Duration `json:"temperatureSampleRate,omitempty" env:"TEMPERATURE_SAMPLE_RATE_MS"`
+	TemperatureUnit       string        `json:"temperatureUnit,omitempty" env:"TEMPERATURE_UNIT"`
+	TemperatureTarget     float64       `json:"temperatureTarget,omitempty" env:"TEMPERATURE_TARGET"`
+	P                     float64       `json:"p,omitempty" env:"P"`
+	I                     float64       `json:"i,omitempty" env:"I"`
+	D                     float64       `json:"d,omitempty" env:"D"`
+	PidFrequency          time.Duration `json:"pidFrequency,omitempty" env:"PID_FREQUENCY_MS"`
 }
 
 // New creates a config with defaults and based on the environment file

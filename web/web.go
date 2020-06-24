@@ -10,18 +10,30 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/lukechannings/gesha/internal/config"
+	"github.com/lukechannings/gesha/internal/pid"
+	"github.com/lukechannings/gesha/internal/temp"
 	"github.com/markbates/pkger"
 )
+
+type templateContext struct {
+	C           *config.Config
+	T           *Translations
+	CurrentTemp float64
+	TargetTemp  float64
+	Heating     bool
+	Running     bool
+	IsTempF     bool
+}
 
 var matcher = language.NewMatcher([]language.Tag{
 	language.English,
 })
 
 func getIndexTemplate() (*template.Template, error) {
-	tmpl, err := pkger.Open("/web/index.template")
+	tmpl, err := pkger.Open("/web/index.tmpl")
 
 	if err != nil {
-		log.Fatal("Could not load index.template")
+		log.Fatal("Could not load index.tmpl")
 	}
 
 	b, _ := ioutil.ReadAll(tmpl)
@@ -29,7 +41,25 @@ func getIndexTemplate() (*template.Template, error) {
 	return template.New("index").Parse(string(b))
 }
 
-func getTranslations(lang language.Tag) interface{} {
+type Translations struct {
+	TemperatureCurrentTitle     string `json:"temperatureCurrentTitle"`
+	TemperatureSubtextLag       string `json:"temperatureSubtextLag"`
+	TemperatureTargetTitle      string `json:"temperatureTargetTitle"`
+	TemperatureTargetButton     string `json:"temperatureTargetButton"`
+	PidTitle                    string `json:"pidTitle"`
+	PidButton                   string `json:"pidButton"`
+	HeatTitle                   string `json:"heatTitle"`
+	GlobalOn                    string `json:"globalOn"`
+	GlobalOff                   string `json:"globalOff"`
+	MessageTargetTempSetSuccess string `json:"messageTargetTempSetSuccess"`
+	MessageTargetTempSetFailure string `json:"messageTargetTempSetFailure"`
+	MessageStartPidSuccess      string `json:"messageStartPidSuccess"`
+	MessageStartPidFailure      string `json:"messageStartPidFailure"`
+	MessageStopPidSuccess       string `json:"messageStopPidSuccess"`
+	MessageStopPidFailure       string `json:"messageStopPidFailure"`
+}
+
+func getTranslations(lang language.Tag) *Translations {
 	baseLang := lang.Parent().String()
 
 	if baseLang == "en" {
@@ -41,20 +71,20 @@ func getTranslations(lang language.Tag) interface{} {
 
 		defer file.Close()
 
-		var strings interface{}
+		tr := new(Translations)
 
 		byteValue, _ := ioutil.ReadAll(file)
 
-		json.Unmarshal(byteValue, &strings)
+		json.Unmarshal(byteValue, &tr)
 
-		return strings
+		return tr
 	}
 
 	return nil
 }
 
 // Index - serves the interpolated index page
-func Index(c *config.Config) http.Handler {
+func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 
 	tmpl, err := getIndexTemplate()
 
@@ -69,6 +99,24 @@ func Index(c *config.Config) http.Handler {
 
 		tr := getTranslations(tag)
 
-		tmpl.Execute(w, tr)
+		t, err := t.Get(c.TemperatureUnit)
+
+		if err != nil {
+			http.Error(w, "Could not read the temperature", http.StatusInternalServerError)
+		}
+
+		ctx := templateContext{
+			T:           tr,
+			C:           c,
+			CurrentTemp: t.Temp,
+			TargetTemp:  c.TemperatureTarget,
+			IsTempF:     c.TemperatureUnit == "F",
+			Running:     p.Running,
+			Heating:     p.Heating,
+		}
+
+		w.Header().Add("cache-control", "no-cache")
+
+		tmpl.Execute(w, ctx)
 	})
 }

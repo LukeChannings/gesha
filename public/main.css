@@ -56,8 +56,8 @@ body {
 .TileContainer {
   display: grid;
   grid-template-areas:
-    "a a"
-    "b b";
+    'a a'
+    'b b';
   gap: 2rem;
   margin-top: 2rem;
 }
@@ -117,8 +117,12 @@ body {
   letter-spacing: -1px;
 }
 
-.Tile_Value.\-\-deg-c::after { content: "° C"; }
-.Tile_Value.\-\-deg-f::after { content: "° F"; }
+.Tile_Value.\-\-deg-c::after {
+  content: '° C';
+}
+.Tile_Value.\-\-deg-f::after {
+  content: '° F';
+}
 
 .Tile.\-\-full {
   grid-area: a;
@@ -157,6 +161,10 @@ body {
   white-space: nowrap;
 }
 
+.Tile_Form {
+  display: contents;
+}
+
 .Chart {
   width: 100%;
   height: 100%;
@@ -193,8 +201,8 @@ body {
 @media screen and (min-width: 48em) {
   .TileContainer {
     grid-template-areas:
-      "a a b c"
-      "d e . .";
+      'a a b c'
+      'd e . .';
     gap: 2rem;
   }
 
@@ -206,8 +214,8 @@ body {
 @media screen and (min-width: 76em) {
   .TileContainer {
     grid-template-areas:
-      "a a a a b c"
-      "a a a a d e";
+      'a a a a b c'
+      'a a a a d e';
   }
 
   :root {

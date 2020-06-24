@@ -39,7 +39,7 @@ func main() {
 	DefaultAPIController := api.NewDefaultAPIController(DefaultAPIService)
 
 	r := api.NewRouter(DefaultAPIController)
-	r.Handle("/", web.Index(&c))
+	r.Handle("/", web.Index(&c, t, &pid))
 	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(pkger.Dir("/public"))))
 
 	log.Fatal(http.ListenAndServe(":"+port, r))

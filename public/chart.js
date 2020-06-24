@@ -1,15 +1,17 @@
-let chartEl, series = []
+let chartEl,
+  series = [],
+  targetTemp
 
 const x = (d, ref, range) => {
   const msSinceRef = d - ref
   const f = msSinceRef / range
 
-  return 500 - (f * 500)
+  return 500 - f * 500
 }
 
-const y = (d) => {
+const y = d => {
   const f = d / 200
-  return 300 - (f * 300)
+  return 300 - f * 300
 }
 
 const draw = () => {
@@ -18,15 +20,21 @@ const draw = () => {
     const then = series[0][0]
     const xRange = then - now
 
-    chartEl.innerHTML = series
-      .map(xy => {
-        return [x(xy[0], now, xRange), y(xy[1])]
-      })
-      .map(([x, y]) => {
-        return `<circle cx="${x}" cy="${y}" r="2" fill="#000" />`
-      })
-      .join('\n') +
-      `<text x="430" y="300" style="font-size: 12px">${(xRange / 1000).toFixed(2)} seconds</text>`
+    const targetY = y(targetTemp)
+
+    chartEl.innerHTML =
+      series
+        .map(xy => {
+          return [x(xy[0], now, xRange), y(xy[1])]
+        })
+        .map(([x, y]) => {
+          return `<circle cx="${x}" cy="${y}" r="2" fill="#000" />`
+        })
+        .join('\n') +
+      `<text x="430" y="300" style="font-size: 12px">${(xRange / 1000).toFixed(
+        2
+      )} seconds</text>
+      <line x1="0" y1="${targetY}" x2="500" y2="${targetY}" stroke="#f00" />`
   }
 
   requestAnimationFrame(draw)
@@ -34,9 +42,10 @@ const draw = () => {
 
 let loopRunning
 
-export default d => {
-  series.unshift(d)
-  series = series.slice(0, 70)
+export default (d, target) => {
+  series = [d, ...series.slice(0, 70)]
+
+  targetTemp = target
 
   if (!loopRunning) {
     chartEl = document.querySelector('#chart')

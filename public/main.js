@@ -1,37 +1,28 @@
-import { Observable } from "https://cdn.pika.dev/zen-observable-ts@^0.8.21";
-import chart from "./chart.js";
+import { el, on, get, post, tr, trBool, toast, makeStream } from './util.js'
+import chart from './chart.js'
 
-const API_HOST = 'http://192.168.20.24:3000'
+const tempEl = el('#temp')
+const lagEl = el('#tempLag')
+const targetTempEl = el('#targetTemp')
+const heatingEl = el('#heating')
+const pidRunningEl = el('#pidRunning')
 
-const { tr } = globalThis
+const getPIDRunning = get('/pid/running')
+const setPID = post('/pid/running')
+const setTemp = post('/temp/target')
+const getTemp = get('/temp/target')
 
-const tempEl = el("#temp");
-const lagEl = el("#tempLag");
-const targetTempEl = el("#targetTemp");
-const heatingEl = el("#heating");
-const toastEl = el("#toast");
-const pidRunningEl = el("#pidRunning");
+let pidOutputSubscription, tempSubscription, isPIDRunning, isHeating, targetTemp
+;(async () => {
+  on('click', '#togglePID', togglePID)
+  on('submit', '#setTargetTemp', setTargetTemp)
+  on('focus', targetTempEl, () => targetTempEl.select())
+  on('visibilitychange', document, () =>
+    document.hidden ? suspend() : resume()
+  )
 
-const getConfig = get('/config')
-const getPIDRunning = get("/pid/running");
-const setPID = post("/pid/running");
-const setTemp = post("/temp/target");
-const getTemp = get("/temp/target");
-
-let pidOutputSubscription, tempSubscription, isPIDRunning, isHeating, config;
-
-(async () => {
-
-  onClick("#togglePID", togglePID);
-  onClick("#setTargetTemp", setTargetTemp);
-
-  targetTempEl.addEventListener("focus", () => targetTempEl.select());
-
-  // window.addEventListener('blur', () => suspend())
-  // window.addEventListener('focus', () => resume())
-
-  await resume()
-})();
+  await resume(true)
+})()
 
 async function suspend() {
   if (tempSubscription) {
@@ -44,152 +35,111 @@ async function suspend() {
   }
 }
 
-async function resume() {
-  config = await getConfig()
-  tempEl.classList.add('--deg-' + config.temperatureUnit.toLowerCase())
+async function resume(isInit) {
+  if (isInit) {
+    isPIDRunning = ctx.pidRunning
+    isHeating = ctx.heating
+  } else {
+    const pid = await getPIDRunning()
+    heatingEl.innerHTML = trBool(pid.heating)
+    pidRunningEl.innerHTML = trBool(pid.running)
 
-  const pid = await getPIDRunning();
-  if (pid.running) trackPIDOutput();
-  heatingEl.innerHTML = onOffText(pid.heating)
-  pidRunningEl.innerHTML = onOffText(pid.running)
+    isPIDRunning = pid.running
+    isHeating = pid.heating
+  }
 
-  isPIDRunning = pid.running
-  isHeating = pid.heating
+  if (isPIDRunning) trackPIDOutput()
 
-  const { target } = await getTemp();
-  targetTempEl.value = target;
+  const { target } = await getTemp()
+  targetTempEl.value = target
+  targetTemp = target
 
-  trackTemp();
+  if (!tempSubscription) {
+    trackTemp()
+  }
+
+  toast('Connected')
 }
 
 async function togglePID() {
   if (isPIDRunning) {
-    await stopPID();
+    await stopPID()
   } else {
-    await startPID();
+    await startPID()
   }
 }
 
 async function startPID() {
-  const result = await setPID({ running: true });
-  toast(result.ok ? "Started PID" : new Error("Could not start the PID"));
+  const result = await setPID({ running: true })
   if (result.ok) {
-    trackPIDOutput();
-    pidRunningEl.innerHTML = "On";
-    isPIDRunning = true;
+    toast(tr('messageStartPidSuccess'))
+    trackPIDOutput()
+    pidRunningEl.innerHTML = tr('globalOn')
+    isPIDRunning = true
+  } else {
+    toast(new Error(tr('messageStartPidFailure')))
   }
 }
 
 async function stopPID() {
-  const result = await setPID({ running: false });
+  const result = await setPID({ running: false })
 
-  toast(result.ok ? "Stopped PID" : new Error("Could not stop the PID"));
+  toast(
+    result.ok
+      ? tr('messageStopPidSuccess')
+      : new Error(tr('messageStopPidFailure'))
+  )
 
   if (result.ok) {
-    if (pidOutputSubscription) pidOutputSubscription.unsubscribe();
+    if (pidOutputSubscription) pidOutputSubscription.unsubscribe()
 
-    heatingEl.innerHTML = "Off";
-    pidRunningEl.innerHTML = "Off";
-    isPIDRunning = false;
+    heatingEl.innerHTML = tr('globalOff')
+    pidRunningEl.innerHTML = tr('globalOff')
+    isPIDRunning = false
   }
 }
 
-async function setTargetTemp() {
-  const target = parseFloat(targetTempEl.value);
+async function setTargetTemp(e) {
+  e.preventDefault()
+  targetTemp = parseFloat(targetTempEl.value)
 
   try {
-    const result = await setTemp({ target });
-    toast(`The temperature target was set to ${target} &deg;${config.temperatureUnit}`);
+    const result = await setTemp({ target: targetTemp })
+    // TODO: Translate and interpolate this.
+    toast(
+      `The temperature target was set to ${targetTemp} &deg;${ctx.tempUnit}`
+    )
   } catch (err) {
-    toast(new Error(`Something went wrong setting new target`));
+    toast(new Error(tr('messageTargetTempSetFailure')))
   }
 }
 
 function trackPIDOutput() {
-  pidOutputSubscription = makeStream("/api/stream/pid/output").subscribe(
-    (result) => {
-      heatingEl.innerHTML = onOffText(result === 1)
+  pidOutputSubscription = makeStream('/api/stream/pid/output').subscribe(
+    result => {
+      heatingEl.innerHTML = trBool(result === 1)
     }
-  );
+  )
 }
 
 function trackTemp() {
-  const temp$ = makeStream("/api/stream/temp/current?sampleRateMs=100")
-  tempSubscription = temp$.subscribe(
+  tempSubscription = makeStream(
+    '/api/stream/temp/current?sampleRateMs=100'
+  ).subscribe(
     ({ time, temp }) => {
-      tempEl.innerHTML = temp.toFixed(2);
-      lagEl.innerHTML = ((Date.now() - +time) / 1000).toFixed(2);
+      tempEl.innerHTML = temp.toFixed(2)
+      lagEl.innerHTML = ((Date.now() - +time) / 1000).toFixed(2)
 
-      chart([time, temp])
+      chart([time, temp], targetTemp)
+    },
+    // TODO: Implement retry
+    err => {
+      tempSubscription = null
+      toast(new Error('Disconnected ' + err), null)
+    },
+    () => {
+      tempSubscription = null
+      toast(new Error('Disconnected'), null)
     }
-  );
-}
-
-// utils
-
-function el(...args) {
-  return document.querySelector(...args);
-}
-
-function makeStream(path) {
-  return new Observable((observer) => {
-    const es = new EventSource(API_HOST + path);
-
-    es.addEventListener("message", (e) => observer.next(JSON.parse(e.data)));
-    es.addEventListener("error", () => {
-      console.log("ERROR in stream " + path);
-      observer.complete();
-    });
-
-    return () => es.close();
-  });
-}
-
-function apiCall(path, method = "GET", body = {}) {
-  return async (bodyOverride = {}) => {
-    const res = await fetch(API_HOST + "/api" + path, {
-      method,
-      ...(method === "POST"
-        ? {
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ ...body, ...bodyOverride }),
-          }
-        : {}),
-    });
-
-    if (res.ok) {
-      return await res.json();
-    } else {
-      throw new Error(
-        `Server responded ${res.status}. ${await res.text()}`
-      );
-    }
-  };
-}
-
-function get(path) {
-  return apiCall(path);
-}
-function post(path, data) {
-  return apiCall(path, "POST", data);
-}
-
-function onClick(node, handler) {
-  (typeof node === "string" ? el(node) : node).addEventListener(
-    "click",
-    handler
-  );
-}
-
-function toast(message, displayTimeMs = 3000) {
-  toastEl.setAttribute('class', `Toast ${message instanceof Error ? '--error' : ''}`)
-
-  toastEl.innerHTML = message;
-
-  clearTimeout(toast.timeout);
-  toast.timeout = setTimeout(() => { toastEl.innerHTML = "" }, displayTimeMs);
-}
-
-function onOffText(bool) {
-  return bool ? tr['global.on'] : tr['global.off']
+  )
 }
