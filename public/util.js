@@ -28,20 +28,24 @@ export const makeStream = path => {
 const apiCall = (path, method = 'GET', body = {}) => async (
   bodyOverride = {}
 ) => {
-  const res = await fetch(API_HOST + '/api' + path, {
-    method,
-    ...(method === 'POST'
-      ? {
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ ...body, ...bodyOverride }),
-        }
-      : {}),
-  })
+  try {
+    const res = await fetch(API_HOST + '/api' + path, {
+      method,
+      ...(method === 'POST'
+        ? {
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ ...body, ...bodyOverride }),
+          }
+        : {}),
+    })
 
-  if (res.ok) {
-    return await res.json()
-  } else {
-    throw new Error(`Server responded ${res.status}. ${await res.text()}`)
+    if (res.ok) {
+      return await res.json()
+    } else {
+      throw new Error(`Server responded ${res.status}. ${await res.text()}`)
+    }
+  } catch (err) {
+    throw err
   }
 }
 
