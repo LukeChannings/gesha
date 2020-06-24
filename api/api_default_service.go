@@ -177,7 +177,7 @@ func (s *DefaultAPIService) PostTempTarget(temperatureTarget TemperatureTarget) 
 	s.c.TemperatureTarget = temperatureTarget.Target
 
 	if s.p.Running {
-		s.p.SetTarget(temperatureTarget.Target)
+		s.p.SetTarget(temperatureTarget.Target, s.c.TemperatureUnit)
 	}
 
 	return OperationResult{Ok: true}, nil

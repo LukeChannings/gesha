@@ -11,7 +11,7 @@ import (
 	"periph.io/x/periph/conn/gpio/gpioreg"
 )
 
-type PidProc struct {
+type pidProc struct {
 	t    *time.Ticker
 	done *chan bool
 }
@@ -24,7 +24,7 @@ type Handle struct {
 	temperatureStream *chan temp.Temp
 	heatPin           gpio.PinIO
 	pid               *pidctrl.PIDController
-	pidProc           *PidProc
+	pidProc           *pidProc
 }
 
 // New creates a Handle and gets the GPIO pin
@@ -39,12 +39,21 @@ func New(pinName string, temperatureStream *chan temp.Temp) Handle {
 	return h
 }
 
+func convTempC(value float64, unit string) float64 {
+	if unit == "C" {
+		return value
+	}
+
+	return -32 * 5 / 9
+}
+
+// Start - starts a new PID
 func (h *Handle) Start(c *config.Config) {
 	if !h.Running {
 		ticker := time.NewTicker(c.PidFrequency)
 		output := make(chan float64)
 
-		h.pidProc = &PidProc{
+		h.pidProc = &pidProc{
 			t: ticker,
 		}
 
@@ -52,7 +61,7 @@ func (h *Handle) Start(c *config.Config) {
 
 		go func() {
 			pid := pidctrl.NewPIDController(c.P, c.I, c.D)
-			pid.Set(c.TemperatureTarget)
+			pid.Set(convTempC(c.TemperatureTarget, c.TemperatureUnit))
 			pid.SetOutputLimits(-1.0, 1.0)
 
 			h.pid = pid
@@ -80,6 +89,7 @@ func (h *Handle) Start(c *config.Config) {
 	}
 }
 
+// Stop - stops the running PID
 func (h *Handle) Stop() {
 	if h.Running && h.pidProc != nil {
 		fmt.Println("Sending quit signal to PID")
@@ -92,8 +102,9 @@ func (h *Handle) Stop() {
 	}
 }
 
-func (h *Handle) SetTarget(targetTemp float64) {
+// SetTarget - sets a new target temperature
+func (h *Handle) SetTarget(targetTemp float64, unit string) {
 	if h.Running {
-		h.pid.Set(targetTemp)
+		h.pid.Set(convTempC(targetTemp, unit))
 	}
 }
