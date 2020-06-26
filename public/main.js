@@ -48,12 +48,13 @@ async function resume(isInit) {
     isHeating = ctx.heating
   } else {
     const pid = await getPIDRunning()
-    heatingEl.innerHTML = trBool(pid.heating)
-    pidRunningEl.innerHTML = trBool(pid.running)
 
     isPIDRunning = pid.running
     isHeating = pid.heating
   }
+
+  heatingEl.innerHTML = trBool(isHeating)
+  pidRunningEl.innerHTML = trBool(isPIDRunning)
 
   if (isPIDRunning) trackPIDOutput()
 
@@ -119,7 +120,12 @@ async function setTargetTemp(e) {
   targetTemp = parseFloat(targetTempEl.value)
 
   try {
-    const result = await setTemp({ target: targetTemp })
+    await setTemp({ target: targetTemp })
+
+    if (chart) {
+      chart.setTargetTemp(targetTemp)
+    }
+
     // TODO: Translate and interpolate this.
     toast(
       `The temperature target was set to ${targetTemp} &deg;${ctx.tempUnit}`

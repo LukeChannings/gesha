@@ -221,6 +221,31 @@ body {
   padding: 1rem;
 }
 
+.Chart .path-currentTemp {
+  stroke-width: 2px;
+  stroke: #ab51bd;
+  fill: transparent;
+}
+
+.Chart .path-targetTemp {
+  fill: transparent;
+  stroke: #643371;
+  stroke-width: 1px;
+}
+
+.Chart .line-second {
+  stroke: #b0a2b4;
+  stroke-dasharray: 5px;
+  stroke-dashoffset: 5px;
+}
+
+@media screen and (min-device-pixel-ratio: 2) {
+  .Chart .path-currentTemp,
+  .Chart .path-targetTemp {
+    stroke-width: 4px;
+  }
+}
+
 .Toast {
   position: fixed;
   bottom: 0;
@@ -266,4 +291,18 @@ body {
   :root {
     --fontSizeDivisor: 3;
   }
+}
+
+#fpsCounter {
+  position: fixed;
+  bottom: max(2rem, env(safe-area-inset-bottom));
+  left: max(2rem, env(safe-area-inset-left));
+  width: 60px;
+  height: 40px;
+  border: 1px solid #000;
+  background: #fff;
+  color: blue;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
