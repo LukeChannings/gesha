@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -18,7 +19,7 @@ import (
 type templateContext struct {
 	C           *config.Config
 	T           *Translations
-	CurrentTemp float64
+	CurrentTemp string
 	TargetTemp  float64
 	Heating     bool
 	Running     bool
@@ -108,7 +109,7 @@ func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 		ctx := templateContext{
 			T:           tr,
 			C:           c,
-			CurrentTemp: t.Temp,
+			CurrentTemp: fmt.Sprintf("%.2f", t.Temp),
 			TargetTemp:  c.TemperatureTarget,
 			IsTempF:     c.TemperatureUnit == "F",
 			Running:     p.Running,
