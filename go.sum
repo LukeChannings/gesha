@@ -1,5 +1,5 @@
-github.com/LukeChannings/max31855 v0.0.0-20200618081011-2941ecfcbeb7 h1:in0gbWSuSgJIbkNicLviUc0BJB8pHCRPhhTpL+rqll8=
-github.com/LukeChannings/max31855 v0.0.0-20200618081011-2941ecfcbeb7/go.mod h1:6TeB+sPs/bGCr8veoTnK/TSw+q5I9AFecTjKCS9+K8w=
+github.com/lukechannings/max31855 v0.0.0-20200618081011-2941ecfcbeb7 h1:in0gbWSuSgJIbkNicLviUc0BJB8pHCRPhhTpL+rqll8=
+github.com/lukechannings/max31855 v0.0.0-20200618081011-2941ecfcbeb7/go.mod h1:6TeB+sPs/bGCr8veoTnK/TSw+q5I9AFecTjKCS9+K8w=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
