@@ -1,104 +1,36 @@
 package config
 
 import (
+	"io/ioutil"
 	"log"
-	"os"
-	"strconv"
 	"time"
 
-	"github.com/joho/godotenv"
-	"github.com/lukechannings/gesha/internal/util"
+	"gopkg.in/yaml.v3"
 )
 
 // Config defines the runtime configuration for the application
 type Config struct {
-	BoilerPin             string        `json:"boilerPin,omitempty" env:"BOILER_PIN"`
-	SpiPort               string        `json:"spiPort,omitempty" env:"SPI_PORT"`
-	TemperatureSampleRate time.Duration `json:"temperatureSampleRate,omitempty" env:"TEMPERATURE_SAMPLE_RATE_MS"`
-	TemperatureUnit       string        `json:"temperatureUnit,omitempty" env:"TEMPERATURE_UNIT"`
-	TemperatureTarget     float64       `json:"temperatureTarget,omitempty" env:"TEMPERATURE_TARGET"`
-	P                     float64       `json:"p,omitempty" env:"P"`
-	I                     float64       `json:"i,omitempty" env:"I"`
-	D                     float64       `json:"d,omitempty" env:"D"`
-	PidFrequency          time.Duration `json:"pidFrequency,omitempty" env:"PID_FREQUENCY_MS"`
+	Port                  string        `json:"port" yaml:"port"`
+	BoilerPin             string        `json:"boilerPin,omitempty" yaml:"boilerPin"`
+	SpiPort               string        `json:"spiPort,omitempty" yaml:"spiPort"`
+	TemperatureSampleRate time.Duration `json:"temperatureSampleRate,omitempty" yaml:"temperatureSampleRateMs"`
+	TemperatureUnit       string        `json:"temperatureUnit,omitempty" yaml:"temperatureUnit"`
+	TemperatureTarget     float64       `json:"temperatureTarget,omitempty" yaml:"temperatureTarget"`
+	PID                   []float64     `json:"pid,omitempty,flow" yaml:"pid"`
+	PidFrequency          time.Duration `json:"pidFrequency,omitempty" yaml:"pidFrequencyMs"`
+	PidAutostart          bool          `json:"pidAutostart,omitempty" yaml:"pidAutostart"`
 }
 
 // New creates a config with defaults and based on the environment file
-func New() Config {
-	godotenv.Load(".env", "/etc/gesha/config.env")
-
+func New(path string) Config {
 	c := Config{}
 
-	c.BoilerPin = util.GetEnv("BOILER_PIN", "GPIO7")
-	c.SpiPort = util.GetEnv("SPI_PORT", "")
-	c.TemperatureUnit = util.GetEnv("TEMPERATURE_UNIT", "C")
+	confData, _ := ioutil.ReadFile(path)
 
-	if c.TemperatureUnit != "C" && c.TemperatureUnit != "F" {
-		log.Println("Invalid temperature unit preference. Must be 'C' or 'F'. Defaulting to C.")
-		c.TemperatureUnit = "C"
-	}
-
-	P, err := strconv.ParseFloat(util.GetEnv("P", "2.9"), 64)
+	err := yaml.Unmarshal([]byte(confData), &c)
 
 	if err != nil {
-		log.Fatalf("P (%s) could not be parsed as a float.", util.GetEnv("P", "2.9"))
-	}
-
-	c.P = P
-
-	I, err := strconv.ParseFloat(util.GetEnv("I", "0.3"), 64)
-
-	if err != nil {
-		log.Fatalf("I (%s) could not be parsed as a float.", util.GetEnv("I", "0.3"))
-	}
-
-	c.I = I
-
-	D, err := strconv.ParseFloat(util.GetEnv("D", "40.0"), 64)
-
-	if err != nil {
-		log.Fatalf("D (%s) could not be parsed as a float.", util.GetEnv("D", "40.0"))
-	}
-
-	c.D = D
-
-	tempSampleRate, hasTempSampleRate := os.LookupEnv("TEMPERATURE_SAMPLE_RATE_MS")
-
-	if hasTempSampleRate {
-		tempSampleRateMs, err := strconv.ParseUint(tempSampleRate, 10, 64)
-		if err != nil {
-			log.Fatalf("TEMPERATURE_SAMPLE_RATE_MS (%s) could not be parsed as a number", tempSampleRate)
-		}
-
-		c.TemperatureSampleRate = time.Duration(tempSampleRateMs) * time.Millisecond
-	} else {
-		c.TemperatureSampleRate = 100 * time.Millisecond
-	}
-
-	targetTemp, hasTargetTemp := os.LookupEnv("TEMPERATURE_TARGET")
-
-	if hasTargetTemp {
-		parsedTargetTemp, err := strconv.ParseFloat(targetTemp, 64)
-		if err != nil {
-			log.Fatalf("TEMPERATURE_TARGET (%s) could not be parsed", targetTemp)
-		}
-
-		c.TemperatureTarget = parsedTargetTemp
-	} else {
-		c.TemperatureTarget = 90.0
-	}
-
-	pidFrequency, hasPidFrequency := os.LookupEnv("PID_FREQUENCY_MS")
-
-	if hasPidFrequency {
-		pidFrequencyMs, err := strconv.ParseUint(pidFrequency, 10, 64)
-		if err != nil {
-			log.Fatalf("PID_FREQUENCY_MS (%s) could not be parsed as a number", pidFrequency)
-		}
-
-		c.PidFrequency = time.Duration(pidFrequencyMs) * time.Millisecond
-	} else {
-		c.PidFrequency = 1000 * time.Millisecond
+		log.Fatalf("error: %v", err)
 	}
 
 	return c

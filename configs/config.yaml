@@ -1,0 +1,13 @@
+---
+port: 80
+boilerPin: GPIO7
+spiPort: ''
+temperatureSampleRateMs: 100ms
+temperatureUnit: C
+temperatureTarget: 95
+pidFrequencyMs: 1s
+pidAutostart: true
+pid:
+  - 2.9
+  - 0.3
+  - 40.0

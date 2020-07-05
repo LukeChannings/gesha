@@ -111,7 +111,7 @@ export class Chart {
   }
 
   y(v, Y0, Y1) {
-    return this.canvasHeight - (v / Y1) * this.canvasHeight
+    return this.canvasHeight - (v - Y0 / Y1 - Y0) * this.canvasHeight
   }
 
   /* s: the series, a list of tuples of the form [time, temp]

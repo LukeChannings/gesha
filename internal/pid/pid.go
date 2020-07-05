@@ -60,7 +60,7 @@ func (h *Handle) Start(c *config.Config) {
 		h.Output = &output
 
 		go func() {
-			pid := pidctrl.NewPIDController(c.P, c.I, c.D)
+			pid := pidctrl.NewPIDController(c.PID[0], c.PID[1], c.PID[2])
 			pid.Set(convTempC(c.TemperatureTarget, c.TemperatureUnit))
 			pid.SetOutputLimits(-1.0, 1.0)
 

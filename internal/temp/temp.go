@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/LukeChannings/max31855"
+	"github.com/lukechannings/max31855"
 	"periph.io/x/periph/conn/spi/spireg"
 	"periph.io/x/periph/host"
 )
