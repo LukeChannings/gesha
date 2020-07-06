@@ -33,7 +33,7 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
-      - name: Upload Release Asset
+      - name: Upload gesha-darwin
         id: upload-release-asset-darwin
         uses: actions/upload-release-asset@v1
         env:
@@ -43,7 +43,7 @@ jobs:
           asset_path: ./build/darwin/gesha
           asset_name: gesha-darwin
           asset_content_type: application/octet-stream
-      - name: Upload Release Asset
+      - name: Upload gesha-linux-arm
         id: upload-release-asset-arm
         uses: actions/upload-release-asset@v1
         env:
@@ -53,7 +53,7 @@ jobs:
           asset_path: ./build/linux-arm/gesha
           asset_name: gesha-linux-arm
           asset_content_type: application/octet-stream
-      - name: Upload Release Asset
+      - name: Upload gesha-linux-arm64
         id: upload-release-asset-arm64
         uses: actions/upload-release-asset@v1
         env:
@@ -63,7 +63,7 @@ jobs:
           asset_path: ./build/linux-arm64/gesha
           asset_name: gesha-linux-arm64
           asset_content_type: application/octet-stream
-      - name: Upload Release Asset
+      - name: Upload gesha-linux-amd64
         id: upload-release-asset-amd64
         uses: actions/upload-release-asset@v1
         env:
