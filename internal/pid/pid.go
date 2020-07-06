@@ -90,7 +90,7 @@ func (h *Handle) Start(c *config.Config) {
 					h.Heating = true
 				}
 
-				log.Printf("PID | Output %v | Heating %v\n", pidOutput, h.Heating)
+				log.Printf("PID | Output %v | Temp %v | Heating %v\n", pidOutput, b.Temp, h.Heating)
 				<-ticker.C
 			}
 		}()
@@ -109,10 +109,22 @@ func (h *Handle) Stop() {
 		h.pidProc.t.Stop()
 		h.Running = false
 		h.pidProc = nil
-		h.heatPin.Out(gpio.Low)
 	} else {
+		h.heatPin.Out(gpio.Low)
 		log.Println("PID not running")
 	}
+}
+
+// OverrideBoilerOn disables the PID and manually sets the boiler on or off
+func (h *Handle) OverrideBoilerOn() {
+	h.Stop()
+	h.heatPin.Out(gpio.High)
+}
+
+// OverrideBoilerOff disables the PID and manually sets the boiler off
+func (h *Handle) OverrideBoilerOff() {
+	h.Stop()
+	h.heatPin.Out(gpio.Low)
 }
 
 // SetTarget - sets a new target temperature
