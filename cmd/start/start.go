@@ -34,6 +34,10 @@ func Cmd(configPath string, verbose bool) {
 	apiService := api.NewAPIService(&c, t, &pid, &ts)
 	apiController := api.NewDefaultAPIController(apiService)
 
+	if c.PidAutostart {
+		pid.Start(c)
+	}
+
 	r := api.NewRouter(apiController)
 	r.Handle("/", web.Index(&c, t, &pid))
 	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(pkger.Dir("/public"))))
