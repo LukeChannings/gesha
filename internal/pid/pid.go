@@ -18,21 +18,24 @@ type pidProc struct {
 
 // Handle - a handle for the PID instance
 type Handle struct {
-	Running           bool
-	Heating           bool
-	Output            *chan float64
-	temperatureStream *chan temp.Temp
-	heatPin           gpio.PinIO
-	pid               *pidctrl.PIDController
-	pidProc           *pidProc
+	Running   bool
+	Heating   bool
+	t         *temp.Handle
+	c         *config.Config
+	heatPin   gpio.PinIO
+	pid       *pidctrl.PIDController
+	pidProc   *pidProc
+	pidOutput float64
 }
 
 // New creates a Handle and gets the GPIO pin
-func New(pinName string, temperatureStream *chan temp.Temp) Handle {
+func New(c *config.Config, t *temp.Handle) Handle {
 	h := Handle{}
 
-	h.heatPin = gpioreg.ByName(pinName)
-	h.temperatureStream = temperatureStream
+	h.c = c
+
+	h.heatPin = gpioreg.ByName(h.c.BoilerPin)
+	h.t = t
 	h.Heating = false
 	h.Running = false
 
@@ -51,13 +54,10 @@ func convTempC(value float64, unit string) float64 {
 func (h *Handle) Start(c *config.Config) {
 	if !h.Running {
 		ticker := time.NewTicker(c.PidFrequency)
-		output := make(chan float64)
 
 		h.pidProc = &pidProc{
 			t: ticker,
 		}
-
-		h.Output = &output
 
 		go func() {
 			pid := pidctrl.NewPIDController(c.PID[0], c.PID[1], c.PID[2])
@@ -68,13 +68,19 @@ func (h *Handle) Start(c *config.Config) {
 
 			h.Running = true
 
-			var a, b temp.Temp = <-*h.temperatureStream, <-*h.temperatureStream
+			var b *temp.Temp
+
+			a, _ := h.t.Get(h.c.TemperatureUnit)
+			b = a
 
 			for {
+				temp, _ := h.t.Get(h.c.TemperatureUnit)
 				a = b
-				b = <-*h.temperatureStream
+				b = temp
+
 				pidOutput := pid.UpdateDuration(b.Temp, time.Time(b.Time).Sub(time.Time(a.Time)))
-				output <- pidOutput
+
+				h.pidOutput = pidOutput
 
 				if pidOutput <= 0.5 {
 					h.heatPin.Out(gpio.Low)
@@ -83,10 +89,17 @@ func (h *Handle) Start(c *config.Config) {
 					h.heatPin.Out(gpio.High)
 					h.Heating = true
 				}
+
+				log.Printf("PID | Output %v | Heating %v\n", pidOutput, h.Heating)
 				<-ticker.C
 			}
 		}()
 	}
+}
+
+// Output returns the current PID output
+func (h *Handle) Output() float64 {
+	return h.pidOutput
 }
 
 // Stop - stops the running PID

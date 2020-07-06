@@ -35,15 +35,14 @@ type Servicer interface {
 // This service should implement the business logic for every endpoint for the API.
 // Include any external packages or services that will be required by this service.
 type Service struct {
-	c  *config.Config
-	t  *temp.Handle
-	p  *pid.Handle
-	ts *chan temp.Temp
+	c *config.Config
+	t *temp.Handle
+	p *pid.Handle
 }
 
 // NewAPIService creates a default api service
-func NewAPIService(c *config.Config, t *temp.Handle, p *pid.Handle, ts *chan temp.Temp) Servicer {
-	return &Service{c: c, t: t, p: p, ts: ts}
+func NewAPIService(c *config.Config, t *temp.Handle, p *pid.Handle) Servicer {
+	return &Service{c: c, t: t, p: p}
 }
 
 // GetConfig - Returns the running config
@@ -59,11 +58,11 @@ func (s *Service) GetPidRunning() (interface{}, error) {
 // GetPidOutput - Your GET endpoint
 func (s *Service) GetPidOutput() (interface{}, error) {
 	if s.p.Running {
-		output := <-*s.p.Output
+		output := s.p.Output()
 		return output, nil
-	} else {
-		return nil, errors.New("PID is not running")
 	}
+
+	return nil, errors.New("PID is not running")
 }
 
 // GetStreamPidOutput - Your GET endpoint
@@ -94,7 +93,7 @@ func (s *Service) GetStreamPidOutput(w http.ResponseWriter, r *http.Request) {
 			ticker.Stop()
 			return
 		}
-		t := <-*s.p.Output
+		t := s.p.Output()
 		tJSON, err := json.Marshal(t)
 		if err != nil {
 			http.Error(w, "Could not marshal temperature data to JSON", http.StatusInternalServerError)
@@ -144,7 +143,7 @@ func (s *Service) GetStreamTempCurrent(w http.ResponseWriter, r *http.Request) {
 	defer ticker.Stop()
 
 	for {
-		t := <-*s.ts
+		t, _ := s.t.Get(s.c.TemperatureUnit)
 		tJSON, err := json.Marshal(t)
 		if err != nil {
 			http.Error(w, "Could not marshal temperature data to JSON", http.StatusInternalServerError)

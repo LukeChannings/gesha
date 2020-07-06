@@ -3,7 +3,6 @@ package start
 import (
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/lukechannings/gesha/internal/api"
 	"github.com/lukechannings/gesha/internal/config"
@@ -23,18 +22,17 @@ func Cmd(configPath string, verbose bool) {
 		log.Fatalf("Could not set up thermocouple. %v", err.Error())
 	}
 
-	ts, err := t.Stream(10*time.Millisecond, c.TemperatureUnit)
-
 	if err != nil {
 		log.Fatal("Couldn't create a temperature stream! " + err.Error())
 	}
 
-	pid := pid.New(c.BoilerPin, &ts)
+	pid := pid.New(&c, t)
 
-	apiService := api.NewAPIService(&c, t, &pid, &ts)
+	apiService := api.NewAPIService(&c, t, &pid)
 	apiController := api.NewDefaultAPIController(apiService)
 
 	if c.PidAutostart {
+		log.Println("Autostarting PID")
 		pid.Start(&c)
 	}
 
@@ -42,7 +40,7 @@ func Cmd(configPath string, verbose bool) {
 	r.Handle("/", web.Index(&c, t, &pid))
 	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(pkger.Dir("/public"))))
 
-	log.Printf("Started on port %s\n", c.Port)
+	log.Printf("Starting server on port %s\n", c.Port)
 
 	if err := http.ListenAndServe(":"+c.Port, r); err != nil {
 		log.Fatalf("Error starting the server on port %s. Maybe try re-running as root?\nError message: %v\n", c.Port, err)
