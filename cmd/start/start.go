@@ -3,6 +3,9 @@ package start
 import (
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/lukechannings/gesha/internal/api"
 	"github.com/lukechannings/gesha/internal/config"
@@ -40,9 +43,19 @@ func Cmd(configPath string, verbose bool) {
 	r.Handle("/", web.Index(&c, t, &pid))
 	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(pkger.Dir("/public"))))
 
-	log.Printf("Starting server on port %s\n", c.Port)
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	if err := http.ListenAndServe(":"+c.Port, r); err != nil {
-		log.Fatalf("Error starting the server on port %s. Maybe try re-running as root?\nError message: %v\n", c.Port, err)
-	}
+	go func() {
+		log.Printf("Starting server on port %s\n", c.Port)
+		if err := http.ListenAndServe(":"+c.Port, r); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Error starting the server on port %s. Maybe try re-running as root?\nError message: %v\n", c.Port, err)
+		}
+	}()
+	log.Print("Server Started")
+
+	<-done
+	log.Print("Server Stopped")
+
+	defer pid.OverrideBoilerOff()
 }
