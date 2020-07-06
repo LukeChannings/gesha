@@ -9,12 +9,11 @@ Gesha is a PID app for your espresso machine that uses a [MAX31855](https://www.
 ## Features
 
 - [x] Fat binary with zero dependencies
-- [ ] Builds for ARM64, ARM, and AMD64
+- [x] Builds for ARM64, ARM, and AMD64
 - [x] Support for Internationalization
-- [x] REST API, fully documented with the OpenAPI 3 standard
+- [x] Fully documented REST API
 - [x] Real-time streaming of temperature and PID output using lightweight [Event Streams](https://html.spec.whatwg.org/multipage/iana.html#text/event-stream)
-- [x] Fast and Accessible Web UI
-- [x] Add to Home Screen
+- [x] Fast and Accessible Web App
 
 ## Installation
 
