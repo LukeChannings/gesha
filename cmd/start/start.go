@@ -35,7 +35,7 @@ func Cmd(configPath string, verbose bool) {
 	apiController := api.NewDefaultAPIController(apiService)
 
 	if c.PidAutostart {
-		pid.Start(c)
+		pid.Start(&c)
 	}
 
 	r := api.NewRouter(apiController)
