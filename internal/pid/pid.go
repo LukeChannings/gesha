@@ -1,7 +1,7 @@
 package pid
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/felixge/pidctrl"
@@ -92,13 +92,13 @@ func (h *Handle) Start(c *config.Config) {
 // Stop - stops the running PID
 func (h *Handle) Stop() {
 	if h.Running && h.pidProc != nil {
-		fmt.Println("Sending quit signal to PID")
+		log.Println("Sending quit signal to PID")
 		h.pidProc.t.Stop()
 		h.Running = false
 		h.pidProc = nil
 		h.heatPin.Out(gpio.Low)
 	} else {
-		fmt.Println("PID not running")
+		log.Println("PID not running")
 	}
 }
 

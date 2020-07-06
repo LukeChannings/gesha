@@ -3,8 +3,6 @@ import { el } from './util.js'
 export class Chart {
   constructor(temp$, targetTemp, range = 30) {
     this.node = el('#chart')
-    this.fpsCounterEl = el('#fpsCounter')
-    this.fps = 0
     this.series = []
 
     this.subscribe(temp$)
@@ -134,28 +132,9 @@ export class Chart {
     return bs
   }
 
-  fpsCounter(t) {
-    if (this.fpsCounterEl) {
-      if (typeof this.t !== 'number') {
-        this.t = t
-      }
-
-      if (this.t + 1000 <= t) {
-        console.log('1 second')
-        this.fpsCounterEl.innerHTML = this.fps
-        this.t = t
-        this.fps = 1
-      } else {
-        this.fps += 1
-      }
-    }
-  }
-
   render(t) {
     const now = Date.now()
     const then = now - 1000 * this.range
-
-    this.fpsCounter(t)
 
     this.paths.currentTemp.setAttribute(
       'd',

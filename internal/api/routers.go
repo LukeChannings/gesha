@@ -35,7 +35,10 @@ func NewRouter(routers ...Router) *mux.Router {
 			var handler http.Handler
 			handler = route.HandlerFunc
 			handler = Logger(handler, route.Name)
-			handler = handlers.CORS()(handler)
+			handler = handlers.CORS(
+				handlers.AllowedOrigins([]string{"*"}),
+				handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "OPTIONS"}),
+			)(handler)
 
 			router.
 				Methods(route.Method).

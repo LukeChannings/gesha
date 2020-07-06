@@ -1,12 +1,11 @@
 package start
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/lukechannings/gesha/api"
+	"github.com/lukechannings/gesha/internal/api"
 	"github.com/lukechannings/gesha/internal/config"
 	"github.com/lukechannings/gesha/internal/pid"
 	"github.com/lukechannings/gesha/internal/temp"
@@ -32,13 +31,16 @@ func Cmd(configPath string, verbose bool) {
 
 	pid := pid.New(c.BoilerPin, &ts)
 
-	DefaultAPIService := api.NewDefaultAPIService(&c, t, &pid, &ts)
-	DefaultAPIController := api.NewDefaultAPIController(DefaultAPIService)
+	apiService := api.NewAPIService(&c, t, &pid, &ts)
+	apiController := api.NewDefaultAPIController(apiService)
 
-	r := api.NewRouter(DefaultAPIController)
+	r := api.NewRouter(apiController)
 	r.Handle("/", web.Index(&c, t, &pid))
 	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(pkger.Dir("/public"))))
 
-	fmt.Printf("Gesha started on port %s\n", c.Port)
-	log.Fatal(http.ListenAndServe(":"+c.Port, r))
+	log.Printf("Started on port %s\n", c.Port)
+
+	if err := http.ListenAndServe(":"+c.Port, r); err != nil {
+		log.Fatalf("Error starting the server on port %s. Maybe try re-running as root?\nError message: %v\n", c.Port, err)
+	}
 }

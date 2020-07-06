@@ -1,31 +1,25 @@
 openapi: 3.0.0
 info:
+  title: Gesha
+  description: An API for controlling your expresso machine
   contact:
     name: Luke Channings
-  description: An API for controlling your expresso machine
   license:
     name: MIT
-  title: gesha
   version: 1.0.0
 servers:
-- url: http://coffee-machine/api
+- url: /api
 paths:
   /pid/enabled:
     get:
       operationId: get-pid-enabled
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PidEnabled'
           description: OK
-          headers:
-            access-control-allow-origin:
-              explode: false
-              schema:
-                type: string
-              style: simple
       summary: Your GET endpoint
       tags: []
     post:
@@ -36,81 +30,57 @@ paths:
             schema:
               $ref: '#/components/schemas/PidEnabled'
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/OperationResult'
           description: OK
-          headers:
-            access-control-allow-origin:
-              explode: false
-              schema:
-                type: string
-              style: simple
   /pid/output:
     get:
       operationId: get-pid-output
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PidOutput'
           description: OK
-          headers:
-            access-control-allow-origin:
-              explode: false
-              schema:
-                type: string
-              style: simple
       summary: Your GET endpoint
       tags: []
   /temp/current:
     get:
       operationId: get-temp
       parameters:
-      - explode: true
-        in: query
-        name: unit
-        required: true
-        schema:
-          enum:
-          - c
-          - f
-          type: string
-        style: form
+        - explode: true
+          in: query
+          name: unit
+          required: true
+          schema:
+            enum:
+              - c
+              - f
+            type: string
+          style: form
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TemperatureItem'
           description: OK
-          headers:
-            access-control-allow-origin:
-              explode: false
-              schema:
-                type: string
-              style: simple
       summary: Your GET endpoint
       tags: []
   /stream/pid/output:
     get:
       operationId: get-stream-pid-output
       responses:
-        "200":
+        '200':
           content:
             text/event-stream:
               schema:
                 $ref: '#/components/schemas/PidOutput'
           description: OK
-          headers:
-            access-control-allow-origin:
-              explode: false
-              schema:
-                type: string
-              style: simple
             connection:
               explode: false
               schema:
@@ -122,7 +92,7 @@ paths:
     get:
       operationId: get-temp-target
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
@@ -138,38 +108,25 @@ paths:
             schema:
               $ref: '#/components/schemas/TemperatureTarget'
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/OperationResult'
           description: OK
-          headers:
-            access-control-allow-origin:
-              explode: false
-              schema:
-                type: string
-              style: simple
   /config:
     get:
       description: Get the running app configuration
       operationId: get-config
       parameters: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               examples: {}
               schema:
                 $ref: '#/components/schemas/Config'
           description: OK
-          headers:
-            access-control-allow-origin:
-              description: CORS
-              explode: false
-              schema:
-                type: string
-              style: simple
       summary: Your GET endpoint
       tags: []
     post:
@@ -181,58 +138,47 @@ paths:
             schema:
               $ref: '#/components/schemas/Config'
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/OperationResult'
           description: OK
-          headers:
-            access-control-allow-origin:
-              explode: false
-              schema:
-                type: string
-              style: simple
   /stream/temp/current:
     get:
       operationId: get-stream-temp-current
       parameters:
-      - explode: true
-        in: query
-        name: unit
-        required: true
-        schema:
-          enum:
-          - c
-          - f
-          type: string
-        style: form
-      - explode: true
-        in: query
-        name: sampleRateMs
-        required: false
-        schema:
-          type: number
-        style: form
+        - explode: true
+          in: query
+          name: unit
+          required: true
+          schema:
+            enum:
+              - c
+              - f
+            type: string
+          style: form
+        - explode: true
+          in: query
+          name: sampleRateMs
+          required: false
+          schema:
+            type: number
+          style: form
       responses:
-        "200":
+        '200':
           content:
             text/event-stream:
               examples:
                 CurrentTemperature:
                   value:
-                  - 1592685123287
-                  - 65.5
+                    - 1592685123287
+                    - 65.5
               schema:
                 $ref: '#/components/schemas/TemperatureItem'
           description: OK
           headers:
             connection:
-              explode: false
-              schema:
-                type: string
-              style: simple
-            access-control-allow-origin:
               explode: false
               schema:
                 type: string
@@ -279,7 +225,8 @@ components:
           type: number
           description: The current temperature in the preferred units
     OperationResult:
-      description: Indicates if the operation succeeded, and if not, what the error
+      description:
+        Indicates if the operation succeeded, and if not, what the error
         was.
       example:
         errorMessage: errorMessage
@@ -290,7 +237,7 @@ components:
         errorMessage:
           type: string
       required:
-      - ok
+        - ok
       title: OperationResult
       type: object
     PidOutput:
@@ -316,7 +263,7 @@ components:
     TemperatureTarget:
       description: The target temperature of the boiler
       example:
-        target: 0.8008281904610115
+        target: 95
       properties:
         target:
           type: number

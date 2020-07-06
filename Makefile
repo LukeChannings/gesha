@@ -23,14 +23,13 @@ darwin:
 compress:
 	upx --brute ./build/*/gesha
 
-generate-api:
-	openapi-generator generate -i ./api/openapi.yaml --git-user-id lukechannings --git-repo-id gesha -g go-server -c ./api/generator-config.yaml
+generate-docs:
+	openapi-generator generate -i ./api/openapi-spec/v1.openapi.yaml -g markdown -o docs/api
 
 pkged.go:
 	pkger
 
 clean:
-	go clean -modcache
 	rm -rf build pkged.go
 
 pi: clean pkged.go linux-arm
@@ -39,4 +38,4 @@ pi: clean pkged.go linux-arm
 test:
 	go test -v ./...
 
-.PHONY: clean linux-arm darwin all generate-api pi test
+.PHONY: clean linux-arm darwin all generate-api generate-api-docs pi test

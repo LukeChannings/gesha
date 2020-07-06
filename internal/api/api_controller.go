@@ -3,81 +3,80 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/lukechannings/gesha/internal/config"
 )
 
-// A DefaultAPIController binds http requests to an api service and writes the service results to the http response
-type DefaultAPIController struct {
-	service DefaultAPIServicer
+// A Controller binds http requests to an api service and writes the service results to the http response
+type Controller struct {
+	service Servicer
 }
 
 // NewDefaultAPIController creates a default api controller
-func NewDefaultAPIController(s DefaultAPIServicer) Router {
-	return &DefaultAPIController{service: s}
+func NewDefaultAPIController(s Servicer) Router {
+	return &Controller{service: s}
 }
 
 // Routes returns all of the api route for the DefaultAPIController
-func (c *DefaultAPIController) Routes() Routes {
+func (c *Controller) Routes() Routes {
 	return Routes{
 		{
 			"GetConfig",
-			strings.ToUpper("Get"),
+			"GET",
 			"/api/config",
 			c.GetConfig,
 		},
 		{
-			" GetPidRunning",
-			strings.ToUpper("Get"),
+			"GetPidRunning",
+			"GET",
 			"/api/pid/running",
 			c.GetPidRunning,
 		},
 		{
 			"GetPidOutput",
-			strings.ToUpper("Get"),
+			"GET",
 			"/api/pid/output",
 			c.GetPidOutput,
 		},
 		{
 			"GetStreamPidOutput",
-			strings.ToUpper("Get"),
+			"GET",
 			"/api/stream/pid/output",
 			c.GetStreamPidOutput,
 		},
 		{
 			"GetStreamTempCurrent",
-			strings.ToUpper("Get"),
+			"GET",
 			"/api/stream/temp/current",
 			c.GetStreamTempCurrent,
 		},
 		{
 			"GetTemp",
-			strings.ToUpper("Get"),
+			"GET",
 			"/api/temp/current",
 			c.GetTemp,
 		},
 		{
 			"GetTempTarget",
-			strings.ToUpper("Get"),
+			"GET",
 			"/api/temp/target",
 			c.GetTempTarget,
 		},
 		{
 			"PostConfig",
-			strings.ToUpper("Post"),
+			"POST",
 			"/api/config",
 			c.PostConfig,
 		},
 		{
 			"PostPidRunning",
-			strings.ToUpper("Post"),
+			"POST",
 			"/api/pid/running",
 			c.PostPidRunning,
 		},
 		{
 			"PostTempTarget",
-			strings.ToUpper("Post"),
+			"POST",
 			"/api/temp/target",
 			c.PostTempTarget,
 		},
@@ -85,7 +84,7 @@ func (c *DefaultAPIController) Routes() Routes {
 }
 
 // GetConfig - Your GET endpoint
-func (c *DefaultAPIController) GetConfig(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetConfig(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.GetConfig()
 	if err != nil {
 		w.WriteHeader(500)
@@ -95,8 +94,8 @@ func (c *DefaultAPIController) GetConfig(w http.ResponseWriter, r *http.Request)
 	EncodeJSONResponse(result, nil, w)
 }
 
-//  GetPidRunning - Your GET endpoint
-func (c *DefaultAPIController) GetPidRunning(w http.ResponseWriter, r *http.Request) {
+// GetPidRunning - Your GET endpoint
+func (c *Controller) GetPidRunning(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.GetPidRunning()
 	if err != nil {
 		w.WriteHeader(500)
@@ -107,7 +106,7 @@ func (c *DefaultAPIController) GetPidRunning(w http.ResponseWriter, r *http.Requ
 }
 
 // GetPidOutput - Your GET endpoint
-func (c *DefaultAPIController) GetPidOutput(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetPidOutput(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.GetPidOutput()
 	if err != nil {
 		w.WriteHeader(500)
@@ -118,17 +117,17 @@ func (c *DefaultAPIController) GetPidOutput(w http.ResponseWriter, r *http.Reque
 }
 
 // GetStreamPidOutput - Your GET endpoint
-func (c *DefaultAPIController) GetStreamPidOutput(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetStreamPidOutput(w http.ResponseWriter, r *http.Request) {
 	c.service.GetStreamPidOutput(w, r)
 }
 
 // GetStreamTempCurrent - Your GET endpoint
-func (c *DefaultAPIController) GetStreamTempCurrent(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetStreamTempCurrent(w http.ResponseWriter, r *http.Request) {
 	c.service.GetStreamTempCurrent(w, r)
 }
 
 // GetTemp - Your GET endpoint
-func (c *DefaultAPIController) GetTemp(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetTemp(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	unit := query.Get("unit")
 	result, err := c.service.GetTemp(unit)
@@ -141,7 +140,7 @@ func (c *DefaultAPIController) GetTemp(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetTempTarget - Your GET endpoint
-func (c *DefaultAPIController) GetTempTarget(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetTempTarget(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.GetTempTarget()
 	if err != nil {
 		w.WriteHeader(500)
@@ -152,7 +151,7 @@ func (c *DefaultAPIController) GetTempTarget(w http.ResponseWriter, r *http.Requ
 }
 
 // PostConfig -
-func (c *DefaultAPIController) PostConfig(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) PostConfig(w http.ResponseWriter, r *http.Request) {
 	config := &config.Config{}
 	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
 		w.WriteHeader(500)
@@ -168,8 +167,8 @@ func (c *DefaultAPIController) PostConfig(w http.ResponseWriter, r *http.Request
 	EncodeJSONResponse(result, nil, w)
 }
 
-//  PostPidRunning -
-func (c *DefaultAPIController) PostPidRunning(w http.ResponseWriter, r *http.Request) {
+// PostPidRunning -
+func (c *Controller) PostPidRunning(w http.ResponseWriter, r *http.Request) {
 	pidEnabled := &PIDEnabled{}
 	if err := json.NewDecoder(r.Body).Decode(&pidEnabled); err != nil {
 		w.WriteHeader(500)
@@ -186,7 +185,7 @@ func (c *DefaultAPIController) PostPidRunning(w http.ResponseWriter, r *http.Req
 }
 
 // PostTempTarget -
-func (c *DefaultAPIController) PostTempTarget(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) PostTempTarget(w http.ResponseWriter, r *http.Request) {
 	temperatureTarget := &TemperatureTarget{}
 	if err := json.NewDecoder(r.Body).Decode(&temperatureTarget); err != nil {
 		w.WriteHeader(500)

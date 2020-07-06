@@ -25,7 +25,11 @@ type Config struct {
 func New(path string) Config {
 	c := Config{}
 
-	confData, _ := ioutil.ReadFile(path)
+	confData, confErr := ioutil.ReadFile(path)
+
+	if confErr != nil {
+		log.Fatalf("Error loading configuration from path '%v'.\nError Message: %v\n", path, confErr)
+	}
 
 	err := yaml.Unmarshal([]byte(confData), &c)
 

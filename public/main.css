@@ -292,17 +292,3 @@ body {
     --fontSizeDivisor: 3;
   }
 }
-
-#fpsCounter {
-  position: fixed;
-  bottom: max(2rem, env(safe-area-inset-bottom));
-  left: max(2rem, env(safe-area-inset-left));
-  width: 60px;
-  height: 40px;
-  border: 1px solid #000;
-  background: #fff;
-  color: blue;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
