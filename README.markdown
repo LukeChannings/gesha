@@ -1,5 +1,7 @@
 # Gesha
 
+![Tests](https://github.com/LukeChannings/gesha/workflows/Tests/badge.svg?branch=main)
+
 Gesha is a PID app for your espresso machine that uses a [MAX31855](https://www.adafruit.com/product/3328) and a solid-state relay to monitor and control the temperature of your boiler.
 
 > My specific use case is with a Rancilio Silvia, modified roughly according to [this excellent project](https://github.com/brycesub/silvia-pi), but Gesha will work with any espresso machine with similar modifications.
