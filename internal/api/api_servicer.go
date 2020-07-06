@@ -84,6 +84,7 @@ func (s *Service) GetStreamPidOutput(w http.ResponseWriter, r *http.Request) {
 	h.Set("connection", "keep-alive")
 	h.Set("cache-control", "no-cache")
 	h.Set("content-type", "text/event-stream")
+	h.Set("access-control-allow-origin", "*")
 
 	ticker := time.NewTicker(sampleRate)
 	defer ticker.Stop()
@@ -137,6 +138,7 @@ func (s *Service) GetStreamTempCurrent(w http.ResponseWriter, r *http.Request) {
 	h.Set("connection", "keep-alive")
 	h.Set("cache-control", "no-cache")
 	h.Set("content-type", "text/event-stream")
+	h.Set("access-control-allow-origin", "*")
 
 	ticker := time.NewTicker(sampleRate)
 	defer ticker.Stop()
