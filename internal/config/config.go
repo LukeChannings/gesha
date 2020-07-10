@@ -13,11 +13,11 @@ type Config struct {
 	Port                  string        `json:"port" yaml:"port"`
 	BoilerPin             string        `json:"boilerPin,omitempty" yaml:"boilerPin"`
 	SpiPort               string        `json:"spiPort,omitempty" yaml:"spiPort"`
-	TemperatureSampleRate time.Duration `json:"temperatureSampleRate,omitempty" yaml:"temperatureSampleRateMs"`
+	TemperatureSampleRate time.Duration `json:"temperatureSampleRate,omitempty" yaml:"temperatureSampleRate"`
 	TemperatureUnit       string        `json:"temperatureUnit,omitempty" yaml:"temperatureUnit"`
 	TemperatureTarget     float64       `json:"temperatureTarget,omitempty" yaml:"temperatureTarget"`
 	PID                   []float64     `json:"pid,omitempty,flow" yaml:"pid"`
-	PidFrequency          time.Duration `json:"pidFrequency,omitempty" yaml:"pidFrequencyMs"`
+	PidFrequency          time.Duration `json:"pidFrequency,omitempty" yaml:"pidFrequency"`
 	PidAutostart          bool          `json:"pidAutostart,omitempty" yaml:"pidAutostart"`
 }
 
