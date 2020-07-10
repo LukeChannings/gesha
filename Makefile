@@ -2,7 +2,7 @@ TAGGED_VERSION = $(shell git tag --points-at HEAD)
 GIT_HASH = $(shell git rev-parse --short HEAD)
 LD_FLAGS = -s -w -X main.gitHash=${GIT_HASH} -X main.taggedVersion=${TAGGED_VERSION}
 
-all: clean pkged.go linux-arm linux-arm64 linux-amd64 darwin compress
+all: clean pkged.go linux linux-arm linux-arm64 linux-amd64 darwin compress
 
 linux-arm:
 	mkdir -p build/linux-arm
@@ -16,6 +16,10 @@ linux-amd64:
 	mkdir -p build/linux-amd64
 	GOOS=linux GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o build/linux-amd64/gesha
 
+linux:
+	mkdir -p build/linux
+	GOOS=linux go build -ldflags="${LD_FLAGS}" -o build/linux/gesha
+	
 darwin:
 	mkdir -p build/darwin
 	GOOS=darwin GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o build/darwin/gesha
@@ -35,7 +39,8 @@ clean:
 pi: clean pkged.go linux-arm
 	scp ./build/linux-arm/gesha coffee-machine:~
 
-test:
+test: linux
 	go test -v ./...
+	./build/linux/gesha -v
 
 .PHONY: clean linux-arm darwin all generate-api generate-api-docs pi test
