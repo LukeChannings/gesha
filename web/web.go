@@ -109,7 +109,7 @@ func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 		ctx := templateContext{
 			T:           tr,
 			C:           c,
-			CurrentTemp: fmt.Sprintf("%.2f", t.Temp),
+			CurrentTemp: fmt.Sprintf("%.1f", t.Temp),
 			TargetTemp:  c.TemperatureTarget,
 			IsTempF:     c.TemperatureUnit == "F",
 			Running:     p.Running,

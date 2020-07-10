@@ -132,8 +132,7 @@ body {
   display: none;
 }
 
-.Tile_Value.\-\-deg-c,
-.Tile_Subtext_number {
+.Tile_Value.\-\-deg-c {
   font-variant-numeric: tabular-nums slashed-zero lining-nums;
 }
 
@@ -180,16 +179,6 @@ body {
   .Tile_Button:hover {
     background-image: var(--darkenGradientInverted);
   }
-}
-
-.Tile_Subtext {
-  position: absolute;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: calc(2.5vw / var(--fontSizeDivisor));
-  color: var(--colorText2);
-  white-space: nowrap;
 }
 
 .Tile_Form {

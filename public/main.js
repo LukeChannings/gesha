@@ -2,7 +2,6 @@ import { el, on, get, post, tr, trBool, toast, makeStream } from './util.js'
 import { Chart } from './chart.js'
 
 const tempEl = el('#temp')
-const lagEl = el('#tempLag')
 const targetTempEl = el('#targetTemp')
 const heatingEl = el('#heating')
 const pidRunningEl = el('#pidRunning')
@@ -145,9 +144,8 @@ function trackPIDOutput() {
 
 function trackTemp() {
   tempSubscription = temp$.subscribe(
-    ({ time, temp }) => {
-      tempEl.innerHTML = temp.toFixed(2)
-      lagEl.innerHTML = ((Date.now() - +time) / 1000).toFixed(2)
+    ({ temp }) => {
+      tempEl.innerHTML = temp.toFixed(1)
     },
     // TODO: Implement retry
     err => {

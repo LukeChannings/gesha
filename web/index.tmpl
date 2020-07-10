@@ -52,10 +52,6 @@
       </section>
       <section class="Tile --currentTemperature">
         <p class="Tile_Title">{{.T.TemperatureCurrentTitle}}</p>
-        <p class="Tile_Value --deg-{{if .IsTempF}}f{{else}}c{{end}}" id="temp">{{.CurrentTemp}}</p>
-        <p class="Tile_Subtext">
-          <span class="Tile_Subtext_number" id="tempLag">0.00</span>{{.T.TemperatureSubtextLag}}
-        </p>
       </section>
       <section class="Tile --targettTemperature">
         <form id="setTargetTemp" class="Tile_Form">
