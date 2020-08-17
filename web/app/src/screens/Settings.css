@@ -1,0 +1,69 @@
+.SettingsForm {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s2);
+  padding: var(--s1);
+  max-width: 70rem;
+  margin: auto;
+}
+
+.SettingsForm > div,
+.SettingsForm > fieldset {
+  display: contents;
+}
+.SettingsForm fieldset > label,
+.SettingsForm fieldset > input {
+  grid-column: 2 / 3;
+}
+
+.SettingsForm label,
+.SettingsForm legend {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.SettingsForm label > span[hidden] {
+  display: block;
+  font-size: small;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.SettingsForm fieldset > div {
+  display: grid;
+  grid-auto-flow: column dense;
+  column-gap: var(--s2);
+}
+
+.SettingsForm div > input {
+  width: 100%;
+  height: 2rem;
+  text-align: left;
+  border-radius: 5px;
+  background-color: var(--navigation-bg);
+  border: 1px solid var(--background-highlight-bg);
+  color: var(--text-primary);
+  padding: calc(var(--s1) / 2);
+}
+
+@media screen and (min-width: 48em) {
+  .SettingsForm {
+    grid-template-columns: 0.5fr 1fr;
+  }
+
+  .SettingsForm button {
+    max-width: max-content;
+    justify-self: end;
+    grid-column: 1 / 3;
+  }
+
+  .SettingsForm > div > label,
+  .SettingsForm fieldset > legend {
+    text-align: right;
+    justify-self: flex-end;
+  }
+
+  .SettingsForm div > input {
+    width: auto;
+  }
+}

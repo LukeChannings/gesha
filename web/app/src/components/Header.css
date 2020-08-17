@@ -1,0 +1,31 @@
+:root {
+  --header-padding-top: max(var(--s1), env(safe-area-inset-top));
+  --header-padding-bottom: var(--s1);
+  --header-height: calc(
+    2.25rem + var(--header-padding-top) + var(--header-padding-bottom)
+  );
+}
+
+.Header {
+  position: fixed;
+  top: 0;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  background-color: var(--header-bg-b);
+  background-image: linear-gradient(
+    to bottom,
+    var(--header-bg-a) 0%,
+    var(--header-bg-b) 100%
+  );
+  padding-top: var(--header-padding-top);
+  padding-bottom: var(--header-padding-bottom);
+  text-align: center;
+  flex: 1 0 0;
+}
+
+.Header_Heading {
+  color: var(--text-secondary);
+  font-size: x-large;
+  user-select: none;
+  -webkit-user-select: none;
+}
