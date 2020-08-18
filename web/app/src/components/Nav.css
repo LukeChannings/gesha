@@ -61,6 +61,7 @@
   color: currentColor;
   font-weight: var(--font-medium);
   font-size: small;
+  user-select: none;
 }
 
 #Brew:target ~ nav [href="#Brew"],
