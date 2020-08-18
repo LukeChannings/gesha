@@ -4,7 +4,7 @@ LD_FLAGS = -s -w -X main.gitHash=${GIT_HASH} -X main.taggedVersion=${TAGGED_VERS
 WEB_SRC = web/app/src
 WEB_DEST = web/static/dist
 
-all: clean pkged.go linux linux-arm linux-arm64 linux-amd64 darwin
+all: clean pkged.go linux-386 linux-arm linux-arm64 linux-amd64 darwin compress
 
 linux-arm:
 	mkdir -p build/linux-arm
@@ -18,9 +18,9 @@ linux-amd64:
 	mkdir -p build/linux-amd64
 	GOOS=linux GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o build/linux-amd64/gesha
 
-linux:
-	mkdir -p build/linux
-	GOOS=linux go build -ldflags="${LD_FLAGS}" -o build/linux/gesha
+linux-386:
+	mkdir -p build/linux-386
+	GOOS=linux GOARCH=386 go build -ldflags="${LD_FLAGS}" -o build/linux-386/gesha
 	
 darwin:
 	mkdir -p build/darwin
