@@ -9,7 +9,7 @@ Gesha is an app for your modded espresso machine. It integrates with a [MAX31855
 ## Features
 
 - [x] Fat binary with zero dependencies
-- [x] Builds for ARM64, ARM, and AMD64
+- [x] Builds for ARM64, ARM, and x86 and x86_64
 - [x] Support for Internationalization
 - [x] Fully documented REST API
 - [x] Real-time streaming of temperature and PID output using lightweight [Event Streams](https://html.spec.whatwg.org/multipage/iana.html#text/event-stream)
