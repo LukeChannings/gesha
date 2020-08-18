@@ -14,17 +14,6 @@ import (
 	"github.com/markbates/pkger"
 )
 
-type templateContext struct {
-	Lang        string
-	C           *config.Config
-	T           *i18n.Translations
-	CurrentTemp string
-	TargetTemp  float64
-	Heating     bool
-	Running     bool
-	IsTempF     bool
-}
-
 func getIndexTemplate() (*template.Template, error) {
 	tmpl, err := pkger.Open("/web/template/index.html")
 
@@ -65,7 +54,16 @@ func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 			http.Error(w, "Could not read the temperature", http.StatusInternalServerError)
 		}
 
-		ctx := templateContext{
+		ctx := struct {
+			Lang        string
+			C           *config.Config
+			T           *i18n.Translations
+			CurrentTemp string
+			TargetTemp  float64
+			Heating     bool
+			Running     bool
+			IsTempF     bool
+		}{
 			Lang:        chosenLang,
 			T:           tr,
 			C:           c,
