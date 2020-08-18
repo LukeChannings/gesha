@@ -1,34 +1,29 @@
 package web
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"text/template"
 
-	"golang.org/x/text/language"
-
 	"github.com/lukechannings/gesha/internal/config"
+	"github.com/lukechannings/gesha/internal/i18n"
 	"github.com/lukechannings/gesha/internal/pid"
 	"github.com/lukechannings/gesha/internal/temp"
 	"github.com/markbates/pkger"
 )
 
 type templateContext struct {
+	Lang        string
 	C           *config.Config
-	T           *Translations
+	T           *i18n.Translations
 	CurrentTemp string
 	TargetTemp  float64
 	Heating     bool
 	Running     bool
 	IsTempF     bool
 }
-
-var matcher = language.NewMatcher([]language.Tag{
-	language.English,
-})
 
 func getIndexTemplate() (*template.Template, error) {
 	tmpl, err := pkger.Open("/web/template/index.html")
@@ -42,48 +37,6 @@ func getIndexTemplate() (*template.Template, error) {
 	return template.New("index").Parse(string(b))
 }
 
-type Translations struct {
-	TemperatureCurrentTitle     string `json:"temperatureCurrentTitle"`
-	TemperatureSubtextLag       string `json:"temperatureSubtextLag"`
-	TemperatureTargetTitle      string `json:"temperatureTargetTitle"`
-	TemperatureTargetButton     string `json:"temperatureTargetButton"`
-	PidTitle                    string `json:"pidTitle"`
-	PidButton                   string `json:"pidButton"`
-	HeatTitle                   string `json:"heatTitle"`
-	GlobalOn                    string `json:"globalOn"`
-	GlobalOff                   string `json:"globalOff"`
-	MessageTargetTempSetSuccess string `json:"messageTargetTempSetSuccess"`
-	MessageTargetTempSetFailure string `json:"messageTargetTempSetFailure"`
-	MessageStartPidSuccess      string `json:"messageStartPidSuccess"`
-	MessageStartPidFailure      string `json:"messageStartPidFailure"`
-	MessageStopPidSuccess       string `json:"messageStopPidSuccess"`
-	MessageStopPidFailure       string `json:"messageStopPidFailure"`
-}
-
-func getTranslations(lang language.Tag) *Translations {
-	baseLang := lang.Parent().String()
-
-	if baseLang == "en" {
-		file, err := pkger.Open("/i18n/en.json")
-
-		if err != nil {
-			log.Fatal("Failed to load translation file ", baseLang)
-		}
-
-		defer file.Close()
-
-		tr := new(Translations)
-
-		byteValue, _ := ioutil.ReadAll(file)
-
-		json.Unmarshal(byteValue, &tr)
-
-		return tr
-	}
-
-	return nil
-}
-
 // Index - serves the interpolated index page
 func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 
@@ -94,11 +47,17 @@ func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lang, _ := r.Cookie("lang")
-		accept := r.Header.Get("Accept-Language")
-		tag, _ := language.MatchStrings(matcher, lang.String(), accept)
+		var userLangs []string
 
-		tr := getTranslations(tag)
+		if langCookie, err := r.Cookie("lang"); err == nil {
+			userLangs = append(userLangs, langCookie.String())
+		}
+
+		userLangs = append(userLangs, r.Header.Get("Accept-Language"))
+
+		chosenLang, tr := i18n.GetTranslations(userLangs)
+
+		fmt.Println(chosenLang)
 
 		t, err := t.Get(c.TemperatureUnit)
 
@@ -107,6 +66,7 @@ func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 		}
 
 		ctx := templateContext{
+			Lang:        chosenLang,
 			T:           tr,
 			C:           c,
 			CurrentTemp: fmt.Sprintf("%.1f", t.Temp),

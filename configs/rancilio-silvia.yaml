@@ -5,8 +5,9 @@ spiPort: ""
 temperatureSampleRate: "100ms"
 temperatureUnit: "C"
 temperatureTarget: 98
+groupHeadBoilerTempDeltaRatio: 0.91188269
 pidFrequency: "1s"
-pidAutostart: false
+pidAutostart: true
 pid:
   - 2
   - 60.0

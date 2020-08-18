@@ -4,9 +4,19 @@ export class Nav extends MountableComponent {
   constructor(node: HTMLElement) {
     super(node)
 
-    if (location.hash.length <= 1) {
-      location.hash = "#Brew"
+    const validHashes = [...node.querySelectorAll("a")].map(a =>
+      a.getAttribute("href"),
+    )
+
+    const validateHash = (e?: HashChangeEvent) => {
+      if (!validHashes.includes(location.hash)) {
+        const { hash } = new URL(e?.oldURL ?? "#Brew")
+        location.hash = hash
+      }
     }
+
+    window.addEventListener("hashchange", validateHash)
+    validateHash()
 
     /**
      * Resizing the browser stretches screens so the old scrollLeft position is out of date,

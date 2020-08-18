@@ -1,0 +1,6 @@
+brew:
+  navLabel: Brew
+history:
+  navLabel: history
+settings:
+  navLabel: Settings

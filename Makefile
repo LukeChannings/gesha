@@ -4,57 +4,49 @@ LD_FLAGS = -s -w -X main.gitHash=${GIT_HASH} -X main.taggedVersion=${TAGGED_VERS
 WEB_SRC = web/app/src
 WEB_DEST = web/static/dist
 
-all: clean pkged.go linux-386 linux-arm linux-arm64 linux-amd64 darwin compress
+all: build/linux-arm/gesha build/linux-arm64/gesha build/linux-amd64/gesha build/linux-i386/gesha build/darwin/gesha
 
-linux-arm:
-	mkdir -p build/linux-arm
-	GOOS=linux GOARCH=arm GOARM=6 go build -ldflags="${LD_FLAGS}" -o build/linux-arm/gesha
+build/linux-arm/gesha: cmd/**/*.go internal/**/*.go pkged.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css
+	GOOS=linux GOARCH=arm GOARM=6 go build -ldflags="${LD_FLAGS}" -o $@
 
-linux-arm64:
-	mkdir -p build/linux-arm64
-	GOOS=linux GOARCH=arm64 go build -ldflags="${LD_FLAGS}" -o build/linux-arm64/gesha
+build/linux-arm64/gesha: cmd/**/*.go internal/**/*.go pkged.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css
+	GOOS=linux GOARCH=arm64 go build -ldflags="${LD_FLAGS}" -o $@
 
-linux-amd64:
+build/linux-amd64/gesha: cmd/**/*.go internal/**/*.go pkged.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css
 	mkdir -p build/linux-amd64
-	GOOS=linux GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o build/linux-amd64/gesha
+	GOOS=linux GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o $@
 
-linux-386:
-	mkdir -p build/linux-386
-	GOOS=linux GOARCH=386 go build -ldflags="${LD_FLAGS}" -o build/linux-386/gesha
+build/linux-i386/gesha: cmd/**/*.go internal/**/*.go pkged.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css
+	mkdir -p build/linux-i386
+	GOOS=linux GOARCH=386 go build -ldflags="${LD_FLAGS}" -o $@
 	
-darwin:
+build/darwin/gesha: cmd/**/*.go internal/**/*.go pkged.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css
 	mkdir -p build/darwin
-	GOOS=darwin GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o build/darwin/gesha
+	GOOS=darwin GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o $@
 
-compress:
-	upx --brute ./build/*/gesha
+docs/api: api/openapi-spec/v1.openapi.yaml
+	openapi-generator generate -i $? -g markdown -o $@
 
-generate-docs:
-	openapi-generator generate -i ./api/openapi-spec/v1.openapi.yaml -g markdown -o docs/api
-
-pkged.go:
+pkged.go: internal/**/*.go
 	pkger
 
-clean: clean-web
-	rm -rf build pkged.go
-
-clean-web:
-	rm -rf ${WEB_DEST}
-	mkdir -p ${WEB_DEST}
-
-pi: clean web pkged.go linux-arm
-	scp ./build/linux-arm/gesha coffee-machine:~
-
-test:
-	go test -v ./...
-	cd web/app && npm ci && npm run lint && npm t
-
-web: clean-web ${WEB_DEST}/main.js ${WEB_DEST}/main.css
-
-${WEB_DEST}/main.js: ${WEB_SRC}/main.ts
-	esbuild --bundle --sourcemap=inline $? --outfile=$@
+${WEB_DEST}/main.js: ${WEB_SRC}/*.ts ${WEB_SRC}/**/*.ts
+	esbuild --bundle --sourcemap ${WEB_SRC}/main.ts --outfile=$@
 
 ${WEB_DEST}/main.css: ${WEB_SRC}/*.css ${WEB_SRC}/**/*.css
 	cat $? | grep -v '@import ' > $@
 
-.PHONY: clean linux-arm darwin all generate-api generate-api-docs pi test web clean-web
+clean:
+	rm -rf build pkged.go web/static/dist
+
+test:
+	go test -v ./...
+	cd web/app && npm run lint && npm t
+
+compress: build/*/gesha
+	upx --brute $?
+
+pi: build/linux-arm/gesha
+	scp build/linux-arm/gesha coffee-machine:~
+
+.PHONY: all clean test pi compress

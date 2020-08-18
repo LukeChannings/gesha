@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" style="--gesha-base-color: {{.C.ThemeColor.Hue}}">
+<html lang="{{ .Lang }}" style="--gesha-base-color: {{.C.ThemeColor.Hue}}">
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content="A tool for brewing espresso">
@@ -31,7 +31,7 @@
       <header class="Header">
         <h1 class="Header_Heading">Gesha</h1>
       </header>
-      <article class="Brew Screen" data-mount="BrewScreen" id="Brew">
+      <article class="Brew Screen" data-mount="BrewScreen" id="{{.T.Brew.NavLabel}}">
         <form class="ShotVariables_Form" name="shot-variables">
           <div class="ShotVariables">
             <legend class="VisuallyHidden">Brew</legend>
@@ -53,13 +53,13 @@
                 step="1"
                 id="temp"
                 name="temp"
-                value="94"
+                value="{{.TargetTemp}}"
               />
               <afix-range-slider
                 min="80"
                 max="120"
-                value="94"
-                shadow-value="0"
+                value="{{.TargetTemp}}"
+                shadow-value="{{.CurrentTemp}}"
                 tabindex="-1"
                 aria-hidden="true"
               ></afix-range-slider>
@@ -132,10 +132,10 @@
           </div>
         </afix-dialog>
       </article>
-      <article class="History Screen" data-mount="HistoryScreen" id="History">
+      <article class="History Screen" data-mount="HistoryScreen" id="{{.T.History.NavLabel}}">
         <div class="content"></div>
       </article>
-      <article class="Settings Screen" data-mount="SettingsScreen" id="Settings">
+      <article class="Settings Screen" data-mount="SettingsScreen" id="{{.T.Settings.NavLabel}}">
         <form class="SettingsForm">
           <div>
             <label for="port">Server Port</label>
@@ -201,7 +201,7 @@
       <nav class="Nav">
         <ul class="Nav_Item_List">
           <li class="Nav_Item Brew">
-            <a class="Nav_Link" tabindex="0" href="#Brew">
+            <a class="Nav_Link" tabindex="0" href="#{{.T.Brew.NavLabel}}">
               <div class="Nav_Link_Icon">
                 <svg
                   width="33"
@@ -216,11 +216,11 @@
                   />
                 </svg>
               </div>
-              <span class="Nav_Link_Text">Brew</span>
+              <span class="Nav_Link_Text">{{.T.Brew.NavLabel}}</span>
             </a>
           </li>
           <li class="Nav_Item History">
-            <a class="Nav_Link" tabindex="0" href="#History">
+            <a class="Nav_Link" tabindex="0" href="#{{.T.History.NavLabel}}">
               <div class="Nav_Link_Icon">
                 <svg
                   width="24"
@@ -235,11 +235,11 @@
                   />
                 </svg>
               </div>
-              <span class="Nav_Link_Text">History</span>
+              <span class="Nav_Link_Text">{{.T.History.NavLabel}}</span>
             </a>
           </li>
           <li class="Nav_Item Settings">
-            <a class="Nav_Link" tabindex="0" href="#Settings">
+            <a class="Nav_Link" tabindex="0" href="#{{.T.Settings.NavLabel}}">
               <div class="Nav_Link_Icon">
                 <svg
                   width="26"
@@ -254,7 +254,7 @@
                   />
                 </svg>
               </div>
-              <span class="Nav_Link_Text">Settings</span>
+              <span class="Nav_Link_Text">{{.T.Settings.NavLabel}}</span>
             </a>
           </li>
         </ul>

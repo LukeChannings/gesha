@@ -10,6 +10,7 @@ require (
 	github.com/lukechannings/max31855 v1.0.0
 	github.com/markbates/pkger v0.17.0
 	golang.org/x/text v0.3.3
+	gopkg.in/yaml.v2 v2.2.7
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 	periph.io/x/periph v3.6.4+incompatible
 )

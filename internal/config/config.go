@@ -38,7 +38,7 @@ func New(path string) Config {
 		log.Fatalf("Error loading configuration from path '%v'.\nError Message: %v\n", path, confErr)
 	}
 
-	err := yaml.Unmarshal([]byte(confData), &c)
+	err := yaml.Unmarshal(confData, &c)
 
 	if err != nil {
 		log.Fatalf("error: %v", err)

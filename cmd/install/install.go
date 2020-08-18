@@ -21,12 +21,12 @@ const (
 func Cmd() {
 	if hasSystemd() {
 		pkger.Include("/init/gesha.service")
-		pkger.Include("/configs/config.yaml")
+		pkger.Include("/configs/rancilio-silvia.yaml")
 
 		fmt.Println("Installing...")
 
 		installFile("/init/gesha.service", servicePath, true, true)
-		installFile("/configs/config.yaml", configPath, false, true)
+		installFile("/configs/rancilio-silvia.yaml", configPath, false, true)
 
 		geshaPath, _ := os.Executable()
 		installFile(geshaPath, exePath, true, false)
@@ -50,8 +50,7 @@ func installFile(fromPath string, toPath string, overwrite bool, bundle bool) {
 				log.Fatalf("Failed to load file %v: %v\n", fromPath, openErr)
 			}
 
-			pkgData, _ := ioutil.ReadAll(handle)
-			data = pkgData
+			data, _ = ioutil.ReadAll(handle)
 		} else {
 			sysData, err := ioutil.ReadFile(fromPath)
 			if err != nil {

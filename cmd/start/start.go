@@ -1,6 +1,7 @@
 package start
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/lukechannings/gesha/internal/api"
 	"github.com/lukechannings/gesha/internal/config"
+	"github.com/lukechannings/gesha/internal/i18n"
 	"github.com/lukechannings/gesha/internal/pid"
 	"github.com/lukechannings/gesha/internal/temp"
 	"github.com/lukechannings/gesha/web"
@@ -18,6 +20,12 @@ import (
 // Cmd - starts the main Gesha service
 func Cmd(configPath string, verbose bool) {
 	c := config.New(configPath)
+
+	trErr := i18n.PopulateTranslations()
+
+	if trErr != nil {
+		fmt.Printf("An error occurred when loading translations: %s", trErr.Error())
+	}
 
 	t, err := temp.New(c.SpiPort)
 

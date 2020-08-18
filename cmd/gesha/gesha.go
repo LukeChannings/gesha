@@ -39,6 +39,7 @@ type Options struct {
 
 // Run - starts the Gesha CLI
 func Run(taggedVersion string, gitHash string) {
+
 	version, err := Version(taggedVersion, gitHash)
 
 	if err != nil {
