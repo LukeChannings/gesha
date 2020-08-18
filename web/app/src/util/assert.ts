@@ -6,3 +6,7 @@ export function assert<T>(
     throw new Error(message)
   }
 }
+
+export function isRecord(data: unknown): data is Record<string, unknown> {
+  return typeof data === "object" && data !== null
+}

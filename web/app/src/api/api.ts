@@ -1,4 +1,4 @@
-import { assert } from "../util/assert"
+import { assert, isRecord } from "../util/assert"
 
 const API_URI = "http://192.168.20.24/api"
 
@@ -112,10 +112,8 @@ export function isTemperature(data: unknown): data is Temperature {
   return hasRequiredKeys(data, ["temp", "time"])
 }
 
-export function isConfig(
-  data: unknown,
-): data is Config {
-  assert(typeof data === 'object' && data !== null)
+export function isConfig(data: unknown): data is Config {
+  assert(isRecord(data))
   assert(typeof data.port === "string")
   assert(typeof data.boilerPin === "string")
   assert(typeof data.temperatureSampleRate === "string")
