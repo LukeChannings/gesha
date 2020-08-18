@@ -5,3 +5,4 @@ pkged.go
 .DS_Store
 *.sketch
 web/app/node_modules
+web/static/*.html
