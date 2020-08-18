@@ -31,7 +31,7 @@ var matcher = language.NewMatcher([]language.Tag{
 })
 
 func getIndexTemplate() (*template.Template, error) {
-	tmpl, err := pkger.Open("/web/index.tmpl")
+	tmpl, err := pkger.Open("/web/template/index.html")
 
 	if err != nil {
 		log.Fatal("Could not load index.tmpl")

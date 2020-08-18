@@ -1,0 +1,16 @@
+.SecondaryButton {
+  background: none;
+  border: none;
+  color: hsl(var(--base-color), 60%, 90%);
+  font-size: large;
+  padding: var(--s2) var(--s3);
+  cursor: pointer;
+  transition: color ease-in-out 150ms;
+  touch-action: manipulation;
+}
+
+@media (hover: hover) {
+  .SecondaryButton:hover {
+    color: hsl(var(--base-color), 70%, 70%);
+  }
+}

@@ -35,14 +35,15 @@ type Servicer interface {
 // This service should implement the business logic for every endpoint for the API.
 // Include any external packages or services that will be required by this service.
 type Service struct {
-	c *config.Config
-	t *temp.Handle
-	p *pid.Handle
+	configPath string
+	c          *config.Config
+	t          *temp.Handle
+	p          *pid.Handle
 }
 
 // NewAPIService creates a default api service
-func NewAPIService(c *config.Config, t *temp.Handle, p *pid.Handle) Servicer {
-	return &Service{c: c, t: t, p: p}
+func NewAPIService(c *config.Config, t *temp.Handle, p *pid.Handle, configPath string) Servicer {
+	return &Service{c: c, t: t, p: p, configPath: configPath}
 }
 
 // GetConfig - Returns the running config
@@ -173,9 +174,12 @@ func (s *Service) GetTempTarget() (interface{}, error) {
 
 // PostConfig -
 func (s *Service) PostConfig(config config.Config) (interface{}, error) {
-	// TODO - update PostConfig with the required logic for this service method.
-	// Add api_default_service.go to the .openapi-generator-ignore to avoid overwriting this service implementation when updating open api generation.
-	return nil, errors.New("service method 'PostConfig' not implemented")
+	err := s.c.Update(&config, s.configPath)
+
+	if err != nil {
+		return OperationResult{Ok: false, ErrorMessage: err.Error()}, nil
+	}
+	return OperationResult{Ok: true}, nil
 }
 
 // PostPidRunning -

@@ -76,16 +76,11 @@ paths:
       operationId: get-stream-pid-output
       responses:
         '200':
+          description: "Nothing"
           content:
             text/event-stream:
               schema:
                 $ref: '#/components/schemas/PidOutput'
-          description: OK
-            connection:
-              explode: false
-              schema:
-                type: string
-              style: simple
       summary: Your GET endpoint
       tags: []
   /temp/target:

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/lukechannings/gesha/internal/config"
@@ -154,6 +155,7 @@ func (c *Controller) GetTempTarget(w http.ResponseWriter, r *http.Request) {
 func (c *Controller) PostConfig(w http.ResponseWriter, r *http.Request) {
 	config := &config.Config{}
 	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
+		fmt.Println(err.Error())
 		w.WriteHeader(500)
 		return
 	}

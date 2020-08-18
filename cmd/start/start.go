@@ -22,16 +22,12 @@ func Cmd(configPath string, verbose bool) {
 	t, err := temp.New(c.SpiPort)
 
 	if err != nil {
-		log.Fatalf("Could not set up thermocouple. %v", err.Error())
-	}
-
-	if err != nil {
 		log.Fatal("Couldn't create a temperature stream! " + err.Error())
 	}
 
 	pid := pid.New(&c, t)
 
-	apiService := api.NewAPIService(&c, t, &pid)
+	apiService := api.NewAPIService(&c, t, &pid, configPath)
 	apiController := api.NewDefaultAPIController(apiService)
 
 	if c.PidAutostart {
@@ -41,7 +37,7 @@ func Cmd(configPath string, verbose bool) {
 
 	r := api.NewRouter(apiController)
 	r.Handle("/", web.Index(&c, t, &pid))
-	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(pkger.Dir("/public"))))
+	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(pkger.Dir("/web/static"))))
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)

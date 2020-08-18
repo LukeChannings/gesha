@@ -1,0 +1,30 @@
+.Button {
+  color: var(--button-color);
+  background-color: var(--button-bg-color);
+  background-image: var(--button-bg-image);
+  border: 2px solid var(--button-border);
+  border-radius: var(--s1);
+  padding: var(--s1) var(--s5);
+  cursor: pointer;
+  font-size: large;
+  font-weight: 600;
+  transition: background-color ease-in-out 150ms, border-color ease-in-out 150ms;
+  touch-action: manipulation;
+}
+
+@media (hover: hover) {
+  .Button:hover {
+    --button-bg-color: var(--button-bg-color-hover);
+    --button-border: var(--button-border-hover);
+  }
+}
+
+@media screen and (-moz-min-device-pixel-ratio: 3),
+  screen and (-o-min-device-pixel-ratio: 3/1),
+  screen and (-webkit-min-device-pixel-ratio: 3),
+  screen and (min-device-pixel-ratio: 3) {
+  .Button {
+    padding: var(--s2) var(--s2);
+    width: 100%;
+  }
+}

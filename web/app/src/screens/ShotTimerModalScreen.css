@@ -1,0 +1,44 @@
+.ShotTimer.Screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.ShotTimer.Screen .ButtonContainer {
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+}
+
+.ShotTimer.Screen .ButtonContainer .Button {
+  margin-bottom: var(--s2);
+}
+
+.ShotTimer.Screen .readouts {
+  width: 100%;
+  margin-bottom: 30vh;
+}
+
+.ShotTimer.Screen .readout .value {
+  text-align: center;
+  font-size: 4.5rem;
+  letter-spacing: -1px;
+  line-height: 1;
+  color: hsl(var(--base-color), 44%, 95%);
+  font-variant-numeric: tabular-nums;
+}
+
+.ShotTimer.Screen .readout .unit {
+  font-size: large;
+  color: hsl(var(--base-color), 5%, 75%);
+  font-weight: 600;
+  margin-top: var(--s1);
+}
+
+@media screen and (min-width: 48em) {
+  .ShotTimer.Screen .ButtonContainer {
+    width: auto;
+  }
+}

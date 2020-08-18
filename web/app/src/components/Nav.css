@@ -1,0 +1,70 @@
+.Nav {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  place-content: center;
+  background-color: var(--navigation-bg);
+  border-top: 1px solid var(--navigation-border);
+}
+
+.Nav_Item_List {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-direction: row;
+  align-items: center;
+  list-style: none;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  padding-top: 0.5rem;
+}
+
+.Nav_Link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0.75rem;
+  width: 5rem;
+  height: 4rem;
+  text-decoration: none;
+  color: var(--text-tertiary);
+  border-radius: 10px;
+  transition: background-color ease-in-out 100ms;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+@media (hover: hover) {
+  .Nav_Link:hover {
+    background: var(--navigation-link-highlight);
+  }
+}
+
+.Nav_Link_Icon {
+  width: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.Brew .Nav_Link_Icon,
+.History .Nav_Link_Icon {
+  height: 35px;
+}
+
+.Settings .Nav_Link_Icon {
+  height: 38px;
+}
+
+.Nav_Link_Text {
+  color: currentColor;
+  font-weight: var(--font-medium);
+  font-size: small;
+}
+
+#Brew:target ~ nav [href="#Brew"],
+#History:target ~ nav [href="#History"],
+#Settings:target ~ nav [href="#Settings"] {
+  color: var(--navigation-fg-active);
+}

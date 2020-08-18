@@ -1,13 +1,66 @@
 {
-  "TemperatureCurrentTitle": "Current",
-  "TemperatureSubtextLag": "s ago",
-  "TemperatureTargetTitle": "Target",
-  "TemperatureTargetButton": "Set",
-  "PidTitle": "PID",
-  "PidButton": "Toggle",
-  "HeatTitle": "Heat",
-  "GlobalOn": "On",
-  "GlobalOff": "Off",
+  "Nav": {
+    "Brew": "Brew",
+    "History": "History",
+    "Settings": "Settings"
+  },
+  "Brew": {
+    "Temp": { "Short": "Temp", "Long": "Temperature" },
+    "Dose": "Dose",
+    "Grind": "Grind",
+    "TimeButton": "Time Shot"
+  },
+  "ShotTimer": {
+    "Seconds": "Seconds",
+    "DoneButton": "Done",
+    "CancelButton": "Cancel"
+  },
+  "History": {
+    "NoRecords": "You haven't recorded any shots yet.",
+    "ItemSeconds": "Seconds",
+    "ItemDose": "Dose",
+    "ItemGrind": "Grind",
+    "ItemTemp": "Temp",
+    "ItemDelete": "Delete"
+  },
+  "Settings": {
+    "ServerPort": {
+      "Label": "Server Port"
+    },
+    "BoilerPin": {
+      "Label": "Boiler Pin",
+      "Description": "The name of the pin that controls the boiler on/off relay."
+    },
+    "SPIPort": {
+      "Label": "SPI Port",
+      "Description": "The name of the SPI port the temperature sensor is attached to."
+    },
+    "TempSampleRate": {
+      "Label": "Temperature Sample Rate",
+      "Description": "How often the UI reads the current temperature"
+    },
+    "TempUnit": {
+      "Label": "Temperature Unit"
+    },
+    "TempTarget": {
+      "Label": "Temperature Target"
+    },
+    "PID": {
+      "Label": "PID Variables"
+    },
+    "PIDFrequency": {
+      "Label": "PID Frequency",
+      "Description": "How often the PID updates the boiler in reaction to a change in temperature"
+    },
+    "PIDAutostart": {
+      "Label": "PID Auto-start",
+      "Description": "Should the PID start running automatically when the Gesha service start up?"
+    },
+    "ThemeColor": {
+      "Label": "Theme Colour"
+    },
+    "SaveButton": "Save"
+  },
   "MessageTargetTempSetSuccess": "The temperature target was set to ${target} &deg;${temperatureUnit}",
   "MessageTargetTempSetFailure": "There was a problem setting a new target temperature",
   "MessageStartPidSuccess": "Successfully started the PID",
