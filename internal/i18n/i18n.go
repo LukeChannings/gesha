@@ -14,8 +14,13 @@ import (
 
 // Translations - the structure of the translations doocument
 type Translations struct {
+	Meta struct {
+		Description string `yaml:"description"`
+	} `yaml:"meta"`
+
 	Brew struct {
 		NavLabel string `yaml:"navLabel"`
+		Legend   string `yaml:"legend"`
 	} `yaml:"brew"`
 
 	History struct {

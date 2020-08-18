@@ -1,5 +1,9 @@
+meta:
+  title: Gesha
+  description: A tool for brewing espresso
 brew:
   navLabel: Brew
+  legend: Brew
 history:
   navLabel: history
 settings:

@@ -2,7 +2,7 @@
 <html lang="{{ .Lang }}" style="--gesha-base-color: {{.C.ThemeColor.Hue}}">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content="A tool for brewing espresso">
+    <meta name="description" content="{{.T.Meta.Description}}">
     <meta
       name="viewport"
       content="initial-scale=1, viewport-fit=cover"
@@ -20,7 +20,7 @@
     <link rel="icon" sizes="256x256" href="icons/gesha@1x.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#9d61a9" />
+    <meta name="theme-color" content="{{.C.ThemeColor.Hex}}" />
     <link rel="stylesheet" href="/dist/main.css" />
     <script type="module" src="/dist/main.js"></script>
     <title>Gesha</title>
@@ -34,7 +34,7 @@
       <article class="Brew Screen" data-mount="BrewScreen" id="{{.T.Brew.NavLabel}}">
         <form class="ShotVariables_Form" name="shot-variables">
           <div class="ShotVariables">
-            <legend class="VisuallyHidden">Brew</legend>
+            <legend class="VisuallyHidden">{{.T.Brew.Legend}}</legend>
             <div class="ShotVariables_Variable temp {{ if .Heating }}is-heating{{end}}" data-shot-variable="temperature">
               <label class="ShotVariables_Variable_Label" for="temp"
                 ><attr title="Temperature">Temp</attr>
