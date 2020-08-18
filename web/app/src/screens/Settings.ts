@@ -61,7 +61,9 @@ export class SettingsScreen extends MountableComponent {
           }
         })
       } else if (input instanceof HTMLInputElement) {
-        input.value = String(value)
+        input.value = String(
+          key === "themeColor" ? this.config.themeColor?.hex : value,
+        )
       }
     }
   }

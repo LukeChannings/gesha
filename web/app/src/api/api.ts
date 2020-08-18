@@ -1,3 +1,5 @@
+import { assert } from "../util/assert"
+
 const API_URI = "http://192.168.20.24/api"
 
 export interface Temperature {
@@ -110,17 +112,23 @@ export function isTemperature(data: unknown): data is Temperature {
   return hasRequiredKeys(data, ["temp", "time"])
 }
 
-export function isConfig(data: unknown): data is Config {
-  return hasRequiredKeys(data, [
-    "port",
-    "boilerPin",
-    "temperatureSampleRate",
-    "temperatureUnit",
-    "temperatureTarget",
-    "pid",
-    "pidFrequency",
-    "pidAutostart",
-  ])
+export function isConfig(
+  data: unknown,
+): data is Config {
+  assert(typeof data === 'object' && data !== null)
+  assert(typeof data.port === "string")
+  assert(typeof data.boilerPin === "string")
+  assert(typeof data.temperatureSampleRate === "string")
+  assert(data.temperatureUnit === "C" || data.temperatureUnit === "F")
+  assert(typeof data.temperatureTarget === "number")
+  assert(
+    Array.isArray(data.pid) &&
+      data.pid.length === 3 &&
+      data.pid.every(v => typeof v === "number"),
+  )
+  assert(typeof data.pidFrequency === "string")
+  assert(typeof data.pidAutostart === "boolean")
+  return true
 }
 
 const hasRequiredKeys = (data: unknown, keys: string[]) =>

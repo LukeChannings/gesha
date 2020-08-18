@@ -1,13 +1,17 @@
 ---
-port: 80
-boilerPin: GPIO7
-spiPort: ''
-temperatureSampleRate: 100ms
-temperatureUnit: C
-temperatureTarget: 95
-pidFrequency: 1s
-pidAutostart: true
+port: "80"
+boilerPin: "GPIO7"
+spiPort: ""
+temperatureSampleRate: "100ms"
+temperatureUnit: "C"
+temperatureTarget: 98
+pidFrequency: "1s"
+pidAutostart: false
 pid:
-  - 1.1
+  - 2
   - 60.0
   - 15.0
+themeColor:
+  hex: "#954B95"
+  hue: 300
+verbose: false

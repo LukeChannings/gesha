@@ -2,16 +2,16 @@ TAGGED_VERSION = $(shell git tag --points-at HEAD)
 GIT_HASH = $(shell git rev-parse --short HEAD)
 LD_FLAGS = -s -w -X main.gitHash=${GIT_HASH} -X main.taggedVersion=${TAGGED_VERSION}
 WEB_SRC = web/app/src
-WEB_DEST = web/app/dist
+WEB_DEST = web/static/dist
 
-all: clean pkged.go linux linux-arm linux-arm64 linux-amd64 darwin compress
+all: clean pkged.go linux linux-arm linux-arm64 linux-amd64 darwin
 
 linux-arm:
 	mkdir -p build/linux-arm
 	GOOS=linux GOARCH=arm GOARM=6 go build -ldflags="${LD_FLAGS}" -o build/linux-arm/gesha
 
 linux-arm64:
-	mkdir -p linux-arm64
+	mkdir -p build/linux-arm64
 	GOOS=linux GOARCH=arm64 go build -ldflags="${LD_FLAGS}" -o build/linux-arm64/gesha
 
 linux-amd64:
@@ -42,7 +42,7 @@ clean-web:
 	rm -rf ${WEB_DEST}
 	mkdir -p ${WEB_DEST}
 
-pi: clean pkged.go linux-arm
+pi: clean web pkged.go linux-arm
 	scp ./build/linux-arm/gesha coffee-machine:~
 
 test:
@@ -55,7 +55,7 @@ test:
 web: clean-web ${WEB_DEST}/main.js ${WEB_DEST}/main.css
 
 ${WEB_DEST}/main.js: ${WEB_SRC}/main.ts
-	esbuild --bundle --minify --sourcemap=external $? --outfile=$@
+	esbuild --bundle --sourcemap=inline $? --outfile=$@
 
 ${WEB_DEST}/main.css: ${WEB_SRC}/*.css ${WEB_SRC}/**/*.css
 	cat $? | grep -v '@import ' > $@

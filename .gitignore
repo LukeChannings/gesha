@@ -1,7 +1,7 @@
 build
+dist
 pkged.go
 .env
 .DS_Store
 *.sketch
 web/app/node_modules
-web/app/dist

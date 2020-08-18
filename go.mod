@@ -4,7 +4,6 @@ go 1.14
 
 require (
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
-	github.com/evanw/esbuild v0.6.25 // indirect
 	github.com/felixge/pidctrl v0.0.0-20160307080219-7b13bcae7243
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
