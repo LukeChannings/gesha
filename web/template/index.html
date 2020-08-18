@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" style="--base-color: {{.C.ThemeColor.Hue}}">
+<html lang="en" style="--gesha-base-color: {{.C.ThemeColor.Hue}}">
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content="A tool for brewing espresso">
@@ -35,7 +35,7 @@
         <form class="ShotVariables_Form" name="shot-variables">
           <div class="ShotVariables">
             <legend class="VisuallyHidden">Brew</legend>
-            <div class="ShotVariables_Variable temp" data-shot-variable="temperature">
+            <div class="ShotVariables_Variable temp {{ if .Heating }}is-heating{{end}}" data-shot-variable="temperature">
               <label class="ShotVariables_Variable_Label" for="temp"
                 ><attr title="Temperature">Temp</attr>
                 <attr

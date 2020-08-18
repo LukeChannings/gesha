@@ -63,12 +63,24 @@
   display: none;
 }
 
+@keyframes HeatingIndicator {
+  0% {
+    color: hsl(calc(var(--base-color) + 180), 55%, 60%, 90%);
+  }
+  50% {
+    color: hsl(calc(var(--base-color) + 180), 35%, 60%, 70%);
+  }
+  100% {
+    color: hsl(calc(var(--base-color) + 180), 55%, 60%, 90%);
+  }
+}
+
 .ShotVariables_Variable.temp afix-range-slider {
   color: hsl(calc(var(--base-color) + 180), 35%, 60%, 70%);
 }
 
-.ShotVariables_Variable.temp.\-\-heating afix-range-slider {
-  color: hsl(calc(var(--base-color) + 180), 55%, 40%, 60%);
+.ShotVariables_Variable.temp.is-heating afix-range-slider {
+  animation: HeatingIndicator 3s infinite;
 }
 
 .ShotVariables_Variable.dose afix-range-slider {
@@ -80,6 +92,7 @@
 }
 
 .ShotVariables_Variable_Label {
+  position: relative;
   font-size: medium;
   font-family: system-ui, -apple-system;
   font-weight: 500;
@@ -87,6 +100,20 @@
   line-height: 1;
   margin-top: var(--sxt2);
   order: 3;
+}
+
+.is-heating .ShotVariables_Variable_Label::before {
+  content: "";
+  display: block;
+  position: absolute;
+  left: -15px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 0.5rem;
+  width: 0.5rem;
+  background: #ff941a;
+  border: 1px solid #333;
+  border-radius: 100%;
 }
 
 .ShotVariables_Variable_Label_Unit {
