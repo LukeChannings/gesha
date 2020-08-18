@@ -2,7 +2,7 @@
 
 ![Tests](https://github.com/LukeChannings/gesha/workflows/Tests/badge.svg?branch=main)
 
-Gesha is a PID app for your espresso machine that uses a [MAX31855](https://www.adafruit.com/product/3328) and a solid-state relay to monitor and control the temperature of your boiler.
+Gesha is an app for your modded espresso machine. It integrates with a [MAX31855](https://www.adafruit.com/product/3328) and a relay to control brew temperature, and lets you track variables like dose, grind, ratio, etc. to make perfecting your espresso easier.
 
 ## Features
 
