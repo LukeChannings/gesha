@@ -39,9 +39,12 @@ ${WEB_DEST}/main.css: ${WEB_SRC}/*.css ${WEB_SRC}/**/*.css
 clean:
 	rm -rf build pkged.go web/static/dist
 
-test:
+test: web/app/node_modules
 	go test -v ./...
 	cd web/app && npm run lint && npm t
+
+web/app/node_modules: web/app/package.json
+	cd web/app && npm ci
 
 compress: build/*/gesha
 	upx --brute $?
