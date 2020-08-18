@@ -47,10 +47,7 @@ pi: clean web pkged.go linux-arm
 
 test:
 	go test -v ./...
-	cd web/app ;\
-		npm ci ;\
-		npm run lint ;\
-		npm t
+	cd web/app && npm ci && npm run lint && npm t
 
 web: clean-web ${WEB_DEST}/main.js ${WEB_DEST}/main.css
 
