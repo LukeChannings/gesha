@@ -9,7 +9,7 @@
 @import "./screens/Brew.css";
 @import "./screens/History.css";
 @import "./screens/Settings.css";
-@import "./screens/ShotTimerModalScreen.css";
+@import "./screens/TimerScreen.css";
 
 :root {
   /* Colours */

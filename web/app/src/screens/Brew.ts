@@ -1,7 +1,7 @@
 import { getTempStream, TemperatureEvent } from "../api/api"
 import { MountableComponent } from "../util/mount"
 import { getInstances } from "../util/mount"
-import { ShotTimerModalScreen } from "./ShotTimerModalScreen"
+import { TimerScreen } from "./TimerScreen"
 
 export class BrewScreen extends MountableComponent {
   shotVariables: Record<string, HTMLElement>
@@ -70,9 +70,9 @@ export class BrewScreen extends MountableComponent {
   }
 
   showTimerModal(): void {
-    const [shotTimerScreen] = getInstances(ShotTimerModalScreen)
-    if (shotTimerScreen) {
-      shotTimerScreen.show({
+    const [TimerScreen] = getInstances(TimerScreen)
+    if (TimerScreen) {
+      TimerScreen.show({
         desiredTemp: Number(
           this.shotVariables.temperature.querySelector("input")?.value,
         ),

@@ -5,7 +5,7 @@ import "afix-list-item"
 import { BrewScreen } from "./screens/Brew"
 import { HistoryScreen } from "./screens/History"
 import { SettingsScreen } from "./screens/Settings"
-import { ShotTimerModalScreen } from "./screens/ShotTimerModalScreen"
+import { TimerScreen } from "./screens/TimerScreen"
 import { Nav } from "./components/Nav"
 import { mount, MountableComponent } from "./util/mount"
 
@@ -13,7 +13,7 @@ const mountableComponents: Record<string, typeof MountableComponent> = {
   BrewScreen,
   HistoryScreen,
   SettingsScreen,
-  ShotTimerModalScreen,
+  TimerScreen,
   Nav,
 }
 
