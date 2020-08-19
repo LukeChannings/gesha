@@ -23,7 +23,10 @@ export class SettingsScreen extends MountableComponent {
       (e.target as HTMLInputElement).name === "themeColorHue" &&
       e instanceof MessageEvent
     ) {
-      document.documentElement.style.setProperty("--gesha-base-color", e.data.value)
+      document.documentElement.style.setProperty(
+        "--gesha-base-color",
+        e.data.value,
+      )
     }
   }
 
