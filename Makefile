@@ -46,10 +46,7 @@ test: web/app/node_modules
 web/app/node_modules: web/app/package.json
 	cd web/app && npm ci
 
-compress: build/*/gesha
-	upx --brute $?
-
 pi: build/linux-arm/gesha
 	scp build/linux-arm/gesha coffee-machine:~
 
-.PHONY: all clean test pi compress
+.PHONY: all clean test pi
