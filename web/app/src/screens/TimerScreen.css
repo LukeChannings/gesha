@@ -1,0 +1,44 @@
+.Timer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.Timer .ButtonContainer {
+  width: 80%;
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+}
+
+.Timer .ButtonContainer .Button {
+  margin-bottom: var(--s2);
+}
+
+.TimerReadouts {
+  width: 100%;
+  margin-bottom: 30vh;
+}
+
+.TimerReadoutValue {
+  text-align: center;
+  font-size: 4.5rem;
+  letter-spacing: -1px;
+  line-height: 1;
+  color: hsl(var(--base-color), 44%, 95%);
+  font-variant-numeric: tabular-nums;
+}
+
+.TimerReadoutUnit {
+  font-size: large;
+  color: hsl(var(--base-color), 5%, 75%);
+  font-weight: 600;
+  margin-top: var(--s1);
+}
+
+@media screen and (min-width: 48em) {
+  .Timer .ButtonContainer {
+    width: auto;
+  }
+}
