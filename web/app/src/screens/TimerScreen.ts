@@ -43,11 +43,17 @@ export class TimerScreen extends MountableComponent {
       this.openTime = Date.now()
       requestAnimationFrame(this.renderTimer)
     })
+    document.addEventListener('keyup', e => {
+      if (e.key === 'Escape' && this.dialog.open) {
+        this.handleCancel();
+      }
+    })
   }
 
   show(shot: Partial<Shot>): void {
     this.pendingShot = shot
     this.dialog.show()
+    this.node.focus({ preventScroll: true })
   }
 
   private handleDone = (): void => {

@@ -1,10 +1,77 @@
 meta:
-  title: Gesha
   description: A tool for brewing espresso
+global:
+  units:
+    celcius:
+      label: Celcius
+      short: "&deg; C"
+      title: Degrees Celcius
+    fahrenheit:
+      label: Fahrenheit
+      short: "&deg; F"
+      title: Degrees Fahrenheit
+    grams:
+      label: Grams
+      short: g
+    seconds:
+      label: Seconds
+      short: s
 brew:
   navLabel: Brew
   legend: Brew
+  actionButton:
+    label: Time Shot
+  temp:
+    description: The temperature of the water used for brewing
+    label: Temp
+    title: Temperature
+  grind:
+    description: The setting on your grinder that controls the fineness of the coffee grounds. 0 being finest.
+    label: Grind
+  dose:
+    description: The weight of coffee to be used in the brew
+    label: Dose
+timer:
+  doneButton:
+    label: Done
+  cancelButton:
+    label: Cancel
 history:
-  navLabel: history
+  navLabel: History
+  emptyMessage: You haven't recorded any shots yet.
+  itemDeleteButton:
+    label: Delete
 settings:
   navLabel: Settings
+  saveButton:
+    label: Save
+  serverPort:
+    label: Server Port
+  boilerPin:
+    label: Boiler Pin
+    description: The name of the pin that controls the boiler on/off relay
+  spiPort:
+    label: SPI Port
+    description: The name of the SPI port the temperature sensor is attached to
+  temperatureSampleRate:
+    label: Temperature Sample Rate
+    description: How often the UI reads the current temperature
+  temperatureUnit:
+    label: Temperature Unit
+  temperatureTarget:
+    label: Temperature Target
+  pid:
+    label: PID variables
+    attr: proportional–integral–derivative
+    pLabel: P value
+    iLabel: I value
+    dLabel: D value
+  themeColor:
+    label: Theme color
+  pidFrequency:
+    label: PID Frequency
+  pidAutostart:
+    label: PID Autostart
+  verbose:
+    label: Verbose
+    description: When enabled Gesha will log to the console the PID value at the PID Frequency

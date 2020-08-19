@@ -70,9 +70,9 @@ export class BrewScreen extends MountableComponent {
   }
 
   showTimerModal(): void {
-    const [TimerScreen] = getInstances(TimerScreen)
-    if (TimerScreen) {
-      TimerScreen.show({
+    const [timerScreen] = getInstances(TimerScreen)
+    if (timerScreen) {
+      timerScreen.show({
         desiredTemp: Number(
           this.shotVariables.temperature.querySelector("input")?.value,
         ),

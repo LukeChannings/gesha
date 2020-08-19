@@ -6,7 +6,7 @@ export class Nav extends MountableComponent {
 
     const validHashes = [...node.querySelectorAll("a")].map(a =>
       a.getAttribute("href"),
-    )
+    ).concat("#Nav")
 
     const validateHash = (e?: HashChangeEvent) => {
       if (!validHashes.includes(location.hash)) {

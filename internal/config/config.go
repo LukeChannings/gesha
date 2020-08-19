@@ -22,10 +22,7 @@ type Config struct {
 	PidFrequency          time.Duration `json:"pidFrequency" yaml:"pidFrequency"`
 	PidAutostart          bool          `json:"pidAutostart" yaml:"pidAutostart"`
 	Verbose               bool          `json:"verbose" yaml:"verbose"`
-	ThemeColor            struct {
-		Hex string `json:"hex" yaml:"hex"`
-		Hue string `json:"hue" yaml:"hue"`
-	} `json:"themeColor" yaml:"themeColor"`
+	ThemeColorHue         string        `json:"themeColorHue" yaml:"themeColorHue"`
 }
 
 // New creates a config with defaults and based on the environment file
@@ -58,7 +55,7 @@ func (c *Config) Update(newConfig *Config, path string) error {
 	c.PID = newConfig.PID
 	c.PidFrequency = newConfig.PidFrequency
 	c.PidAutostart = newConfig.PidAutostart
-	c.ThemeColor = newConfig.ThemeColor
+	c.ThemeColorHue = newConfig.ThemeColorHue
 	c.Verbose = newConfig.Verbose
 
 	data, err := yaml.Marshal(c)
@@ -75,20 +72,17 @@ func (c *Config) Update(newConfig *Config, path string) error {
 }
 
 type ConfigDto struct {
-	Port              string    `json:"port" yaml:"port"`
-	BoilerPin         string    `json:"boilerPin" yaml:"boilerPin"`
-	SpiPort           string    `json:"spiPort" yaml:"spiPort"`
-	TemperatureUnit   string    `json:"temperatureUnit" yaml:"temperatureUnit"`
-	TemperatureTarget float64   `json:"temperatureTarget" yaml:"temperatureTarget"`
-	PID               []float64 `json:"pid,flow" yaml:"pid"`
-	PidAutostart      bool      `json:"pidAutostart" yaml:"pidAutostart"`
-	Verbose           bool      `json:"verbose" yaml:"verbose"`
-	ThemeColor        struct {
-		Hex string `json:"hex" yaml:"hex"`
-		Hue string `json:"hue" yaml:"hue"`
-	} `json:"themeColor" yaml:"themeColor"`
-	TemperatureSampleRate string `json:"temperatureSampleRate,omitempty"`
-	PidFrequency          string `json:"pidFrequency,omitempty"`
+	Port                  string    `json:"port" yaml:"port"`
+	BoilerPin             string    `json:"boilerPin" yaml:"boilerPin"`
+	SpiPort               string    `json:"spiPort" yaml:"spiPort"`
+	TemperatureUnit       string    `json:"temperatureUnit" yaml:"temperatureUnit"`
+	TemperatureTarget     float64   `json:"temperatureTarget" yaml:"temperatureTarget"`
+	PID                   []float64 `json:"pid,flow" yaml:"pid"`
+	PidAutostart          bool      `json:"pidAutostart" yaml:"pidAutostart"`
+	Verbose               bool      `json:"verbose" yaml:"verbose"`
+	ThemeColorHue         string    `json:"themeColorHue" yaml:"themeColorHue"`
+	TemperatureSampleRate string    `json:"temperatureSampleRate,omitempty"`
+	PidFrequency          string    `json:"pidFrequency,omitempty"`
 }
 
 func (c *Config) MarshalJSON() ([]byte, error) {
@@ -104,7 +98,7 @@ func (c *Config) MarshalJSON() ([]byte, error) {
 	config.PidFrequency = c.PidFrequency.String()
 	config.PidAutostart = c.PidAutostart
 	config.Verbose = c.Verbose
-	config.ThemeColor = c.ThemeColor
+	config.ThemeColorHue = c.ThemeColorHue
 
 	return json.Marshal(config)
 }
@@ -137,7 +131,7 @@ func (c *Config) UnmarshalJSON(b []byte) error {
 	c.PidFrequency = pidFrequency
 	c.PidAutostart = config.PidAutostart
 	c.Verbose = config.Verbose
-	c.ThemeColor = config.ThemeColor
+	c.ThemeColorHue = config.ThemeColorHue
 
 	return nil
 }

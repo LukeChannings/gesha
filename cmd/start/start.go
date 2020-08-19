@@ -1,7 +1,6 @@
 package start
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -24,13 +23,13 @@ func Cmd(configPath string, verbose bool) {
 	trErr := i18n.PopulateTranslations()
 
 	if trErr != nil {
-		fmt.Printf("An error occurred when loading translations: %s", trErr.Error())
+		log.Fatalf("An error occurred when loading translations: %v", trErr.Error())
 	}
 
 	t, err := temp.New(c.SpiPort)
 
 	if err != nil {
-		log.Fatal("Couldn't create a temperature stream! " + err.Error())
+		log.Fatalf("Couldn't create a temperature stream! %v", err.Error())
 	}
 
 	pid := pid.New(&c, t)

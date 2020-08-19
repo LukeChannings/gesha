@@ -6,35 +6,35 @@ WEB_DEST = web/static/dist
 
 all: build/linux-arm/gesha build/linux-arm64/gesha build/linux-amd64/gesha build/linux-i386/gesha build/darwin/gesha
 
-build/linux-arm/gesha: cmd/**/*.go internal/**/*.go pkged.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css
+build/linux-arm/gesha: cmd/**/*.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css pkged.go
 	GOOS=linux GOARCH=arm GOARM=6 go build -ldflags="${LD_FLAGS}" -o $@
 
-build/linux-arm64/gesha: cmd/**/*.go internal/**/*.go pkged.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css
+build/linux-arm64/gesha: cmd/**/*.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css pkged.go
 	GOOS=linux GOARCH=arm64 go build -ldflags="${LD_FLAGS}" -o $@
 
-build/linux-amd64/gesha: cmd/**/*.go internal/**/*.go pkged.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css
+build/linux-amd64/gesha: cmd/**/*.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css pkged.go
 	mkdir -p build/linux-amd64
 	GOOS=linux GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o $@
 
-build/linux-i386/gesha: cmd/**/*.go internal/**/*.go pkged.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css
+build/linux-i386/gesha: cmd/**/*.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css pkged.go
 	mkdir -p build/linux-i386
 	GOOS=linux GOARCH=386 go build -ldflags="${LD_FLAGS}" -o $@
 	
-build/darwin/gesha: cmd/**/*.go internal/**/*.go pkged.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css
+build/darwin/gesha: cmd/**/*.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css pkged.go
 	mkdir -p build/darwin
 	GOOS=darwin GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o $@
 
 docs/api: api/openapi-spec/v1.openapi.yaml
 	openapi-generator generate -i $? -g markdown -o $@
 
-pkged.go: internal/**/*.go
+pkged.go: internal/**/*.go web/template/index.html web/web.go i18n/**.yaml ${WEB_DEST}/main.js ${WEB_DEST}/main.css
 	pkger
 
-${WEB_DEST}/main.js: ${WEB_SRC}/*.ts ${WEB_SRC}/**/*.ts
+${WEB_DEST}/main.js: ${WEB_SRC}/*.ts ${WEB_SRC}/**/*.ts web/app/node_modules
 	esbuild --bundle --sourcemap ${WEB_SRC}/main.ts --outfile=$@
 
 ${WEB_DEST}/main.css: ${WEB_SRC}/*.css ${WEB_SRC}/**/*.css
-	cat $? | grep -v '@import ' > $@
+	cat $? | grep -v '@import ' >> $@
 
 clean:
 	rm -rf build pkged.go web/static/dist

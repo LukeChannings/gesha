@@ -90,7 +90,10 @@ func (h *Handle) Start(c *config.Config) {
 					h.Heating = true
 				}
 
-				log.Printf("PID | Output %v | Temp %v | Heating %v\n", pidOutput, b.Temp, h.Heating)
+				if h.c.Verbose {
+					log.Printf("PID | Output %v | Temp %v | Heating %v\n", pidOutput, b.Temp, h.Heating)
+				}
+
 				<-ticker.C
 			}
 		}()

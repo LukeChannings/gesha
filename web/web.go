@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"text/template"
 
+	"github.com/dchest/uniuri"
 	"github.com/lukechannings/gesha/internal/config"
 	"github.com/lukechannings/gesha/internal/i18n"
 	"github.com/lukechannings/gesha/internal/pid"
@@ -46,15 +47,16 @@ func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 
 		chosenLang, tr := i18n.GetTranslations(userLangs)
 
-		fmt.Println(chosenLang)
-
 		t, err := t.Get(c.TemperatureUnit)
 
 		if err != nil {
 			http.Error(w, "Could not read the temperature", http.StatusInternalServerError)
 		}
 
+		scriptNonce := uniuri.New()
+
 		ctx := struct {
+			ScriptNonce string
 			Lang        string
 			C           *config.Config
 			T           *i18n.Translations
@@ -64,6 +66,7 @@ func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 			Running     bool
 			IsTempF     bool
 		}{
+			ScriptNonce: scriptNonce,
 			Lang:        chosenLang,
 			T:           tr,
 			C:           c,
@@ -75,6 +78,7 @@ func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 		}
 
 		w.Header().Add("cache-control", "no-cache")
+		w.Header().Add("content-security-policy", fmt.Sprintf("script-src 'strict-dynamic' 'nonce-%v' 'unsafe-inline' http: https:; object-src 'none'; base-uri 'none';", scriptNonce))
 
 		tmpl.Execute(w, ctx)
 	})

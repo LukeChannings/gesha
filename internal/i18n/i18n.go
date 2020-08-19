@@ -1,6 +1,7 @@
 package i18n
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -17,23 +18,116 @@ type Translations struct {
 	Meta struct {
 		Description string `yaml:"description"`
 	} `yaml:"meta"`
-
+	Global struct {
+		Units struct {
+			Celcius struct {
+				Label string `yaml:"label"`
+				Short string `yaml:"short"`
+				Title string `yaml:"title"`
+			} `yaml:"celcius"`
+			Fahrenheit struct {
+				Label string `yaml:"label"`
+				Short string `yaml:"short"`
+				Title string `yaml:"title"`
+			} `yaml:"fahrenheit"`
+			Grams struct {
+				Label string `yaml:"label"`
+				Short string `yaml:"short"`
+			} `yaml:"grams"`
+			Seconds struct {
+				Label string `yaml:"label"`
+				Short string `yaml:"short"`
+			} `yaml:"seconds"`
+		} `yaml:"units"`
+	} `yaml:"global"`
 	Brew struct {
-		NavLabel string `yaml:"navLabel"`
-		Legend   string `yaml:"legend"`
+		NavLabel     string `yaml:"navLabel"`
+		Legend       string `yaml:"legend"`
+		ActionButton struct {
+			Label string `yaml:"label"`
+		} `yaml:"actionButton"`
+		Temp struct {
+			Description string `yaml:"description"`
+			Label       string `yaml:"label"`
+			Title       string `yaml:"title"`
+		} `yaml:"temp"`
+		Grind struct {
+			Description string `yaml:"description"`
+			Label       string `yaml:"label"`
+		} `yaml:"grind"`
+		Dose struct {
+			Description string `yaml:"description"`
+			Label       string `yaml:"label"`
+		} `yaml:"dose"`
 	} `yaml:"brew"`
-
+	Timer struct {
+		DoneButton struct {
+			Label string `yaml:"label"`
+		} `yaml:"doneButton"`
+		CancelButton struct {
+			Label string `yaml:"label"`
+		} `yaml:"cancelButton"`
+	} `yaml:"timer"`
 	History struct {
-		NavLabel string `yaml:"navLabel"`
+		NavLabel         string `yaml:"navLabel"`
+		EmptyMessage     string `yaml:"emptyMessage"`
+		ItemDeleteButton struct {
+			Label string `yaml:"label"`
+		} `yaml:"itemDeleteButton"`
 	} `yaml:"history"`
-
 	Settings struct {
-		NavLabel string `yaml:"navLabel"`
+		NavLabel   string `yaml:"navLabel"`
+		SaveButton struct {
+			Label string `yaml:"label"`
+		} `yaml:"saveButton"`
+		ServerPort struct {
+			Label string `yaml:"label"`
+		} `yaml:"serverPort"`
+		BoilerPin struct {
+			Label       string `yaml:"label"`
+			Description string `yaml:"description"`
+		} `yaml:"boilerPin"`
+		SpiPort struct {
+			Label       string `yaml:"label"`
+			Description string `yaml:"description"`
+		} `yaml:"spiPort"`
+		TemperatureSampleRate struct {
+			Label       string `yaml:"label"`
+			Description string `yaml:"description"`
+		} `yaml:"temperatureSampleRate"`
+		TemperatureUnit struct {
+			Label string `yaml:"label"`
+		} `yaml:"temperatureUnit"`
+		TemperatureTarget struct {
+			Label string `yaml:"label"`
+		} `yaml:"temperatureTarget"`
+		Pid struct {
+			Label  string `yaml:"label"`
+			Attr   string `yaml:"attr"`
+			PLabel string `yaml:"pLabel"`
+			ILabel string `yaml:"iLabel"`
+			DLabel string `yaml:"dLabel"`
+		} `yaml:"pid"`
+		ThemeColor struct {
+			Label string `yaml:"label"`
+		} `yaml:"themeColor"`
+		PidFrequency struct {
+			Label string `yaml:"label"`
+		} `yaml:"pidFrequency"`
+		PidAutostart struct {
+			Label       string `yaml:"label"`
+			Description string `yaml:"description"`
+		} `yaml:"pidAutostart"`
+		Verbose struct {
+			Label       string `yaml:"label"`
+			Description string `yaml:"description"`
+		} `yaml:"verbose"`
 	} `yaml:"settings"`
 }
 
 var availableTranslations map[language.Tag]*Translations = make(map[language.Tag]*Translations)
 
+// PopulateTranslations - populates available translations with translations files from /i18n/*.yaml
 func PopulateTranslations() error {
 	err := pkger.Walk("/i18n", func(filepath string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -62,6 +156,7 @@ func PopulateTranslations() error {
 			unmarshalErr := yaml.Unmarshal(data, &translations)
 
 			if unmarshalErr != nil {
+				fmt.Printf("Error loading translation file %v. %v.\n", filepath, unmarshalErr.Error())
 				return err
 			}
 
@@ -75,19 +170,30 @@ func PopulateTranslations() error {
 		return err
 	}
 
+	if langs := GetAvailableLanguages(); len(langs) == 0 {
+		return errors.New("There are no translations available")
+	}
+
 	return nil
 }
 
-func GetTranslations(langs []string) (string, *Translations) {
-
+// GetAvailableLanguages - gets a list of the loaded translations
+func GetAvailableLanguages() []language.Tag {
 	keys := make([]language.Tag, 0, len(availableTranslations))
 	for k := range availableTranslations {
 		keys = append(keys, k)
 	}
+	return keys
+}
 
-	var matcher = language.NewMatcher(keys)
+// GetTranslations - Gets a translations set based on a list of languages by preference
+func GetTranslations(langs []string) (string, *Translations) {
 
-	key, _ := language.MatchStrings(matcher, langs...)
+	availableLangs := GetAvailableLanguages()
+
+	var matcher = language.NewMatcher(availableLangs)
+
+	key, _ := language.MatchStrings(matcher, "en-GB")
 
 	baseLang, _ := key.Base()
 	langRegion, regionConfidence := key.Region()
@@ -97,8 +203,6 @@ func GetTranslations(langs []string) (string, *Translations) {
 	if regionConfidence > language.High {
 		htmlLang += "-" + langRegion.String()
 	}
-
-	fmt.Printf("base %v, region %v, conf %v", baseLang, langRegion, regionConfidence)
 
 	return htmlLang, availableTranslations[key]
 }

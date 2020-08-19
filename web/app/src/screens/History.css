@@ -16,7 +16,7 @@
   transform: translate(-50%, -50%);
   color: var(--text-primary);
   white-space: nowrap;
-  content: "You haven't recorded any shots yet.";
+  content: attr(data-empty-message);
 }
 
 .History afix-list-item::part(content) {

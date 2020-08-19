@@ -1,6 +1,6 @@
 import { assert, isRecord } from "../util/assert"
 
-const API_URI = "http://192.168.20.24/api"
+const API_URI = location.origin + "/api"
 
 export interface Temperature {
   temp: number
@@ -12,14 +12,12 @@ export interface Config {
   boilerPin: string
   temperatureSampleRate: string
   temperatureUnit: "C" | "F"
-  temperatureTarget: 110
+  temperatureTarget: number
   pid: [number, number, number]
   pidFrequency: string
   pidAutostart: boolean
-  themeColor: {
-    hex: string
-    hue: string
-  }
+  verbose: boolean
+  themeColorHue: string
 }
 
 export interface TemperatureEvent extends MessageEvent {
@@ -65,28 +63,6 @@ export const getTemp = async (apiUrl = API_URI): Promise<Temperature> => {
 
   throw new RequestNotOkError(
     `Recieved a ${res.status} when getting the current temperature`,
-  )
-}
-
-export const getConfig = async (apiUrl = API_URI): Promise<Config> => {
-  const res = await fetch(`${apiUrl}/config`)
-
-  if (res.ok) {
-    const config = await res.json()
-
-    if (isConfig(config)) {
-      return config
-    } else {
-      throw new ParseResultError(
-        `The response received when getting the current temperature was not what was expected. Got: ${JSON.stringify(
-          config,
-        )}`,
-      )
-    }
-  }
-
-  throw new RequestNotOkError(
-    `Recieved a ${res.status} when getting the config`,
   )
 }
 

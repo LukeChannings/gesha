@@ -8,11 +8,6 @@ temperatureTarget: 98
 groupHeadBoilerTempDeltaRatio: 0.91188269
 pidFrequency: "1s"
 pidAutostart: true
-pid:
-  - 2
-  - 60.0
-  - 15.0
-themeColor:
-  hex: "#954B95"
-  hue: 300
+pid: [2, 60, 15]
+themeColorHue: "300"
 verbose: false

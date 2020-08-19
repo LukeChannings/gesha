@@ -69,6 +69,6 @@
   "dependencies": {
     "afix-dialog": "^1.1.1",
     "afix-list-item": "^1.0.5",
-    "afix-range-slider": "^1.3.3"
+    "afix-range-slider": "^1.3.4"
   }
 }

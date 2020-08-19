@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ .Lang }}" style="--gesha-base-color: {{.C.ThemeColor.Hue}}">
+<html lang="{{ .Lang }}" {{ if .C.ThemeColorHue }}style="--gesha-base-color: {{.C.ThemeColorHue}}"{{end}}>
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content="{{.T.Meta.Description}}">
@@ -20,9 +20,9 @@
     <link rel="icon" sizes="256x256" href="icons/gesha@1x.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="{{.C.ThemeColor.Hex}}" />
+    <meta name="theme-color" content="hsl({{.C.ThemeColorHue}}, 37%, 30%)" />
     <link rel="stylesheet" href="/dist/main.css" />
-    <script type="module" src="/dist/main.js"></script>
+    <script type="module" src="/dist/main.js" nonce="{{ .ScriptNonce }}"></script>
     <title>Gesha</title>
   </head>
 
@@ -30,34 +30,41 @@
     <main class="Gesha" data-mount="Nav">
       <header class="Header">
         <h1 class="Header_Heading">Gesha</h1>
+        <a class="Header_SkipToNav" href="#Nav">Skip to navigation</a>
       </header>
-      <article class="Brew Screen" data-mount="BrewScreen" id="{{.T.Brew.NavLabel}}">
+      <article id="{{.T.Brew.NavLabel}}" class="Brew Screen" data-mount="BrewScreen">
         <form class="ShotVariables_Form" name="shot-variables">
           <div class="ShotVariables">
             <legend class="VisuallyHidden">{{.T.Brew.Legend}}</legend>
             <div class="ShotVariables_Variable temp {{ if .Heating }}is-heating{{end}}" data-shot-variable="temperature">
               <label class="ShotVariables_Variable_Label" for="temp"
-                ><attr title="Temperature">Temp</attr>
+                ><attr title="Temperature">{{.T.Brew.Temp.Label}}</attr>
+                {{ if eq .C.TemperatureUnit "C" }}
                 <attr
                   class="ShotVariables_Variable_Label_Unit"
-                  title="Degrees Celcius"
-                  >(&deg;C)</attr
-                ></label
-              >
+                  title="{{ .T.Global.Units.Celcius.Title }}"
+                  >({{ .T.Global.Units.Celcius.Short }})</attr>
+                {{ else }}
+                <attr
+                  class="ShotVariables_Variable_Label_Unit"
+                  title="{{ .T.Global.Units.Fahrenheit.Title }}"
+                  >({{ .T.Global.Units.Fahrenheit.Short }})</attr>
+                {{ end }}
+              </label>
               <input
                 class="ShotVariables_Variable_Input"
                 type="number"
                 pattern="\d*"
-                min="80"
-                max="120"
+                min="{{ if eq .C.TemperatureUnit "C" }}80{{else}}176{{end}}"
+                max="{{ if eq .C.TemperatureUnit "C" }}120{{else}}248{{end}}"
                 step="1"
                 id="temp"
                 name="temp"
                 value="{{.TargetTemp}}"
               />
               <afix-range-slider
-                min="80"
-                max="120"
+                min="{{ if eq .C.TemperatureUnit "C" }}80{{else}}176{{end}}"
+                max="{{ if eq .C.TemperatureUnit "C" }}120{{else}}248{{end}}"
                 value="{{.TargetTemp}}"
                 shadow-value="{{.CurrentTemp}}"
                 tabindex="-1"
@@ -65,12 +72,10 @@
               ></afix-range-slider>
             </div>
             <div class="ShotVariables_Variable dose" data-shot-variable="dose">
-              <label class="ShotVariables_Variable_Label" for="dose"
-                >Dose
-                <attr class="ShotVariables_Variable_Label_Unit" title="Grams"
-                  >(g)</attr
-                ></label
-              >
+              <label class="ShotVariables_Variable_Label" for="dose">
+                {{.T.Brew.Dose.Label}}
+                <attr class="ShotVariables_Variable_Label_Unit" title="Grams">({{.T.Global.Units.Grams.Short}})</attr>
+              </label>
               <input
                 class="ShotVariables_Variable_Input"
                 type="number"
@@ -92,9 +97,9 @@
               ></afix-range-slider>
             </div>
             <div class="ShotVariables_Variable grind" data-shot-variable="grind">
-              <label class="ShotVariables_Variable_Label" for="grind"
-                >Grind</label
-              >
+              <label class="ShotVariables_Variable_Label" for="grind">
+                {{.T.Brew.Grind.Label}}
+              </label>
               <input
                 class="ShotVariables_Variable_Input"
                 type="number"
@@ -115,99 +120,110 @@
               ></afix-range-slider>
             </div>
           </div>
-          <button class="Button">Time Shot</button>
+          <button class="Button">{{.T.Brew.ActionButton.Label}}</button>
         </form>
         <afix-dialog tabindex="-1">
-          <div slot="content" class="Screen ShotTimer" data-mount="ShotTimerModalScreen">
-            <div class="readouts">
-              <div class="readout time">
-                <p class="value">00.00</p>
-                <p class="unit">Seconds</p>
+          <div slot="content" class="Timer Screen" data-mount="TimerScreen">
+            <div class="TimerReadouts">
+              <div class="TimerReadout time">
+                <p class="TimerReadoutValue" tabindex="-1">00.00</p>
+                <p class="TimerReadoutUnit">{{ .T.Global.Units.Seconds.Label }}</p>
               </div>
             </div>
             <div class="VStack ButtonContainer">
-              <button class="Button done">Done</button>
-              <button class="SecondaryButton cancel">Cancel</button>
+              <button class="Button done">{{ .T.Timer.DoneButton.Label }}</button>
+              <button class="SecondaryButton cancel">{{ .T.Timer.CancelButton.Label }}</button>
             </div>
           </div>
         </afix-dialog>
       </article>
-      <article class="History Screen" data-mount="HistoryScreen" id="{{.T.History.NavLabel}}">
-        <div class="content"></div>
+      <article id="{{.T.History.NavLabel}}" class="History Screen" data-mount="HistoryScreen" data-tr-dose="{{ .T.Brew.Dose.Label }}" data-tr-grind="{{ .T.Brew.Grind.Label }}" data-tr-temp="{{ .T.Brew.Temp.Label }}" data-tr-deg="{{ if eq .C.TemperatureUnit "C" }}{{ .T.Global.Units.Celcius.Short }}{{else}}{{ .T.Global.Units.Fahrenheit.Short }}{{end}}" data-tr-delete="{{ .T.History.ItemDeleteButton.Label }}">
+        <div class="content" data-empty-message="{{ .T.History.EmptyMessage }}"></div>
       </article>
-      <article class="Settings Screen" data-mount="SettingsScreen" id="{{.T.Settings.NavLabel}}">
-        <form class="SettingsForm">
+      <article id="{{.T.Settings.NavLabel}}" class="Settings Screen" data-mount="SettingsScreen">
+        <form class="SettingsForm" name="settings" method="POST" action="/api/config">
           <div>
-            <label for="port">Server Port</label>
-            <input type="number" value="80" name="port" id="port" />
+            <label for="port">{{ .T.Settings.ServerPort.Label }}</label>
+            <input type="text" value="{{ .C.Port }}" name="port" id="port" />
           </div>
           <div>
             <label for="boilerPin" aria-describedby="boilerPinDescription">
-              Boiler Pin
-              <span hidden id="boilerPinDescription">The name of the pin that controls the boiler on/off relay</span>
+              {{ .T.Settings.BoilerPin.Label }}
+              <span hidden id="boilerPinDescription">{{ .T.Settings.BoilerPin.Description }}</span>
             </label>
-            <input type="text" value="GPIO7" name="boilerPin" id="boilerPin" value="GPIO7" />
+            <input type="text" value="{{ .C.BoilerPin }}" name="boilerPin" id="boilerPin" value="GPIO7" />
           </div>
           <div>
             <label for="spiPort">
-              SPI Port
-              <span hidden id="spiPortDescription">The name of the SPI port the temperature sensor is attached to</span>
+              {{ .T.Settings.SpiPort.Label }}
+              <span hidden id="spiPortDescription">{{ .T.Settings.SpiPort.Description }}</span>
             </label>
-            <input type="text" value="" name="spiPort" id="spiPort" />
+            <input type="text" value="{{ .C.SpiPort }}" name="spiPort" id="spiPort" />
           </div>
           <div>
-            <label for="temperatureSampleRate">
-              Temperature Sample Rate
-              <span hidden id="temperatureSampleRateDescription">How often the UI reads the current temperature</span>
+            <label for="temperatureSampleRate" aria-describedby="temperatureSampleRateDescription">
+              {{ .T.Settings.TemperatureSampleRate.Label }}
+              <span hidden id="temperatureSampleRateDescription">{{ .T.Settings.TemperatureSampleRate.Description }}</span>
             </label>
-            <input type="text" value="100ms" name="temperatureSampleRate" id="temperatureSampleRate" />
+            <input type="text" value="{{ .C.TemperatureSampleRate }}" name="temperatureSampleRate" id="temperatureSampleRate" />
           </div>
           <fieldset>
-            <legend>Temperature Unit</legend>
+            <legend>{{ .T.Settings.TemperatureUnit.Label }}</legend>
             <div>
-              <label><input type="radio" value="C" name="temperatureUnit" checked /> &deg;C</label>
-              <label><input type="radio" value="F" name="temperatureUnit" /> &deg;F</label>
+              <label><input type="radio" value="C" name="temperatureUnit" {{ if eq .C.TemperatureUnit "C" }}checked{{end}} /> <attr title="{{ .T.Global.Units.Celcius.Title }}">{{ .T.Global.Units.Celcius.Short }}</attr></label>
+              <label><input type="radio" value="F" name="temperatureUnit" {{ if eq .C.TemperatureUnit "F" }}checked{{end}} /> <attr title="{{ .T.Global.Units.Fahrenheit.Title }}">{{ .T.Global.Units.Fahrenheit.Short }}</attr></label>
             </div>
           </fieldset>
           <div>
-            <label for="temperatureTarget">Temperature Target</label>
-            <input type="number" value="98" name="temperatureTarget" id="temperatureTarget" />
+            <label for="temperatureTarget">{{ .T.Settings.TemperatureTarget.Label }}</label>
+            <input type="number" value="{{ .C.TemperatureTarget }}" name="temperatureTarget" id="temperatureTarget" />
           </div>
           <fieldset>
-            <legend id="pidLabel"><attr title="proportional–integral–derivative">PID</attr> variables</legend>
+            <legend id="pidLabel"><attr title="{{ .T.Settings.Pid.Attr }}">{{ .T.Settings.Pid.Label }}</attr></legend>
             <div>
-              <input type="text" value="2.9" name="pid" aria-label="P value" />
-              <input type="text" value="0.3" name="pid" aria-label="I value" />
-              <input type="text" value="40.0" name="pid" aria-label="D value" />
+              <input type="number" value="{{ index .C.PID 0 }}" name="pid.p" aria-label="{{ .T.Settings.Pid.PLabel }}" />
+              <input type="number" value="{{ index .C.PID 1 }}" name="pid.i" aria-label="{{ .T.Settings.Pid.ILabel }}" />
+              <input type="number" value="{{ index .C.PID 2 }}" name="pid.d" aria-label="{{ .T.Settings.Pid.DLabel }}" />
             </div>
           </fieldset>
           <div>
-            <label for="themeColor">Theme Colour</label>
-            <input type="color" value="#871287" name="themeColor" id="themeColor" />
+            <label for="themeColor">{{ .T.Settings.ThemeColor.Label }}</label>
+            <afix-range-slider class="ThemeColorSlider" position-indicator="line" min="0" max="360" value="{{ .C.ThemeColorHue }}" step="0.1" name="themeColorHue" id="themeColor"></afix-range-slider>
           </div>
           <div>
-            <label for="pidFrequency">PID Frequency</label>
-            <input type="text" value="1s" name="pidFrequency" id="pidFrequency" />
+            <label for="pidFrequency">{{ .T.Settings.PidFrequency.Label }}</label>
+            <input type="text" value="{{ .C.PidFrequency }}" name="pidFrequency" id="pidFrequency" />
           </div>
           <div>
-            <label for="pidAutostart">PID Autostart</label>
-            <input type="checkbox" checked name="pidAutostart" id="pidAutostart" />
+            <label for="pidAutostart" aria-describedby="pidAutostartDescription">
+              {{ .T.Settings.PidAutostart.Label }}
+              <span hidden id="pidAutostartDescription">{{ .T.Settings.PidAutostart.Description }}</span>
+            </label>
+            <input type="checkbox" {{ if .C.PidAutostart }}checked{{end}} name="pidAutostart" id="pidAutostart" />
           </div>
           <div>
-            <button class="Button">Save</button>
+            <label for="verbose" aria-describedby="verboseDescription">
+              {{ .T.Settings.Verbose.Label }}
+              <span hidden id="verboseDescription">{{ .T.Settings.Verbose.Description }}</span>
+            </label>
+            <input type="checkbox" {{ if .C.Verbose }}checked{{end}} name="verbose" id="verbose" />
+          </div>
+          <div>
+            <button class="Button">{{ .T.Settings.SaveButton.Label }}</button>
           </div>
         </form>
       </article>
-      <nav class="Nav">
+      <nav class="Nav" id="Nav">
         <ul class="Nav_Item_List">
           <li class="Nav_Item Brew">
-            <a class="Nav_Link" tabindex="0" href="#{{.T.Brew.NavLabel}}">
+            <a class="Nav_Link" href="#{{.T.Brew.NavLabel}}" tabindex="0">
               <div class="Nav_Link_Icon">
                 <svg
                   width="33"
                   height="24"
                   viewBox="0 0 30 21"
                   xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
                 >
                   <path
                     d="M9.019 16.449h8.972a4.487 4.487 0 004.486-4.486h1.495c3.299 0 5.981-2.683 5.981-5.982C29.953 2.682 27.271 0 23.972 0H5.654c-.621 0-1.121.5-1.121 1.121v10.842a4.487 4.487 0 004.486 4.486zM23.972 2.99c1.65 0 2.99 1.34 2.99 2.99 0 1.65-1.34 2.991-2.99 2.991h-1.495V2.991h1.495zm2.229 17.944H2.304c-2.225 0-2.85-2.991-1.683-2.991H27.88c1.168 0 .55 2.99-1.678 2.99z"
@@ -220,13 +236,14 @@
             </a>
           </li>
           <li class="Nav_Item History">
-            <a class="Nav_Link" tabindex="0" href="#{{.T.History.NavLabel}}">
+            <a class="Nav_Link" href="#{{.T.History.NavLabel}}" tabindex="0">
               <div class="Nav_Link_Icon">
                 <svg
                   width="24"
                   height="24"
                   viewBox="0 0 27 27"
                   xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
                 >
                   <path
                     d="M27 13.474c.014 7.439-6.052 13.52-13.49 13.526a13.444 13.444 0 01-8.482-2.99 1.306 1.306 0 01-.1-1.937l.613-.614a1.309 1.309 0 011.736-.108 9.976 9.976 0 006.223 2.165A10.01 10.01 0 0023.516 13.5 10.01 10.01 0 0013.5 3.484a9.981 9.981 0 00-6.863 2.718L9.4 8.965c.549.548.16 1.487-.616 1.487H.871A.87.87 0 010 9.58V1.667C0 .891.938.503 1.487 1.051L4.174 3.74A13.454 13.454 0 0113.5 0C20.947 0 26.986 6.03 27 13.474zm-9.848 4.29l.535-.688c.443-.57.34-1.39-.23-1.834l-2.215-1.723v-5.68c0-.722-.585-1.307-1.307-1.307h-.87c-.722 0-1.307.585-1.307 1.307v7.384l3.56 2.77c.57.442 1.391.34 1.834-.23z"
@@ -239,13 +256,14 @@
             </a>
           </li>
           <li class="Nav_Item Settings">
-            <a class="Nav_Link" tabindex="0" href="#{{.T.Settings.NavLabel}}">
+            <a class="Nav_Link" href="#{{.T.Settings.NavLabel}}" tabindex="0">
               <div class="Nav_Link_Icon">
                 <svg
                   width="26"
                   height="27"
                   viewBox="0 0 26 27"
                   xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
                 >
                   <path
                     d="M25.288 16.744l-2.298-1.339a10.579 10.579 0 000-3.821l2.298-1.34a.66.66 0 00.297-.761 13.587 13.587 0 00-2.951-5.15.645.645 0 00-.798-.125l-2.299 1.339a10.16 10.16 0 00-3.28-1.91V.963a.65.65 0 00-.507-.637 13.443 13.443 0 00-5.89 0 .65.65 0 00-.508.637v2.678a10.48 10.48 0 00-3.28 1.91L3.78 4.213a.637.637 0 00-.798.126A13.505 13.505 0 00.03 9.489a.654.654 0 00.297.761l2.298 1.34a10.579 10.579 0 000 3.82L.327 16.75a.66.66 0 00-.297.762 13.587 13.587 0 002.95 5.15c.206.223.54.277.8.125l2.298-1.34a10.16 10.16 0 003.28 1.911v2.678c0 .305.21.572.507.637 1.98.447 4.008.425 5.89 0a.65.65 0 00.508-.637v-2.678a10.48 10.48 0 003.28-1.91l2.298 1.339a.637.637 0 00.798-.126 13.505 13.505 0 002.951-5.15.675.675 0 00-.302-.767zM12.808 18c-2.48 0-4.5-2.02-4.5-4.5s2.02-4.5 4.5-4.5 4.5 2.02 4.5 4.5-2.02 4.5-4.5 4.5z"

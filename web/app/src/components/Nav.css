@@ -36,7 +36,8 @@
 }
 
 @media (hover: hover) {
-  .Nav_Link:hover {
+  .Nav_Link:hover,
+  .Nav_Link:focus {
     background: var(--navigation-link-highlight);
   }
 }
