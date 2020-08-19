@@ -8,7 +8,7 @@ Gesha is an app for your modded espresso machine. It integrates with a [MAX31855
 
 ## Features
 
-- [x] Fat binary with zero dependencies
+- [x] Zero dependencies
 - [x] Builds for ARM64, ARM, x86, and x86_64
 - [x] Support for Internationalization
 - [x] Fully documented REST API
