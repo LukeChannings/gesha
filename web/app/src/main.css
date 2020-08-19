@@ -27,7 +27,6 @@
   --text-primary: hsl(var(--base-color), 4%, 20%);
   --text-secondary: hsl(var(--base-color), 0%, 100%);
   --text-tertiary: hsl(var(--base-color), 10%, 25%);
-
   --button-color: var(--text-secondary);
   --button-bg-color: hsl(var(--base-color), 33%, 44%);
   --button-bg-image: linear-gradient(
@@ -38,6 +37,8 @@
   --button-bg-color-hover: hsl(var(--base-color), 33%, 50%);
   --button-border: hsl(var(--base-color), 20%, 40%);
   --button-border-hover: hsl(var(--base-color), 20%, 30%);
+  --history-item-bg: hsl(var(--base-color), 10%, 70%);
+  --history-item-controls-bg: hsl(var(--base-color), 10%, 50%);
 
   /* Gradients */
   --g-light-to-dark: linear-gradient(
@@ -94,6 +95,7 @@
     --button-bg-color: hsl(var(--base-color), 37%, 40%);
     --button-border: none;
     --button-border-hover: none;
+    --history-item-bg: hsl(var(--base-color), 10%, 12%);
   }
 }
 
