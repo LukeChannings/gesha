@@ -46,7 +46,7 @@ export class HistoryScreen extends MountableComponent {
   }
 
   private renderHistory = (): void => {
-    const { trDose, trGrind, trTemp, trDeg, trDelete } = this.node.dataset;
+    const { trDose, trGrind, trTemp, trDeg, trDelete } = this.node.dataset
     this.contentEl.innerHTML = `
     ${this.shots
       .map(
@@ -64,7 +64,9 @@ export class HistoryScreen extends MountableComponent {
             )}<span>Seconds</span></p>
             <p slot="content">${shot.dose}g<span>${trDose}</span></p>
             <p slot="content">${shot.grind}<span>${trGrind}</span></p>
-            <p slot="content">${shot.desiredTemp}${trDeg}<span>${trTemp}</span></p>
+            <p slot="content">${
+              shot.desiredTemp
+            }${trDeg}<span>${trTemp}</span></p>
             <button class="DeleteButton" slot="controls">
               <span>${trDelete}</span>
               <svg aria-hidden="true" class="icon" viewBox="0 0 448 512">

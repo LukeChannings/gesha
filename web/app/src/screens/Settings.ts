@@ -30,7 +30,7 @@ export class SettingsScreen extends MountableComponent {
   async handleSubmit(e: Event): Promise<void> {
     e.preventDefault()
 
-    const formData = Object.fromEntries(new FormData(this.formEl));
+    const formData = Object.fromEntries(new FormData(this.formEl))
 
     const config = {
       ...formData,
@@ -41,8 +41,11 @@ export class SettingsScreen extends MountableComponent {
       pidAutostart: formData.pidAutostart === "on",
       verbose: formData.verbose === "on",
       themeColorHue:
-        String((this.formEl.querySelector("[name=themeColorHue]") as HTMLInputElement)
-          ?.value) ?? "300",
+        String(
+          (this.formEl.querySelector(
+            "[name=themeColorHue]",
+          ) as HTMLInputElement)?.value,
+        ) ?? "300",
     }
 
     assert(isConfig(config))
