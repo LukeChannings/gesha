@@ -73,13 +73,13 @@ jobs:
           asset_path: ./build/linux-amd64/gesha
           asset_name: gesha-linux-amd64
           asset_content_type: application/octet-stream
-      - name: Upload gesha-linux-386
-        id: upload-release-asset-386
+      - name: Upload gesha-linux-i386
+        id: upload-release-asset-i386
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/linux-386/gesha
-          asset_name: gesha-linux-386
+          asset_path: ./build/linux-i386/gesha
+          asset_name: gesha-linux-i386
           asset_content_type: application/octet-stream
