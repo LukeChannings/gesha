@@ -8,12 +8,11 @@ Gesha is an app for your modded espresso machine. It integrates with a [MAX31855
 
 ## Features
 
-- [x] Zero dependencies
-- [x] Fast and Accessible Web App
-- [x] Fully documented REST API
-- [x] Support for Internationalization
-- [x] Builds for ARM64, ARM, x86, and x86_64
-- [x] Real-time streaming of temperature and PID output using lightweight [Event Streams](https://html.spec.whatwg.org/multipage/iana.html#text/event-stream)
+- [x] Finely control brew temperature with PID control
+- [ ] Easily override the PID by sliding all the way to the bottom (off) or the top (on)
+- [x] Keep a record of your variables to help you dial in
+- [x] Nothing to install or configure up with a zero dependency binary
+- [x] Configurable with [YAML](https://github.com/LukeChannings/gesha/blob/main/configs/rancilio-silvia.yaml), or through the app's settings screen.
 
 ## Installation
 
