@@ -13,6 +13,7 @@ Gesha is an app for your modded espresso machine. It integrates with a [MAX31855
 - [x] Keep a history of past shots to help you dial in
 - [x] Nothing to install or configure with a zero dependency binary
 - [x] Configurable with [a simple YAML file](https://github.com/LukeChannings/gesha/blob/main/configs/rancilio-silvia.yaml), or through the app's settings screen.
+- [x] Written Go and TypeScript for a fast and finely tuned experience
 
 ## Installation
 
