@@ -176,7 +176,7 @@
           </fieldset>
           <div>
             <label for="temperatureTarget">{{ .T.Settings.TemperatureTarget.Label }}</label>
-            <input type="number" value="{{ .C.TemperatureTarget }}" name="temperatureTarget" id="temperatureTarget" />
+            <input type="number" value="{{.TargetTemp}}" name="temperatureTarget" id="temperatureTarget" />
           </div>
           <fieldset>
             <legend id="pidLabel"><attr title="{{ .T.Settings.Pid.Attr }}">{{ .T.Settings.Pid.Label }}</attr></legend>

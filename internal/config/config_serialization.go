@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -65,7 +67,11 @@ func (cw configWire) toConfig() (Config, error) {
 	}
 
 	var temperatureTarget physic.Temperature
+	if !strings.HasSuffix(cw.TemperatureTarget, "C") || !strings.HasSuffix(cw.TemperatureTarget, "F") {
+		cw.TemperatureTarget += cw.TemperatureUnit
+	}
 	err = temperatureTarget.Set(cw.TemperatureTarget)
+	fmt.Printf("Marshalling ... %s - %v\n", cw.TemperatureTarget, temperatureTarget)
 	if err != nil {
 		temperatureTarget = 96 * physic.Celsius
 	}

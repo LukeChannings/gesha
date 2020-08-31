@@ -47,13 +47,25 @@ func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 
 		chosenLang, tr := i18n.GetTranslations(userLangs)
 
-		t, err := t.Get(c.TemperatureUnit)
+		t, err := t.Get()
 
 		if err != nil {
 			http.Error(w, "Could not read the temperature", http.StatusInternalServerError)
 		}
 
 		scriptNonce := uniuri.New()
+
+		currentTemp := t.Temp.Celsius()
+
+		if c.TemperatureUnit == "F" {
+			currentTemp = t.Temp.Fahrenheit()
+		}
+
+		targetTemp := c.TemperatureTarget.Celsius()
+
+		if c.TemperatureUnit == "F" {
+			targetTemp = c.TemperatureTarget.Fahrenheit()
+		}
 
 		ctx := struct {
 			ScriptNonce string
@@ -70,8 +82,8 @@ func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 			Lang:        chosenLang,
 			T:           tr,
 			C:           c,
-			CurrentTemp: fmt.Sprintf("%.1f", t.Temp),
-			TargetTemp:  c.TemperatureTarget,
+			CurrentTemp: fmt.Sprintf("%.1f", currentTemp),
+			TargetTemp:  targetTemp,
 			IsTempF:     c.TemperatureUnit == "F",
 			Running:     p.Running,
 			Heating:     p.Heating,

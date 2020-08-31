@@ -66,7 +66,7 @@ export class BrewScreen extends MountableComponent {
     es.addEventListener("message", e => {
       const { detail } = e as TemperatureEvent
 
-      rangeEl.setAttribute("shadow-value", String(Math.round(detail.temp)))
+      rangeEl.setAttribute("shadow-value", String(Math.round(detail.tempC)))
     })
   }
 

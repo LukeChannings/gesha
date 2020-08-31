@@ -1,4 +1,5 @@
 import { MountableComponent } from "../util/mount"
+import "./Nav.css"
 
 export class Nav extends MountableComponent {
   constructor(node: HTMLElement) {

@@ -4,6 +4,8 @@ import (
 	"log"
 	"time"
 
+	"periph.io/x/periph/conn/physic"
+
 	"github.com/felixge/pidctrl"
 	"github.com/lukechannings/gesha/internal/config"
 	"github.com/lukechannings/gesha/internal/temp"
@@ -42,14 +44,6 @@ func New(c *config.Config, t *temp.Handle) Handle {
 	return h
 }
 
-func convTempC(value float64, unit string) float64 {
-	if unit == "C" {
-		return value
-	}
-
-	return value - 32*5/9
-}
-
 // Start - starts a new PID
 func (h *Handle) Start(c *config.Config) {
 	if !h.Running {
@@ -61,24 +55,24 @@ func (h *Handle) Start(c *config.Config) {
 
 		go func() {
 			pid := pidctrl.NewPIDController(c.PID[0], c.PID[1], c.PID[2])
-			pid.Set(convTempC(c.TemperatureTarget, c.TemperatureUnit))
+			pid.Set(c.TemperatureTarget.Celsius())
 			pid.SetOutputLimits(-1.0, 1.0)
 
 			h.pid = pid
 
 			h.Running = true
 
-			var b *temp.Temp
+			var b *temp.CurrentTemp
 
-			a, _ := h.t.Get(h.c.TemperatureUnit)
+			a, _ := h.t.Get()
 			b = a
 
 			for {
-				temp, _ := h.t.Get(h.c.TemperatureUnit)
+				temp, _ := h.t.Get()
 				a = b
 				b = temp
 
-				pidOutput := pid.UpdateDuration(b.Temp, time.Time(b.Time).Sub(time.Time(a.Time)))
+				pidOutput := pid.UpdateDuration(b.Temp.Celsius(), time.Time(b.Time).Sub(time.Time(a.Time)))
 
 				h.pidOutput = pidOutput
 
@@ -131,8 +125,8 @@ func (h *Handle) OverrideBoilerOff() {
 }
 
 // SetTarget - sets a new target temperature
-func (h *Handle) SetTarget(targetTemp float64, unit string) {
+func (h *Handle) SetTarget(targetTemp physic.Temperature) {
 	if h.Running {
-		h.pid.Set(convTempC(targetTemp, unit))
+		h.pid.Set(targetTemp.Celsius())
 	}
 }

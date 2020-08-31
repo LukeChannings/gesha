@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	"periph.io/x/periph/conn/physic"
+
 	"github.com/lukechannings/gesha/internal/config"
 	"github.com/lukechannings/gesha/internal/pid"
 	"github.com/lukechannings/gesha/internal/temp"
@@ -144,7 +146,7 @@ func (s *Service) GetStreamTempCurrent(w http.ResponseWriter, r *http.Request) {
 	defer ticker.Stop()
 
 	for {
-		t, _ := s.t.Get(s.c.TemperatureUnit)
+		t, _ := s.t.Get()
 		tJSON, err := json.Marshal(t)
 		if err != nil {
 			http.Error(w, "Could not marshal temperature data to JSON", http.StatusInternalServerError)
@@ -164,17 +166,22 @@ func (s *Service) GetStreamTempCurrent(w http.ResponseWriter, r *http.Request) {
 
 // GetTemp - Your GET endpoint
 func (s *Service) GetTemp(unit string) (interface{}, error) {
-	return s.t.Get(s.c.TemperatureUnit)
+	return s.t.Get()
 }
 
 // GetTempTarget - Your GET endpoint
 func (s *Service) GetTempTarget() (interface{}, error) {
-	return TemperatureTarget{Target: s.c.TemperatureTarget}, nil
+	tempTarget := s.c.TemperatureTarget.Celsius()
+	if s.c.TemperatureUnit == "F" {
+		tempTarget = s.c.TemperatureTarget.Fahrenheit()
+	}
+	return TemperatureTarget{Target: tempTarget}, nil
 }
 
 // PostConfig -
 func (s *Service) PostConfig(config config.Config) (interface{}, error) {
 	err := s.c.Update(&config, s.configPath)
+	s.p.SetTarget(config.TemperatureTarget)
 
 	if err != nil {
 		return OperationResult{Ok: false, ErrorMessage: err.Error()}, nil
@@ -195,10 +202,17 @@ func (s *Service) PostPidRunning(pidEnabled PIDEnabled) (interface{}, error) {
 
 // PostTempTarget -
 func (s *Service) PostTempTarget(temperatureTarget TemperatureTarget) (interface{}, error) {
-	s.c.TemperatureTarget = temperatureTarget.Target
+	var temperature physic.Temperature
+
+	err := temperature.Set(fmt.Sprintf("%f%s", temperatureTarget.Target, s.c.TemperatureUnit))
+	if err != nil {
+		return nil, err
+	}
+
+	s.c.TemperatureTarget = temperature
 
 	if s.p.Running {
-		s.p.SetTarget(temperatureTarget.Target, s.c.TemperatureUnit)
+		s.p.SetTarget(temperature)
 	}
 
 	return OperationResult{Ok: true}, nil

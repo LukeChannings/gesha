@@ -102,7 +102,7 @@ func Version(tag string, gitHash string) (string, error) {
 }
 
 func start(configPath string, verbose bool) {
-	c := config.New(configPath)
+	c := config.Load(configPath)
 
 	trErr := i18n.PopulateTranslations()
 
@@ -154,11 +154,11 @@ func install() {
 
 		fmt.Println("Installing...")
 
-		installFile("/init/gesha.service", servicePath, true, true)
-		installFile("/configs/rancilio-silvia.yaml", configPath, false, true)
+		installFile("/init/gesha.service", "/etc/systemd/system/gesha.service", true, true)
+		installFile("/configs/rancilio-silvia.yaml", "/etc/gesha/config.yaml", false, true)
 
 		geshaPath, _ := os.Executable()
-		installFile(geshaPath, exePath, true, false)
+		installFile(geshaPath, "/usr/local/bin/gesha", true, false)
 
 		fmt.Println("Installation complete.")
 		fmt.Println("To start on boot, run: sudo systemctl enable gesha")

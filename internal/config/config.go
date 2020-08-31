@@ -42,3 +42,18 @@ func Load(path string) Config {
 
 	return c
 }
+
+// Update - updates the running configuration and writes the update to disk
+func (c *Config) Update(nc *Config, path string) error {
+	*c = *nc
+	confData, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(path, confData, 0x740)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

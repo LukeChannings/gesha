@@ -3,7 +3,8 @@ import { assert, isRecord } from "../util/assert"
 const API_URI = location.origin + "/api"
 
 export interface Temperature {
-  temp: number
+  tempC: number
+  tempF: number
   time: string
 }
 
@@ -85,7 +86,7 @@ export const postConfig = async (
 }
 
 export function isTemperature(data: unknown): data is Temperature {
-  return hasRequiredKeys(data, ["temp", "time"])
+  return hasRequiredKeys(data, ["tempC", "tempF", "time"])
 }
 
 export function isConfig(data: unknown): data is Config {
