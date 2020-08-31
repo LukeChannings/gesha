@@ -1,32 +1,31 @@
 package config
 
 import (
-	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
 
 	"gopkg.in/yaml.v3"
+	"periph.io/x/periph/conn/physic"
 )
 
-// Config defines the runtime configuration for the application
+// Config - defines the runtime configuration for the application
 type Config struct {
-	Port                  string        `json:"port" yaml:"port"`
-	BoilerPin             string        `json:"boilerPin" yaml:"boilerPin"`
-	SpiPort               string        `json:"spiPort" yaml:"spiPort"`
-	TemperatureSampleRate time.Duration `json:"temperatureSampleRate" yaml:"temperatureSampleRate"`
-	TemperatureUnit       string        `json:"temperatureUnit" yaml:"temperatureUnit"`
-	TemperatureTarget     float64       `json:"temperatureTarget" yaml:"temperatureTarget"`
-	PID                   []float64     `json:"pid,flow" yaml:"pid"`
-	PidFrequency          time.Duration `json:"pidFrequency" yaml:"pidFrequency"`
-	PidAutostart          bool          `json:"pidAutostart" yaml:"pidAutostart"`
-	Verbose               bool          `json:"verbose" yaml:"verbose"`
-	ThemeColorHue         string        `json:"themeColorHue" yaml:"themeColorHue"`
+	Port                  string
+	BoilerPin             string
+	SpiPort               string
+	TemperatureSampleRate time.Duration
+	TemperatureUnit       string
+	TemperatureTarget     physic.Temperature
+	PID                   []float64
+	PidFrequency          time.Duration
+	PidAutostart          bool
+	Verbose               bool
+	ThemeColorHue         string
 }
 
-// New creates a config with defaults and based on the environment file
-func New(path string) Config {
+// Load creates a config with defaults and based on the environment file
+func Load(path string) Config {
 	c := Config{}
 
 	confData, confErr := ioutil.ReadFile(path)
@@ -42,96 +41,4 @@ func New(path string) Config {
 	}
 
 	return c
-}
-
-// Update - updates the running config with a newConfig and writes it to disk
-func (c *Config) Update(newConfig *Config, path string) error {
-	c.Port = newConfig.Port
-	c.BoilerPin = newConfig.BoilerPin
-	c.SpiPort = newConfig.SpiPort
-	c.TemperatureSampleRate = newConfig.TemperatureSampleRate
-	c.TemperatureUnit = newConfig.TemperatureUnit
-	c.TemperatureTarget = newConfig.TemperatureTarget
-	c.PID = newConfig.PID
-	c.PidFrequency = newConfig.PidFrequency
-	c.PidAutostart = newConfig.PidAutostart
-	c.ThemeColorHue = newConfig.ThemeColorHue
-	c.Verbose = newConfig.Verbose
-
-	data, err := yaml.Marshal(c)
-
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(string(data))
-
-	ioutil.WriteFile(path, data, 0700)
-
-	return nil
-}
-
-type ConfigDto struct {
-	Port                  string    `json:"port" yaml:"port"`
-	BoilerPin             string    `json:"boilerPin" yaml:"boilerPin"`
-	SpiPort               string    `json:"spiPort" yaml:"spiPort"`
-	TemperatureUnit       string    `json:"temperatureUnit" yaml:"temperatureUnit"`
-	TemperatureTarget     float64   `json:"temperatureTarget" yaml:"temperatureTarget"`
-	PID                   []float64 `json:"pid,flow" yaml:"pid"`
-	PidAutostart          bool      `json:"pidAutostart" yaml:"pidAutostart"`
-	Verbose               bool      `json:"verbose" yaml:"verbose"`
-	ThemeColorHue         string    `json:"themeColorHue" yaml:"themeColorHue"`
-	TemperatureSampleRate string    `json:"temperatureSampleRate,omitempty"`
-	PidFrequency          string    `json:"pidFrequency,omitempty"`
-}
-
-func (c *Config) MarshalJSON() ([]byte, error) {
-	var config ConfigDto
-
-	config.Port = c.Port
-	config.BoilerPin = c.BoilerPin
-	config.SpiPort = c.SpiPort
-	config.TemperatureSampleRate = c.TemperatureSampleRate.String()
-	config.TemperatureUnit = c.TemperatureUnit
-	config.TemperatureTarget = c.TemperatureTarget
-	config.PID = c.PID
-	config.PidFrequency = c.PidFrequency.String()
-	config.PidAutostart = c.PidAutostart
-	config.Verbose = c.Verbose
-	config.ThemeColorHue = c.ThemeColorHue
-
-	return json.Marshal(config)
-}
-
-func (c *Config) UnmarshalJSON(b []byte) error {
-	var config ConfigDto
-
-	err := json.Unmarshal(b, &config)
-
-	if err != nil {
-		return err
-	}
-
-	temperatureSampleRate, err := time.ParseDuration(config.TemperatureSampleRate)
-	if err != nil {
-		return err
-	}
-	pidFrequency, err := time.ParseDuration(config.PidFrequency)
-	if err != nil {
-		return err
-	}
-
-	c.Port = config.Port
-	c.BoilerPin = config.BoilerPin
-	c.SpiPort = config.SpiPort
-	c.TemperatureSampleRate = temperatureSampleRate
-	c.TemperatureUnit = config.TemperatureUnit
-	c.TemperatureTarget = config.TemperatureTarget
-	c.PID = config.PID
-	c.PidFrequency = pidFrequency
-	c.PidAutostart = config.PidAutostart
-	c.Verbose = config.Verbose
-	c.ThemeColorHue = config.ThemeColorHue
-
-	return nil
 }
