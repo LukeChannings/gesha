@@ -56,7 +56,7 @@ func (h *Handle) Start(c *config.Config) {
 		go func() {
 			pid := pidctrl.NewPIDController(c.PID[0], c.PID[1], c.PID[2])
 			pid.Set(c.TemperatureTarget.Celsius())
-			pid.SetOutputLimits(-1.0, 1.0)
+			pid.SetOutputLimits(0.0, 1.0)
 
 			h.pid = pid
 
@@ -76,7 +76,7 @@ func (h *Handle) Start(c *config.Config) {
 
 				h.pidOutput = pidOutput
 
-				if pidOutput <= 0.5 {
+				if pidOutput != 1.0 {
 					h.heatPin.Out(gpio.Low)
 					h.Heating = false
 				} else {
@@ -85,7 +85,7 @@ func (h *Handle) Start(c *config.Config) {
 				}
 
 				if h.c.Verbose {
-					log.Printf("PID | Output %v | Temp %v | Heating %v\n", pidOutput, b.Temp, h.Heating)
+					log.Printf("PID | Output %v | Target %v | Temp %v | Heating %v\n", pidOutput, pid.Get(), b.Temp, h.Heating)
 				}
 
 				<-ticker.C

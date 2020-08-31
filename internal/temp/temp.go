@@ -12,8 +12,9 @@ import (
 
 // Handle keeps hold of the SPI device and port
 type Handle struct {
-	spiPort string
-	dev     *max31855.Dev
+	spiPort  string
+	dev      *max31855.Dev
+	tempGHBR float64
 }
 
 // CurrentTemp is a tuple of the current temperature and the time it was read
@@ -23,7 +24,7 @@ type CurrentTemp struct {
 }
 
 // New connects to the SPI device and returns a handle
-func New(spiPort string) (*Handle, error) {
+func New(spiPort string, tempGHBR float64) (*Handle, error) {
 
 	if _, err := host.Init(); err != nil {
 		return nil, err
@@ -41,7 +42,7 @@ func New(spiPort string) (*Handle, error) {
 		return nil, err
 	}
 
-	return &Handle{spiPort: spiPort, dev: dev}, nil
+	return &Handle{spiPort: spiPort, dev: dev, tempGHBR: tempGHBR}, nil
 }
 
 // Get - the current temperature
@@ -52,7 +53,7 @@ func (t *Handle) Get() (*CurrentTemp, error) {
 		return nil, err
 	}
 
-	return &CurrentTemp{time.Now(), te.Thermocouple}, nil
+	return &CurrentTemp{time.Now(), physic.Temperature(float64(te.Thermocouple) * t.tempGHBR)}, nil
 }
 
 // Stream - sample the temperature on a timer

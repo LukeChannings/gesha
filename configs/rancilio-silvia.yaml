@@ -5,9 +5,13 @@ spiPort: ""
 temperatureSampleRate: "100ms"
 temperatureUnit: "C"
 temperatureTarget: 98
-groupHeadBoilerTempDeltaRatio: 0.91188269
+# This means that when the boiler temperature is 100 C
+# the temperature reading will be 92 C. This is based on
+# data gathered by Seattle Coffee Gear showing the temp
+# difference betweeen boiler and group head.
+tempGHBR: 0.92
+pid: [0.6, 60, 15]
 pidFrequency: "1s"
 pidAutostart: true
-pid: [2, 60, 15]
+verbose: true
 themeColorHue: "300"
-verbose: false

@@ -110,7 +110,7 @@ func start(configPath string, verbose bool) {
 		log.Fatalf("An error occurred when loading translations: %v", trErr.Error())
 	}
 
-	t, err := temp.New(c.SpiPort)
+	t, err := temp.New(c.SpiPort, c.TemperatureGHBR)
 
 	if err != nil {
 		log.Fatalf("Couldn't create a temperature stream! %v", err.Error())
@@ -155,6 +155,7 @@ func install() {
 		fmt.Println("Installing...")
 
 		installFile("/init/gesha.service", "/etc/systemd/system/gesha.service", true, true)
+		exec.Command("systemctl", "daemon-reload")
 		installFile("/configs/rancilio-silvia.yaml", "/etc/gesha/config.yaml", false, true)
 
 		geshaPath, _ := os.Executable()

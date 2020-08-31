@@ -17,11 +17,13 @@ type Config struct {
 	TemperatureSampleRate time.Duration
 	TemperatureUnit       string
 	TemperatureTarget     physic.Temperature
-	PID                   []float64
-	PidFrequency          time.Duration
-	PidAutostart          bool
-	Verbose               bool
-	ThemeColorHue         string
+	// Group Head to Boiler temperature ratio
+	TemperatureGHBR float64
+	PID             []float64
+	PidFrequency    time.Duration
+	PidAutostart    bool
+	Verbose         bool
+	ThemeColorHue   string
 }
 
 // Load creates a config with defaults and based on the environment file

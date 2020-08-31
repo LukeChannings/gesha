@@ -17,6 +17,7 @@ type configWire struct {
 	TemperatureSampleRate string    `json:"temperatureSampleRate" yaml:"temperatureSampleRate"`
 	TemperatureUnit       string    `json:"temperatureUnit" yaml:"temperatureUnit"`
 	TemperatureTarget     string    `json:"temperatureTarget" yaml:"temperatureTarget"`
+	TemperatureGHBR       float64   `json:"tempGHBR" yaml:"tempGHBR"`
 	PID                   []float64 `json:"pid,flow" yaml:"pid"`
 	PidFrequency          string    `json:"pidFrequency" yaml:"pidFrequency"`
 	PidAutostart          bool      `json:"pidAutostart" yaml:"pidAutostart"`
@@ -81,6 +82,10 @@ func (cw configWire) toConfig() (Config, error) {
 		pidFrequency = 1 * time.Second
 	}
 
+	if cw.TemperatureGHBR == 0 {
+		cw.TemperatureGHBR = 1
+	}
+
 	return Config{
 		Port:                  cw.Port,
 		BoilerPin:             cw.BoilerPin,
@@ -88,6 +93,7 @@ func (cw configWire) toConfig() (Config, error) {
 		TemperatureSampleRate: temperatureSampleRate,
 		TemperatureUnit:       cw.TemperatureUnit,
 		TemperatureTarget:     temperatureTarget,
+		TemperatureGHBR:       cw.TemperatureGHBR,
 		PID:                   cw.PID,
 		PidFrequency:          pidFrequency,
 		PidAutostart:          cw.PidAutostart,
