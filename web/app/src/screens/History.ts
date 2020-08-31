@@ -1,6 +1,7 @@
 import { MountableComponent } from "../util/mount"
 import { Shot, historyStore } from "../store/history"
-import AfixListItem from "afix-list-item"
+import AfixListItem from "https://cdn.skypack.dev/afix-list-item@latest"
+import "./History.css"
 
 export class HistoryScreen extends MountableComponent {
   contentEl: HTMLElement

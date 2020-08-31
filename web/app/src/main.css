@@ -1,15 +1,12 @@
-@import "./components/VisuallyHidden.css";
-@import "./components/Header.css";
-@import "./components/Nav.css";
-@import "./components/Screen.css";
-@import "./components/Button.css";
-@import "./components/SecondaryButton.css";
-@import "./components/ShotVariables.css";
-
-@import "./screens/Brew.css";
-@import "./screens/History.css";
-@import "./screens/Settings.css";
-@import "./screens/TimerScreen.css";
+.Gesha {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  padding-top: var(--header-height);
+  padding-bottom: calc(4.5rem + max(0.5rem, env(safe-area-inset-bottom)));
+}
 
 :root {
   /* Colours */

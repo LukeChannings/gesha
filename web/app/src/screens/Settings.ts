@@ -1,6 +1,7 @@
 import { MountableComponent } from "../util/mount"
 import { isConfig, postConfig } from "../api/api"
 import { assert } from "../util/assert"
+import "./Settings.css"
 
 export class SettingsScreen extends MountableComponent {
   formEl: HTMLFormElement

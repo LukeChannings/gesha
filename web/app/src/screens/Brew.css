@@ -1,5 +1,139 @@
+:root {
+  --slider-width: 25vmin;
+  --slider-height: calc(var(--slider-width) * 3);
+}
+
+@media screen and (min-width: 48em) {
+  :root {
+    --slider-width: 6.25rem;
+  }
+}
+
 .Brew {
   text-align: center;
   justify-content: center;
   align-items: center;
+}
+
+.ShotVariables {
+  all: unset;
+  display: grid;
+  grid-template-columns:
+    var(--slider-width)
+    var(--slider-width)
+    var(--slider-width);
+  grid-template-rows: auto;
+  gap: 10%;
+  place-content: center;
+  margin-bottom: var(--s5);
+}
+
+.ShotVariables_Legend {
+  display: none;
+}
+
+.ShotVariables afix-range-slider {
+  --afix-range-slider-border: 2px solid #353135;
+  --afix-range-slider-background-color: #353135;
+  --afix-range-slider-width: var(--slider-width);
+  --afix-range-slider-height: var(--slider-height);
+}
+
+.ShotVariables_Variable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: var(--slider-width);
+  color: #333;
+  text-align: center;
+}
+
+.ShotVariables_Variable_Input {
+  border: none;
+  text-align: center;
+  width: var(--slider-width);
+  font-size: 1.875rem;
+  letter-spacing: -1px;
+  appearance: textfield;
+  line-height: 1;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  background-color: var(--background-highlight-bg);
+  border-radius: var(--s1);
+  padding: calc(var(--s1) / 2);
+  margin-bottom: var(--sxb2);
+}
+
+.ShotVariables_Variable_Input::-webkit-inner-spin-button,
+.ShotVariables_Variable_Input::-webkit-outer-spin-button {
+  display: none;
+}
+
+@keyframes HeatingIndicator {
+  0% {
+    color: hsl(calc(var(--base-color) + 180), 55%, 60%, 90%);
+  }
+  50% {
+    color: hsl(calc(var(--base-color) + 180), 35%, 60%, 70%);
+  }
+  100% {
+    color: hsl(calc(var(--base-color) + 180), 55%, 60%, 90%);
+  }
+}
+
+.ShotVariables_Variable.temp afix-range-slider {
+  color: hsl(calc(var(--base-color) + 180), 20%, 60%, 70%);
+}
+
+.ShotVariables_Variable.temp.is-heating afix-range-slider {
+  animation: HeatingIndicator 3s infinite;
+}
+
+.ShotVariables_Variable.dose afix-range-slider {
+  color: hsl(calc(var(--base-color) + 180), 20%, 60%);
+}
+
+.ShotVariables_Variable.grind afix-range-slider {
+  color: hsl(calc(var(--base-color) + 180), 20%, 75%);
+}
+
+.ShotVariables_Variable_Label {
+  position: relative;
+  font-size: medium;
+  font-family: system-ui, -apple-system;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-top: var(--sxt2);
+  order: 3;
+}
+
+.is-heating .ShotVariables_Variable_Label::before {
+  content: "";
+  display: block;
+  position: absolute;
+  left: -15px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 0.5rem;
+  width: 0.5rem;
+  background: #ff941a;
+  border: 1px solid #333;
+  border-radius: 100%;
+}
+
+.ShotVariables_Variable_Label_Unit {
+  color: var(--text-tertiary);
+  font-size: smaller;
+}
+
+.Screen.Home {
+  display: grid;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ShotVariables_Variable afix-range-slider {
+    --afix-range-slider-background-color: var(--background-bg-a);
+    --afix-range-slider-border: 2px solid currentColor;
+  }
 }

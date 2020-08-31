@@ -1,7 +1,8 @@
+import { DialogElement } from "https://cdn.skypack.dev/afix-dialog@latest"
 import { MountableComponent } from "../util/mount"
-import { DialogElement } from "afix-dialog"
 import { historyStore, Shot } from "../store/history"
 import { assert } from "../util/assert"
+import "./TimerScreen.css"
 
 export class TimerScreen extends MountableComponent {
   dialog: DialogElement

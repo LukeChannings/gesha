@@ -2,6 +2,7 @@ import { getTempStream, TemperatureEvent } from "../api/api"
 import { MountableComponent } from "../util/mount"
 import { getInstances } from "../util/mount"
 import { TimerScreen } from "./TimerScreen"
+import "./Brew.css"
 
 export class BrewScreen extends MountableComponent {
   shotVariables: Record<string, HTMLElement>
