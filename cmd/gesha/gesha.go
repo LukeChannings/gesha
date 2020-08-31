@@ -3,12 +3,23 @@ package gesha
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
+	"os/exec"
+	"os/signal"
+	"path"
+	"syscall"
 
 	"github.com/docopt/docopt-go"
-	"github.com/lukechannings/gesha/cmd/install"
-	"github.com/lukechannings/gesha/cmd/start"
+	"github.com/lukechannings/gesha/internal/api"
+	"github.com/lukechannings/gesha/internal/config"
+	"github.com/lukechannings/gesha/internal/i18n"
+	"github.com/lukechannings/gesha/internal/pid"
+	"github.com/lukechannings/gesha/internal/temp"
+	"github.com/lukechannings/gesha/web"
+	"github.com/markbates/pkger"
 )
 
 // Usage - the CLI definition, used as a DSL by docopt.
@@ -53,11 +64,11 @@ func Run(taggedVersion string, gitHash string) {
 	}
 
 	if options.Install {
-		install.Cmd()
+		install()
 	}
 
 	if options.Start {
-		start.Cmd(options.ConfigPath, options.Verbose)
+		start(options.ConfigPath, options.Verbose)
 	}
 }
 
@@ -88,4 +99,111 @@ func Version(tag string, gitHash string) (string, error) {
 	}
 
 	return version, nil
+}
+
+func start(configPath string, verbose bool) {
+	c := config.New(configPath)
+
+	trErr := i18n.PopulateTranslations()
+
+	if trErr != nil {
+		log.Fatalf("An error occurred when loading translations: %v", trErr.Error())
+	}
+
+	t, err := temp.New(c.SpiPort)
+
+	if err != nil {
+		log.Fatalf("Couldn't create a temperature stream! %v", err.Error())
+	}
+
+	pid := pid.New(&c, t)
+
+	apiService := api.NewAPIService(&c, t, &pid, configPath)
+	apiController := api.NewDefaultAPIController(apiService)
+
+	if c.PidAutostart {
+		log.Println("Autostarting PID")
+		pid.Start(&c)
+	}
+
+	r := api.NewRouter(apiController)
+	r.Handle("/", web.Index(&c, t, &pid))
+	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(pkger.Dir("/web/static"))))
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		log.Printf("Starting server on port %s\n", c.Port)
+		if err := http.ListenAndServe(":"+c.Port, r); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Error starting the server on port %s. Maybe try re-running as root?\nError message: %v\n", c.Port, err)
+		}
+	}()
+	log.Print("Server Started")
+
+	<-done
+	log.Print("Server Stopped")
+
+	defer pid.OverrideBoilerOff()
+}
+
+func install() {
+	if hasSystemd() {
+		pkger.Include("/init/gesha.service")
+		pkger.Include("/configs/rancilio-silvia.yaml")
+
+		fmt.Println("Installing...")
+
+		installFile("/init/gesha.service", servicePath, true, true)
+		installFile("/configs/rancilio-silvia.yaml", configPath, false, true)
+
+		geshaPath, _ := os.Executable()
+		installFile(geshaPath, exePath, true, false)
+
+		fmt.Println("Installation complete.")
+		fmt.Println("To start on boot, run: sudo systemctl enable gesha")
+		fmt.Println("To start now: sudo systemctl start gesha")
+		fmt.Println("Configuration file can be edited at /etc/gesha/config.yaml")
+	} else {
+		fmt.Println("This OS does not use systemd. Please install manually.")
+	}
+}
+
+func installFile(fromPath string, toPath string, overwrite bool, bundle bool) {
+	if _, err := os.Stat(toPath); os.IsNotExist(err) || overwrite {
+		var data []byte
+		if bundle {
+			handle, openErr := pkger.Open(fromPath)
+
+			if openErr != nil {
+				log.Fatalf("Failed to load file %v: %v\n", fromPath, openErr)
+			}
+
+			data, _ = ioutil.ReadAll(handle)
+		} else {
+			sysData, err := ioutil.ReadFile(fromPath)
+			if err != nil {
+				log.Fatalf("Coudn't read %v\n", fromPath)
+			}
+			data = sysData
+		}
+
+		mkdirError := os.MkdirAll(path.Dir(toPath), os.ModePerm)
+		if mkdirError != nil {
+			log.Fatalf("Failed to create %v\n", path.Dir(toPath))
+		}
+
+		writeErr := ioutil.WriteFile(toPath, data, 0644)
+
+		fmt.Printf("Writing %v to %v\n", fromPath, toPath)
+
+		if writeErr != nil {
+			log.Fatalf("Failed to write %v! %v\n", toPath, writeErr)
+		}
+	}
+}
+
+func hasSystemd() bool {
+	_, err := exec.LookPath("systemd")
+	return err == nil
 }
