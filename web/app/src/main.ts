@@ -34,12 +34,11 @@ document.querySelectorAll("[data-mount]").forEach(node => {
   }
 })
 
-
 // The defau;t focus ring is annoying to some users, but important for accessibility.
 // This code (in concert with some CSS) turns on the focus ring for keyboard users,
 // but they're disabled by default.
-document.addEventListener('keyup', e => {
-  if (e.key === 'Tab') {
+document.addEventListener("keyup", e => {
+  if (e.key === "Tab") {
     document.documentElement.classList.add("focus-ring-enabled")
   }
 })

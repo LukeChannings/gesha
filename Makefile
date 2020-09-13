@@ -46,4 +46,7 @@ pi: build/linux-arm/gesha
 dev:
 	hammer serve --define=window.__API_BASE__='"http://192.168.20.24"' web/app/src web/static
 
+format:
+	cd web/app && npm run format
+
 .PHONY: all clean test pi
