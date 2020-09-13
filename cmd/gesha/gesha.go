@@ -1,7 +1,6 @@
 package gesha
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -53,11 +52,7 @@ type Options struct {
 // Run - starts the Gesha CLI
 func Run(taggedVersion string, gitHash string) {
 
-	version, err := Version(taggedVersion, gitHash)
-
-	if err != nil {
-		log.Printf("Warning: This build was compiled without a version")
-	}
+	version := Version(taggedVersion, gitHash)
 
 	options, err := GetOptions(os.Args[1:], version)
 
@@ -88,7 +83,7 @@ func GetOptions(args []string, version string) (*Options, error) {
 }
 
 // Version - Formats the version and adds a github link
-func Version(tag string, gitHash string) (string, error) {
+func Version(tag string, gitHash string) string {
 	var version string
 	gitURL := "https://github.com/lukechannings/gesha"
 
@@ -97,10 +92,10 @@ func Version(tag string, gitHash string) (string, error) {
 	} else if gitHash != "" {
 		version = fmt.Sprintf("%s (%s/tree/%s)", gitHash, gitURL, gitHash)
 	} else {
-		return "", errors.New("taggedVersion or gitHash must be set")
+		return "development"
 	}
 
-	return version, nil
+	return version
 }
 
 func start(configPath string, verbose bool) {

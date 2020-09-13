@@ -1,6 +1,8 @@
 import { assert, isRecord } from "../util/assert"
 
-const API_URI = "http://192.168.20.24" /* location.origin */ + "/api"
+declare const window: Window & typeof globalThis & { __API_BASE__: string; };
+
+const API_URI = (window.__API_BASE__ || "") + "/api"
 
 export interface State {
   currentTemp: Temperature

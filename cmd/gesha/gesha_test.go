@@ -5,19 +5,15 @@ import (
 )
 
 func TestEmptyVersion(t *testing.T) {
-	_, err := Version("", "")
+	version := Version("", "")
 
-	if err.Error() != "taggedVersion or gitHash must be set" {
-		t.Fatal("Passing an empty taggedVersion and gitHash to Version() should error")
+	if version != "development" {
+		t.Fatalf("Expected development, got %s\n", version)
 	}
 }
 
 func TestHashVersion(t *testing.T) {
-	version, err := Version("", "abcdef")
-
-	if err != nil {
-		t.Fatalf("Version should not error, but did with %v", err)
-	}
+	version := Version("", "abcdef")
 
 	expectedVersion := "abcdef (https://github.com/lukechannings/gesha/tree/abcdef)"
 	if version != expectedVersion {
@@ -26,11 +22,7 @@ func TestHashVersion(t *testing.T) {
 }
 
 func TestReleaseVersion(t *testing.T) {
-	version, err := Version("v1.0.0", "abcdef")
-
-	if err != nil {
-		t.Fatalf("Version should not error, but did with %v", err)
-	}
+	version := Version("v1.0.0", "abcdef")
 
 	expectedVersion := "v1.0.0 (https://github.com/lukechannings/gesha/releases/tag/v1.0.0)"
 	if version != expectedVersion {
