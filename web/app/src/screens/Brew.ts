@@ -69,7 +69,7 @@ export class BrewScreen extends MountableComponent {
       const { detail } = e as StateEvent
 
       assert(rangeEl instanceof AfixRangeSlider)
-      
+
       rangeEl.setShadowValue(detail.currentTemp.tempC)
 
       if (detail.isHeating) {
