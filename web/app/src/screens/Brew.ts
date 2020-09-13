@@ -1,7 +1,9 @@
+import { AfixRangeSlider } from "https://cdn.skypack.dev/afix-range-slider@latest"
 import { getStateStream, StateEvent } from "../api/api"
 import { MountableComponent } from "../util/mount"
 import { getInstances } from "../util/mount"
 import { TimerScreen } from "./TimerScreen"
+import { assert } from "../util/assert"
 import "./Brew.css"
 
 export class BrewScreen extends MountableComponent {
@@ -66,10 +68,9 @@ export class BrewScreen extends MountableComponent {
     es.addEventListener("message", e => {
       const { detail } = e as StateEvent
 
-      rangeEl.setAttribute(
-        "shadow-value",
-        String(Math.round(detail.currentTemp.tempC)),
-      )
+      assert(rangeEl instanceof AfixRangeSlider)
+      
+      rangeEl.setShadowValue(detail.currentTemp.tempC)
 
       if (detail.isHeating) {
         this.shotVariables.temperature.classList.add("is-heating")
