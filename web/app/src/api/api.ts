@@ -1,6 +1,6 @@
 import { assert, isRecord } from "../util/assert"
 
-declare const window: Window & typeof globalThis & { __API_BASE__: string; };
+declare const window: Window & typeof globalThis & { __API_BASE__: string }
 
 const API_URI = (window.__API_BASE__ || "") + "/api"
 
