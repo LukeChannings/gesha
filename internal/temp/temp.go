@@ -1,6 +1,7 @@
 package temp
 
 import (
+	"fmt"
 	"time"
 
 	"periph.io/x/periph/conn/physic"
@@ -53,7 +54,10 @@ func (t *Handle) Get() (*CurrentTemp, error) {
 		return nil, err
 	}
 
-	return &CurrentTemp{time.Now(), physic.Temperature(float64(te.Thermocouple) * t.tempGHBR)}, nil
+	var altState physic.Temperature
+	altState.Set(fmt.Sprintf("%fC", te.Thermocouple.Celsius()*t.tempGHBR))
+
+	return &CurrentTemp{time.Now(), altState}, nil
 }
 
 // Stream - sample the temperature on a timer

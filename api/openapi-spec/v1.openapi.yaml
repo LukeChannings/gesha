@@ -83,6 +83,26 @@ paths:
                 $ref: '#/components/schemas/PidOutput'
       summary: Your GET endpoint
       tags: []
+  /state/current:
+    get:
+      operationId: get-state-current
+      responses:
+        '200':
+          description: The current state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/State'
+  /stream/state:
+    get:
+      operationId: get-state-stream
+      responses:
+        '200':
+          description: The current state
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/State'
   /temp/target:
     get:
       operationId: get-temp-target
@@ -216,9 +236,12 @@ components:
         time:
           type: number
           description: The time at which the temperature was read in unix epoch millis
-        temp:
+        tempC:
           type: number
-          description: The current temperature in the preferred units
+          description: The current temperature in Celcius
+        tempF:
+          type: number
+          description: The current temperature in Fahrenheit
     OperationResult:
       description:
         Indicates if the operation succeeded, and if not, what the error
@@ -264,4 +287,11 @@ components:
           type: number
       title: TemperatureTarget
       type: object
+    State:
+      type: object
+      properties:
+        currentTemp:
+          $ref: '#/components/schemas/TemperatureItem'
+        isHeating:
+          type: boolean
   securitySchemes: {}

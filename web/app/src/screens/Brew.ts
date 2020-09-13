@@ -1,4 +1,4 @@
-import { getTempStream, TemperatureEvent } from "../api/api"
+import { getStateStream, StateEvent } from "../api/api"
 import { MountableComponent } from "../util/mount"
 import { getInstances } from "../util/mount"
 import { TimerScreen } from "./TimerScreen"
@@ -61,12 +61,18 @@ export class BrewScreen extends MountableComponent {
   }
 
   bindTemperature(rangeEl: HTMLElement): void {
-    const es = getTempStream()
+    const es = getStateStream()
 
     es.addEventListener("message", e => {
-      const { detail } = e as TemperatureEvent
+      const { detail } = e as StateEvent
 
-      rangeEl.setAttribute("shadow-value", String(Math.round(detail.tempC)))
+      rangeEl.setAttribute("shadow-value", String(Math.round(detail.currentTemp.tempC)))
+      
+      if (detail.isHeating) {
+        this.shotVariables.temperature.classList.add('is-heating')
+      } else {
+        this.shotVariables.temperature.classList.remove('is-heating')
+      }
     })
   }
 

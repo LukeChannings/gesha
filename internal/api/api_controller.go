@@ -52,6 +52,12 @@ func (c *Controller) Routes() Routes {
 			c.GetStreamTempCurrent,
 		},
 		{
+			"GetStreamState",
+			"GET",
+			"/api/stream/state",
+			c.GetStreamCurrentState,
+		},
+		{
 			"GetTemp",
 			"GET",
 			"/api/temp/current",
@@ -62,6 +68,12 @@ func (c *Controller) Routes() Routes {
 			"GET",
 			"/api/temp/target",
 			c.GetTempTarget,
+		},
+		{
+			"GetCurrentState",
+			"GET",
+			"/api/state/current",
+			c.GetCurrentState,
 		},
 		{
 			"PostConfig",
@@ -84,7 +96,7 @@ func (c *Controller) Routes() Routes {
 	}
 }
 
-// GetConfig - Your GET endpoint
+// GetConfig -
 func (c *Controller) GetConfig(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.GetConfig()
 	if err != nil {
@@ -95,7 +107,7 @@ func (c *Controller) GetConfig(w http.ResponseWriter, r *http.Request) {
 	EncodeJSONResponse(result, nil, w)
 }
 
-// GetPidRunning - Your GET endpoint
+// GetPidRunning -
 func (c *Controller) GetPidRunning(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.GetPidRunning()
 	if err != nil {
@@ -106,7 +118,7 @@ func (c *Controller) GetPidRunning(w http.ResponseWriter, r *http.Request) {
 	EncodeJSONResponse(result, nil, w)
 }
 
-// GetPidOutput - Your GET endpoint
+// GetPidOutput -
 func (c *Controller) GetPidOutput(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.GetPidOutput()
 	if err != nil {
@@ -117,21 +129,24 @@ func (c *Controller) GetPidOutput(w http.ResponseWriter, r *http.Request) {
 	EncodeJSONResponse(result, nil, w)
 }
 
-// GetStreamPidOutput - Your GET endpoint
+// GetStreamPidOutput -
 func (c *Controller) GetStreamPidOutput(w http.ResponseWriter, r *http.Request) {
 	c.service.GetStreamPidOutput(w, r)
 }
 
-// GetStreamTempCurrent - Your GET endpoint
+// GetStreamTempCurrent -
 func (c *Controller) GetStreamTempCurrent(w http.ResponseWriter, r *http.Request) {
 	c.service.GetStreamTempCurrent(w, r)
 }
 
-// GetTemp - Your GET endpoint
-func (c *Controller) GetTemp(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	unit := query.Get("unit")
-	result, err := c.service.GetTemp(unit)
+// GetStreamCurrentState -
+func (c *Controller) GetStreamCurrentState(w http.ResponseWriter, r *http.Request) {
+	c.service.GetStreamCurrentState(w, r)
+}
+
+// GetCurrentState -
+func (c *Controller) GetCurrentState(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.GetCurrentState()
 	if err != nil {
 		w.WriteHeader(500)
 		return
@@ -140,7 +155,18 @@ func (c *Controller) GetTemp(w http.ResponseWriter, r *http.Request) {
 	EncodeJSONResponse(result, nil, w)
 }
 
-// GetTempTarget - Your GET endpoint
+// GetTemp -
+func (c *Controller) GetTemp(w http.ResponseWriter, r *http.Request) {
+	result, err := c.service.GetTemp()
+	if err != nil {
+		w.WriteHeader(500)
+		return
+	}
+
+	EncodeJSONResponse(result, nil, w)
+}
+
+// GetTempTarget -
 func (c *Controller) GetTempTarget(w http.ResponseWriter, r *http.Request) {
 	result, err := c.service.GetTempTarget()
 	if err != nil {
@@ -153,15 +179,24 @@ func (c *Controller) GetTempTarget(w http.ResponseWriter, r *http.Request) {
 
 // PostConfig -
 func (c *Controller) PostConfig(w http.ResponseWriter, r *http.Request) {
-	config := &config.Config{}
-	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
+	configWire := config.WireConfig{}
+	if err := json.NewDecoder(r.Body).Decode(&configWire); err != nil {
 		fmt.Println(err.Error())
 		w.WriteHeader(500)
 		return
 	}
 
-	result, err := c.service.PostConfig(*config)
+	parsedCfg, err := configWire.ToConfig()
+
 	if err != nil {
+		fmt.Print(err.Error())
+		w.WriteHeader(500)
+		return
+	}
+
+	result, err := c.service.PostConfig(parsedCfg)
+	if err != nil {
+		fmt.Print(err.Error())
 		w.WriteHeader(500)
 		return
 	}

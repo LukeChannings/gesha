@@ -1,8 +1,8 @@
-export function assert<T>(
+export function assert(
   condition: boolean,
   message = "Assertion failed",
 ): asserts condition {
-  if (condition === false) {
+  if (condition !== true) {
     throw new Error(message)
   }
 }

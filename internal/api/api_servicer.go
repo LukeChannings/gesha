@@ -26,7 +26,9 @@ type Servicer interface {
 	GetPidOutput() (interface{}, error)
 	GetStreamPidOutput(w http.ResponseWriter, r *http.Request)
 	GetStreamTempCurrent(w http.ResponseWriter, r *http.Request)
-	GetTemp(string) (interface{}, error)
+	GetStreamCurrentState(w http.ResponseWriter, r *http.Request)
+	GetCurrentState() (interface{}, error)
+	GetTemp() (interface{}, error)
 	GetTempTarget() (interface{}, error)
 	PostConfig(config.Config) (interface{}, error)
 	PostPidRunning(PIDEnabled) (interface{}, error)
@@ -164,8 +166,76 @@ func (s *Service) GetStreamTempCurrent(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetStreamCurrentState -
+func (s *Service) GetStreamCurrentState(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	var sampleRate time.Duration
+
+	if sampleRateMsQuery, ok := query["sampleRateMs"]; ok {
+		parsedSampleRate, err := strconv.ParseInt(sampleRateMsQuery[0], 10, 32)
+		if err != nil {
+			log.Println("Could not parse sampleRateMs from query string")
+		}
+		sampleRate = time.Duration(parsedSampleRate) * time.Millisecond
+	}
+
+	if sampleRate == 0 {
+		sampleRate = 100 * time.Millisecond
+	}
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
+		return
+	}
+	h := w.Header()
+	h.Set("connection", "keep-alive")
+	h.Set("cache-control", "no-cache")
+	h.Set("content-type", "text/event-stream")
+	h.Set("access-control-allow-origin", "*")
+
+	ticker := time.NewTicker(sampleRate)
+	defer ticker.Stop()
+
+	for {
+		s, _ := s.GetCurrentState()
+		stateWire, err := json.Marshal(s)
+		if err != nil {
+			http.Error(w, "Could not marshal temperature data to JSON", http.StatusInternalServerError)
+		}
+		fmt.Fprintf(w, "data: %s\n\n", string(stateWire))
+		flusher.Flush()
+
+		select {
+		case <-r.Context().Done():
+			ticker.Stop()
+			return
+		default:
+			<-ticker.C
+		}
+	}
+}
+
+// GetCurrentState -
+func (s *Service) GetCurrentState() (interface{}, error) {
+	currentTemp, err := s.t.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	state := struct {
+		CurrentTemp *temp.CurrentTemp `json:"currentTemp"`
+		IsHeating   bool              `json:"isHeating"`
+	}{
+		CurrentTemp: currentTemp,
+		IsHeating:   s.p.Heating,
+	}
+
+	return state, nil
+}
+
 // GetTemp - Your GET endpoint
-func (s *Service) GetTemp(unit string) (interface{}, error) {
+func (s *Service) GetTemp() (interface{}, error) {
 	return s.t.Get()
 }
 
@@ -180,7 +250,8 @@ func (s *Service) GetTempTarget() (interface{}, error) {
 
 // PostConfig -
 func (s *Service) PostConfig(config config.Config) (interface{}, error) {
-	err := s.c.Update(&config, s.configPath)
+	s.c = &config
+	err := s.c.Write(&config, s.configPath)
 	s.p.SetTarget(config.TemperatureTarget)
 
 	if err != nil {

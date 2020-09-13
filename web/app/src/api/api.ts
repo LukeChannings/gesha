@@ -1,6 +1,11 @@
 import { assert, isRecord } from "../util/assert"
 
-const API_URI = location.origin + "/api"
+const API_URI = 'http://192.168.20.24' /* location.origin */ + "/api"
+
+export interface State {
+  currentTemp: Temperature
+  isHeating: boolean
+}
 
 export interface Temperature {
   tempC: number
@@ -13,7 +18,7 @@ export interface Config {
   boilerPin: string
   temperatureSampleRate: string
   temperatureUnit: "C" | "F"
-  temperatureTarget: number
+  temperatureTarget: string
   pid: [number, number, number]
   pidFrequency: string
   pidAutostart: boolean
@@ -23,6 +28,10 @@ export interface Config {
 
 export interface TemperatureEvent extends MessageEvent {
   detail: Temperature
+}
+
+export interface StateEvent extends MessageEvent {
+  detail: State
 }
 
 export class ParseResultError extends Error {}
@@ -40,6 +49,23 @@ export const getTempStream = (
     const detail = JSON.parse(e.data)
 
     ;(e as TemperatureEvent).detail = detail
+  })
+
+  return es
+}
+
+export const getStateStream = (
+  apiUrl = API_URI,
+  sampleRateMs = 100,
+): EventSource => {
+  const es = new EventSource(
+    `${apiUrl}/stream/state?sampleRateMs=${sampleRateMs}`,
+  )
+
+  es.addEventListener("message", e => {
+    const detail = JSON.parse(e.data)
+
+    ;(e as StateEvent).detail = detail
   })
 
   return es
@@ -95,7 +121,7 @@ export function isConfig(data: unknown): data is Config {
   assert(typeof data.boilerPin === "string")
   assert(typeof data.temperatureSampleRate === "string")
   assert(data.temperatureUnit === "C" || data.temperatureUnit === "F")
-  assert(typeof data.temperatureTarget === "number")
+  assert(typeof data.temperatureTarget === "string")
   assert(
     Array.isArray(data.pid) &&
       data.pid.length === 3 &&

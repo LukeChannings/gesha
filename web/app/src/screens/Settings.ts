@@ -41,7 +41,6 @@ export class SettingsScreen extends MountableComponent {
       pid: [formData["pid.p"], formData["pid.i"], formData["pid.d"]].map(
         Number,
       ),
-      temperatureTarget: Number(formData.temperatureTarget),
       pidAutostart: formData.pidAutostart === "on",
       verbose: formData.verbose === "on",
       themeColorHue:
