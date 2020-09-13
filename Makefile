@@ -43,4 +43,7 @@ web/app/node_modules: web/app/package.json
 pi: build/linux-arm/gesha
 	scp build/linux-arm/gesha coffee-machine:~
 
+dev:
+	hammer serve --define=window.__API_BASE__='"http://192.168.20.24"' web/app/src web/static
+
 .PHONY: all clean test pi
