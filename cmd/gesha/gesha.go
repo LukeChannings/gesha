@@ -12,6 +12,8 @@ import (
 	"path"
 	"syscall"
 
+	"github.com/gorilla/handlers"
+
 	"github.com/docopt/docopt-go"
 	"github.com/lukechannings/gesha/internal/api"
 	"github.com/lukechannings/gesha/internal/config"
@@ -135,7 +137,10 @@ func start(configPath string, verbose bool) {
 
 	go func() {
 		log.Printf("Starting server on port %s\n", c.Port)
-		if err := http.ListenAndServe(":"+c.Port, r); err != nil && err != http.ErrServerClosed {
+		headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type"})
+		originsOk := handlers.AllowedOrigins([]string{"*"})
+		methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
+		if err := http.ListenAndServe(":"+c.Port, handlers.CORS(originsOk, headersOk, methodsOk)(r)); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Error starting the server on port %s. Maybe try re-running as root?\nError message: %v\n", c.Port, err)
 		}
 	}()
@@ -155,7 +160,6 @@ func install() {
 		fmt.Println("Installing...")
 
 		installFile("/init/gesha.service", "/etc/systemd/system/gesha.service", true, true)
-		exec.Command("systemctl", "daemon-reload")
 		installFile("/configs/rancilio-silvia.yaml", "/etc/gesha/config.yaml", false, true)
 
 		geshaPath, _ := os.Executable()

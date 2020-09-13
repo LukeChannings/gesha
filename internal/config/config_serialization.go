@@ -9,8 +9,8 @@ import (
 	"periph.io/x/periph/conn/physic"
 )
 
-// configWire - a JSON / YAML friendly representation of the Config struct
-type configWire struct {
+// WireConfig - a JSON / YAML friendly representation of the Config struct
+type WireConfig struct {
 	Port                  string    `json:"port" yaml:"port"`
 	BoilerPin             string    `json:"boilerPin" yaml:"boilerPin"`
 	SpiPort               string    `json:"spiPort" yaml:"spiPort"`
@@ -32,12 +32,13 @@ func (c Config) MarshalYAML() (interface{}, error) {
 
 // UnmarshalYAML - Implements YAML Unmarshaller interface
 func (c *Config) UnmarshalYAML(value *yaml.Node) error {
-	var wire configWire
+	fmt.Printf("UnMarshalling YAML!")
+	var wire WireConfig
 	err := value.Decode(&wire)
 	if err != nil {
 		return err
 	}
-	config, err := wire.toConfig()
+	config, err := wire.ToConfig()
 	if err != nil {
 		return err
 	}
@@ -45,8 +46,8 @@ func (c *Config) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-func (c Config) toWire() configWire {
-	return configWire{
+func (c Config) toWire() WireConfig {
+	return WireConfig{
 		Port:                  c.Port,
 		BoilerPin:             c.BoilerPin,
 		SpiPort:               c.SpiPort,
@@ -61,18 +62,17 @@ func (c Config) toWire() configWire {
 	}
 }
 
-func (cw configWire) toConfig() (Config, error) {
+func (cw WireConfig) ToConfig() (Config, error) {
 	temperatureSampleRate, err := time.ParseDuration(cw.TemperatureSampleRate)
 	if err != nil {
 		temperatureSampleRate = 100 * time.Millisecond
 	}
 
 	var temperatureTarget physic.Temperature
-	if !strings.HasSuffix(cw.TemperatureTarget, "C") || !strings.HasSuffix(cw.TemperatureTarget, "F") {
+	if !(strings.HasSuffix(cw.TemperatureTarget, "C") || strings.HasSuffix(cw.TemperatureTarget, "F")) {
 		cw.TemperatureTarget += cw.TemperatureUnit
 	}
 	err = temperatureTarget.Set(cw.TemperatureTarget)
-	fmt.Printf("Marshalling ... %s - %v\n", cw.TemperatureTarget, temperatureTarget)
 	if err != nil {
 		temperatureTarget = 96 * physic.Celsius
 	}

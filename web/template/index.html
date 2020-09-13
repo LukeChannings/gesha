@@ -181,7 +181,7 @@
           <fieldset>
             <legend id="pidLabel"><attr title="{{ .T.Settings.Pid.Attr }}">{{ .T.Settings.Pid.Label }}</attr></legend>
             <div>
-              <input type="number" value="{{ index .C.PID 0 }}" name="pid.p" aria-label="{{ .T.Settings.Pid.PLabel }}" />
+              <input type="number" value="{{ index .C.PID 0 }}" step="0.1" name="pid.p" aria-label="{{ .T.Settings.Pid.PLabel }}" />
               <input type="number" value="{{ index .C.PID 1 }}" name="pid.i" aria-label="{{ .T.Settings.Pid.ILabel }}" />
               <input type="number" value="{{ index .C.PID 2 }}" name="pid.d" aria-label="{{ .T.Settings.Pid.DLabel }}" />
             </div>

@@ -26,6 +26,28 @@ The install command will copy the binary into `/usr/local/`, install a systemd u
 
 > If you do not have a distribution that uses systemd, you can run gesha directly with `./gesha start`.
 
+## Developing the UI
+
+The UI is written in HTML, CSS, and TypeScript. It doesn't use a web framework and relies on modern CSS and JS APIs.
+
+### Browser support
+
+- Safari latest
+- FireFox latest
+- Chrome latest
+
+### Compiling
+
+I wanted to try something new with the development toolchain, inspired by [Snowpack](https://www.snowpack.dev).
+
+The development environment does not require Node.js or NPM to be installed, instead the UI is compiled with [Hammer](https://github.com/LukeChannings/hammer), an extremely simple HTTP server / compiler combo that uses [esbuild](https://github.com/evanw/esbuild).
+
+Install hammer with `go get github.com/lukechannings/hammer/cmd/hammer`
+
+To start developing, run `hammer serve web/static web/app/src` and load up [localhost:4321](http://localhost:4321).
+
+The app should load instantly. As you edit, reload the browser to update.
+
 ## Supporting documents & prior works
 
 - [silvia-pi](https://github.com/brycesub/silvia-pi)
