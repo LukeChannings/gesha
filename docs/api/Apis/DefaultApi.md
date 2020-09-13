@@ -7,6 +7,8 @@ Method | HTTP request | Description
 [**getConfig**](DefaultApi.md#getConfig) | **GET** /config | Your GET endpoint
 [**getPidEnabled**](DefaultApi.md#getPidEnabled) | **GET** /pid/enabled | Your GET endpoint
 [**getPidOutput**](DefaultApi.md#getPidOutput) | **GET** /pid/output | Your GET endpoint
+[**getStateCurrent**](DefaultApi.md#getStateCurrent) | **GET** /state/current | 
+[**getStateStream**](DefaultApi.md#getStateStream) | **GET** /stream/state | 
 [**getStreamPidOutput**](DefaultApi.md#getStreamPidOutput) | **GET** /stream/pid/output | Your GET endpoint
 [**getStreamTempCurrent**](DefaultApi.md#getStreamTempCurrent) | **GET** /stream/temp/current | Your GET endpoint
 [**getTemp**](DefaultApi.md#getTemp) | **GET** /temp/current | Your GET endpoint
@@ -83,6 +85,50 @@ No authorization required
 
 - **Content-Type**: Not defined
 - **Accept**: application/json
+
+<a name="getStateCurrent"></a>
+# **getStateCurrent**
+> State getStateCurrent()
+
+
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**State**](..//Models/State.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
+
+<a name="getStateStream"></a>
+# **getStateStream**
+> State getStateStream()
+
+
+
+### Parameters
+This endpoint does not need any parameter.
+
+### Return type
+
+[**State**](..//Models/State.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: text/event-stream
 
 <a name="getStreamPidOutput"></a>
 # **getStreamPidOutput**

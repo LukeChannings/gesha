@@ -10,6 +10,8 @@ Class | Method | HTTP request | Description
 *DefaultApi* | [**getConfig**](Apis/DefaultApi.md#getconfig) | **GET** /config | Your GET endpoint
 *DefaultApi* | [**getPidEnabled**](Apis/DefaultApi.md#getpidenabled) | **GET** /pid/enabled | Your GET endpoint
 *DefaultApi* | [**getPidOutput**](Apis/DefaultApi.md#getpidoutput) | **GET** /pid/output | Your GET endpoint
+*DefaultApi* | [**getStateCurrent**](Apis/DefaultApi.md#getstatecurrent) | **GET** /state/current | 
+*DefaultApi* | [**getStateStream**](Apis/DefaultApi.md#getstatestream) | **GET** /stream/state | 
 *DefaultApi* | [**getStreamPidOutput**](Apis/DefaultApi.md#getstreampidoutput) | **GET** /stream/pid/output | Your GET endpoint
 *DefaultApi* | [**getStreamTempCurrent**](Apis/DefaultApi.md#getstreamtempcurrent) | **GET** /stream/temp/current | Your GET endpoint
 *DefaultApi* | [**getTemp**](Apis/DefaultApi.md#gettemp) | **GET** /temp/current | Your GET endpoint
@@ -26,6 +28,7 @@ Class | Method | HTTP request | Description
  - [OperationResult](.//Models/OperationResult.md)
  - [PidEnabled](.//Models/PidEnabled.md)
  - [PidOutput](.//Models/PidOutput.md)
+ - [State](.//Models/State.md)
  - [TemperatureItem](.//Models/TemperatureItem.md)
  - [TemperatureTarget](.//Models/TemperatureTarget.md)
 
