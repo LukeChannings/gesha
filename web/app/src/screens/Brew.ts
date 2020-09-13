@@ -66,12 +66,15 @@ export class BrewScreen extends MountableComponent {
     es.addEventListener("message", e => {
       const { detail } = e as StateEvent
 
-      rangeEl.setAttribute("shadow-value", String(Math.round(detail.currentTemp.tempC)))
-      
+      rangeEl.setAttribute(
+        "shadow-value",
+        String(Math.round(detail.currentTemp.tempC)),
+      )
+
       if (detail.isHeating) {
-        this.shotVariables.temperature.classList.add('is-heating')
+        this.shotVariables.temperature.classList.add("is-heating")
       } else {
-        this.shotVariables.temperature.classList.remove('is-heating')
+        this.shotVariables.temperature.classList.remove("is-heating")
       }
     })
   }

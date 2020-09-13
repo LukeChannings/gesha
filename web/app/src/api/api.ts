@@ -1,6 +1,6 @@
 import { assert, isRecord } from "../util/assert"
 
-const API_URI = 'http://192.168.20.24' /* location.origin */ + "/api"
+const API_URI = "http://192.168.20.24" /* location.origin */ + "/api"
 
 export interface State {
   currentTemp: Temperature
