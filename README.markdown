@@ -44,7 +44,7 @@ The development environment does not require Node.js or NPM to be installed, ins
 
 Install hammer with `go get github.com/lukechannings/hammer/cmd/hammer`
 
-To start developing, run `hammer serve web/static web/app/src` and load up [localhost:4321](http://localhost:4321).
+To start developing, run `make dev` and load up [localhost:4321](http://localhost:4321).
 
 The app should load instantly. As you edit, reload the browser to update.
 
