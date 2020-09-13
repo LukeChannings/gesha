@@ -76,3 +76,6 @@ settings:
   verbose:
     label: Verbose
     description: If enabled Gesha will log to the console the PID value at the PID Frequency
+  temperatureGHBR:
+    label: GHBR
+    description: The Ratio between the Group Head and the Boiler temperature

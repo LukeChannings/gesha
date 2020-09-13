@@ -144,8 +144,42 @@
       <article id="{{.T.Settings.NavLabel}}" class="Settings Screen" data-mount="SettingsScreen">
         <form class="SettingsForm" name="settings" method="POST" action="/api/config">
           <div>
+            <label for="temperatureTarget">{{ .T.Settings.TemperatureTarget.Label }}</label>
+            <input type="number" value="{{.TargetTemp}}" name="temperatureTarget" id="temperatureTarget" />
+          </div>
+          <fieldset>
+            <legend>{{ .T.Settings.TemperatureUnit.Label }}</legend>
+            <div>
+              <label><input type="radio" value="C" name="temperatureUnit" {{ if eq .C.TemperatureUnit "C" }}checked{{end}} />
+                <attr title="{{ .T.Global.Units.Celcius.Title }}">{{ .T.Global.Units.Celcius.Short }}</attr>
+              </label>
+              <label><input type="radio" value="F" name="temperatureUnit" {{ if eq .C.TemperatureUnit "F" }}checked{{end}} />
+                <attr title="{{ .T.Global.Units.Fahrenheit.Title }}">{{ .T.Global.Units.Fahrenheit.Short }}</attr>
+              </label>
+            </div>
+          </fieldset>
+          <div>
+            <label for="themeColor">{{ .T.Settings.ThemeColor.Label }}</label>
+            <afix-range-slider class="ThemeColorSlider" position-indicator="line" min="0" max="360" value="{{ .C.ThemeColorHue }}"
+              step="0.1" name="themeColorHue" id="themeColor"></afix-range-slider>
+          </div>
+          <div>
+            <label for="pidAutostart" aria-describedby="pidAutostartDescription">
+              {{ .T.Settings.PidAutostart.Label }}
+              <span hidden id="pidAutostartDescription">{{ .T.Settings.PidAutostart.Description }}</span>
+            </label>
+            <input type="checkbox" {{ if .C.PidAutostart }}checked{{end}} name="pidAutostart" id="pidAutostart" />
+          </div>
+          <div>
             <label for="port">{{ .T.Settings.ServerPort.Label }}</label>
             <input type="text" value="{{ .C.Port }}" name="port" id="port" />
+          </div>
+          <div>
+            <label for="verbose" aria-describedby="verboseDescription">
+              {{ .T.Settings.Verbose.Label }}
+              <span hidden id="verboseDescription">{{ .T.Settings.Verbose.Description }}</span>
+            </label>
+            <input type="checkbox" {{ if .C.Verbose }}checked{{end}} name="verbose" id="verbose" />
           </div>
           <div>
             <label for="boilerPin" aria-describedby="boilerPinDescription">
@@ -169,17 +203,6 @@
             <input type="text" value="{{ .C.TemperatureSampleRate }}" name="temperatureSampleRate" id="temperatureSampleRate" />
           </div>
           <fieldset>
-            <legend>{{ .T.Settings.TemperatureUnit.Label }}</legend>
-            <div>
-              <label><input type="radio" value="C" name="temperatureUnit" {{ if eq .C.TemperatureUnit "C" }}checked{{end}} /> <attr title="{{ .T.Global.Units.Celcius.Title }}">{{ .T.Global.Units.Celcius.Short }}</attr></label>
-              <label><input type="radio" value="F" name="temperatureUnit" {{ if eq .C.TemperatureUnit "F" }}checked{{end}} /> <attr title="{{ .T.Global.Units.Fahrenheit.Title }}">{{ .T.Global.Units.Fahrenheit.Short }}</attr></label>
-            </div>
-          </fieldset>
-          <div>
-            <label for="temperatureTarget">{{ .T.Settings.TemperatureTarget.Label }}</label>
-            <input type="number" value="{{.TargetTemp}}" name="temperatureTarget" id="temperatureTarget" />
-          </div>
-          <fieldset>
             <legend id="pidLabel"><attr title="{{ .T.Settings.Pid.Attr }}">{{ .T.Settings.Pid.Label }}</attr></legend>
             <div>
               <input type="number" value="{{ index .C.PID 0 }}" step="0.1" name="pid.p" aria-label="{{ .T.Settings.Pid.PLabel }}" />
@@ -188,26 +211,15 @@
             </div>
           </fieldset>
           <div>
-            <label for="themeColor">{{ .T.Settings.ThemeColor.Label }}</label>
-            <afix-range-slider class="ThemeColorSlider" position-indicator="line" min="0" max="360" value="{{ .C.ThemeColorHue }}" step="0.1" name="themeColorHue" id="themeColor"></afix-range-slider>
+            <label for="temperatureGHBR" aria-describedby="temperatureGHBRDescription">
+              {{ .T.Settings.TemperatureGHBR.Label }}
+              <span hidden id="temperatureGHBRDescription">{{ .T.Settings.TemperatureGHBR.Description }}</span>
+            </label>
+            <input type="text" value="{{ .C.TemperatureGHBR }}" name="temperatureGHBR" id="temperatureGHBR" />
           </div>
           <div>
             <label for="pidFrequency">{{ .T.Settings.PidFrequency.Label }}</label>
             <input type="text" value="{{ .C.PidFrequency }}" name="pidFrequency" id="pidFrequency" />
-          </div>
-          <div>
-            <label for="pidAutostart" aria-describedby="pidAutostartDescription">
-              {{ .T.Settings.PidAutostart.Label }}
-              <span hidden id="pidAutostartDescription">{{ .T.Settings.PidAutostart.Description }}</span>
-            </label>
-            <input type="checkbox" {{ if .C.PidAutostart }}checked{{end}} name="pidAutostart" id="pidAutostart" />
-          </div>
-          <div>
-            <label for="verbose" aria-describedby="verboseDescription">
-              {{ .T.Settings.Verbose.Label }}
-              <span hidden id="verboseDescription">{{ .T.Settings.Verbose.Description }}</span>
-            </label>
-            <input type="checkbox" {{ if .C.Verbose }}checked{{end}} name="verbose" id="verbose" />
           </div>
           <div>
             <button class="Button">{{ .T.Settings.SaveButton.Label }}</button>

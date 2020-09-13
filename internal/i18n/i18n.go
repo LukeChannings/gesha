@@ -122,6 +122,10 @@ type Translations struct {
 			Label       string `yaml:"label"`
 			Description string `yaml:"description"`
 		} `yaml:"verbose"`
+		TemperatureGHBR struct {
+			Label       string `yaml:"label"`
+			Description string `yaml:"description"`
+		} `yaml:"temperatureGHBR"`
 	} `yaml:"settings"`
 }
 
