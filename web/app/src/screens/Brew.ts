@@ -32,7 +32,7 @@ export class BrewScreen extends MountableComponent {
 
       if (tempRangeEl instanceof HTMLElement) this.bindTemperature(tempRangeEl)
       tempRangeEl?.addEventListener("change", e =>
-        this.handleTemperatureSlider(e),
+        this.handleTemperatureSlider(e as MessageEvent),
       )
     }
 

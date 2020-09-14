@@ -69,7 +69,7 @@ export class SettingsScreen extends MountableComponent {
     return config
   }
 
-  setConfigValue<K extends keyof Config>(key: K, value: Config[K]) {
+  setConfigValue<K extends keyof Config>(key: K, value: Config[K]): void {
     const item = this.formEl.elements.namedItem(key)
     if (item instanceof HTMLInputElement) {
       item.value = String(value)
