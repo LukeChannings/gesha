@@ -45,6 +45,7 @@
   );
 
   /* Spacing sizes */
+  --s1\/2: 0.25rem; /* 4px  */
   --s1: 0.5rem; /* 8px  */
   --s2: calc(var(--s1) * 2); /* 16px */
   --s3: calc(var(--s1) * 3); /* 24px */

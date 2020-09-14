@@ -20,6 +20,7 @@
 .SettingsForm legend {
   font-weight: 700;
   color: var(--text-primary);
+  margin-left: var(--s1\/2);
 }
 
 .SettingsForm label > span[hidden] {
