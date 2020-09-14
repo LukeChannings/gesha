@@ -58,7 +58,7 @@ export class SettingsScreen extends MountableComponent {
       const [brewScreen] = getInstances(BrewScreen)
       brewScreen.updateTemperature(
         Number(config.temperatureTarget),
-        config.temperatureUnit
+        config.temperatureUnit,
       )
     }
   }

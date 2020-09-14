@@ -101,9 +101,7 @@ export class BrewScreen extends MountableComponent {
     const tempSlider = this.shotVariables.temperature.querySelector(
       "afix-range-slider",
     )
-    const tempInput = this.shotVariables.temperature.querySelector(
-      "input",
-    )
+    const tempInput = this.shotVariables.temperature.querySelector("input")
     const label = this.shotVariables.temperature.querySelector(
       ".ShotVariables_Variable_Label_Unit",
     )
