@@ -1,13 +1,15 @@
 import { AfixRangeSlider } from "https://unpkg.com/afix-range-slider@latest"
-import { getStateStream, StateEvent } from "../api/api"
+import { getStateStream, StateEvent, setTemp } from "../api/api"
 import { MountableComponent } from "../util/mount"
 import { getInstances } from "../util/mount"
 import { TimerScreen } from "./TimerScreen"
 import { assert } from "../util/assert"
 import "./Brew.css"
+import { SettingsScreen } from "./Settings"
 
 export class BrewScreen extends MountableComponent {
   shotVariables: Record<string, HTMLElement>
+  private temperatureSetTimeout?: number
 
   constructor(node: HTMLElement) {
     super(node)
@@ -27,7 +29,11 @@ export class BrewScreen extends MountableComponent {
       const tempRangeEl = this.shotVariables.temperature.querySelector(
         "afix-range-slider",
       )
+
       if (tempRangeEl instanceof HTMLElement) this.bindTemperature(tempRangeEl)
+      tempRangeEl?.addEventListener("change", e =>
+        this.handleTemperatureSlider(e),
+      )
     }
 
     this.node.addEventListener("submit", e => this.handleSubmit(e))
@@ -37,6 +43,21 @@ export class BrewScreen extends MountableComponent {
     e.preventDefault()
 
     this.showTimerModal()
+  }
+
+  handleTemperatureSlider(e: MessageEvent): void {
+    if (this.temperatureSetTimeout) {
+      clearTimeout(this.temperatureSetTimeout)
+    }
+
+    this.temperatureSetTimeout = window.setTimeout(() => {
+      const target = e.data?.value
+      assert(typeof target === "number")
+      const [settingsScreen] = getInstances(SettingsScreen)
+      const config = settingsScreen.getConfig()
+      setTemp(target, config.temperatureUnit)
+      settingsScreen.setConfigValue("temperatureTarget", String(target))
+    }, 1_000)
   }
 
   bindValueUpdates(variableEl: HTMLElement): void {

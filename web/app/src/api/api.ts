@@ -95,6 +95,19 @@ export const getTemp = async (apiUrl = API_URI): Promise<Temperature> => {
   )
 }
 
+export const setTemp = async (
+  target: number,
+  unit: string,
+  apiUrl = API_URI,
+): Promise<boolean> => {
+  const res = await fetch(`${apiUrl}/temp/target`, {
+    method: "POST",
+    body: JSON.stringify({ target, unit }),
+  })
+
+  return res.ok
+}
+
 export const postConfig = async (
   config: Config,
   apiUrl = API_URI,

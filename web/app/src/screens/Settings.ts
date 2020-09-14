@@ -1,5 +1,5 @@
 import { MountableComponent, getInstances } from "../util/mount"
-import { isConfig, postConfig } from "../api/api"
+import { isConfig, postConfig, Config } from "../api/api"
 import { assert } from "../util/assert"
 import "./Settings.css"
 import { BrewScreen } from "./Brew"
@@ -35,6 +35,18 @@ export class SettingsScreen extends MountableComponent {
   async handleSubmit(e: Event): Promise<void> {
     e.preventDefault()
 
+    const config = this.getConfig()
+
+    if (await postConfig(config)) {
+      const [brewScreen] = getInstances(BrewScreen)
+      brewScreen.updateTemperature(
+        Number(config.temperatureTarget),
+        config.temperatureUnit,
+      )
+    }
+  }
+
+  getConfig(): Config {
     const formData = Object.fromEntries(new FormData(this.formEl))
 
     const config = {
@@ -54,12 +66,13 @@ export class SettingsScreen extends MountableComponent {
 
     assert(isConfig(config))
 
-    if (await postConfig(config)) {
-      const [brewScreen] = getInstances(BrewScreen)
-      brewScreen.updateTemperature(
-        Number(config.temperatureTarget),
-        config.temperatureUnit,
-      )
+    return config
+  }
+
+  setConfigValue<K extends keyof Config>(key: K, value: Config[K]) {
+    const item = this.formEl.elements.namedItem(key)
+    if (item instanceof HTMLInputElement) {
+      item.value = String(value)
     }
   }
 }

@@ -274,12 +274,13 @@ func (s *Service) PostPidRunning(pidEnabled PIDEnabled) (interface{}, error) {
 func (s *Service) PostTempTarget(temperatureTarget TemperatureTarget) (interface{}, error) {
 	var temperature physic.Temperature
 
-	err := temperature.Set(fmt.Sprintf("%f%s", temperatureTarget.Target, s.c.TemperatureUnit))
+	err := temperature.Set(fmt.Sprintf("%f%s", temperatureTarget.Target, temperatureTarget.Unit))
 	if err != nil {
 		return nil, err
 	}
 
 	s.c.TemperatureTarget = temperature
+	s.c.TemperatureUnit = temperatureTarget.Unit
 
 	if s.p.Running {
 		s.p.SetTarget(temperature)
