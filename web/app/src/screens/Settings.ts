@@ -1,7 +1,8 @@
-import { MountableComponent } from "../util/mount"
+import { MountableComponent, getInstances } from "../util/mount"
 import { isConfig, postConfig } from "../api/api"
 import { assert } from "../util/assert"
 import "./Settings.css"
+import { BrewScreen } from "./Brew"
 
 export class SettingsScreen extends MountableComponent {
   formEl: HTMLFormElement
@@ -53,6 +54,12 @@ export class SettingsScreen extends MountableComponent {
 
     assert(isConfig(config))
 
-    postConfig(config)
+    if (await postConfig(config)) {
+      const [brewScreen] = getInstances(BrewScreen)
+      brewScreen.updateTemperature(
+        Number(config.temperatureTarget),
+        config.temperatureUnit
+      )
+    }
   }
 }

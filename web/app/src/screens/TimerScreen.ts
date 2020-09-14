@@ -1,4 +1,4 @@
-import { DialogElement } from "https://cdn.skypack.dev/afix-dialog@latest"
+import { DialogElement } from "https://unpkg.com/afix-dialog@latest"
 import { MountableComponent } from "../util/mount"
 import { historyStore, Shot } from "../store/history"
 import { assert } from "../util/assert"

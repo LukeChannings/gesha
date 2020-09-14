@@ -250,8 +250,7 @@ func (s *Service) GetTempTarget() (interface{}, error) {
 
 // PostConfig -
 func (s *Service) PostConfig(config config.Config) (interface{}, error) {
-	s.c = &config
-	err := s.c.Write(&config, s.configPath)
+	err := s.c.Update(&config, s.configPath)
 	s.p.SetTarget(config.TemperatureTarget)
 
 	if err != nil {

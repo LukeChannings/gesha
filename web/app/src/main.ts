@@ -5,9 +5,9 @@ import "./components/Screen.css"
 import "./components/Button.css"
 import "./components/SecondaryButton.css"
 
-import "https://cdn.skypack.dev/afix-range-slider@latest"
-import "https://cdn.skypack.dev/afix-dialog@latest"
-import "https://cdn.skypack.dev/afix-list-item@latest"
+import "https://unpkg.com/afix-range-slider@latest"
+import "https://unpkg.com/afix-dialog@latest"
+import "https://unpkg.com/afix-list-item@latest"
 
 import { BrewScreen } from "./screens/Brew"
 import { HistoryScreen } from "./screens/History"

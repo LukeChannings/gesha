@@ -73,7 +73,7 @@ func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 			C           *config.Config
 			T           *i18n.Translations
 			CurrentTemp string
-			TargetTemp  float64
+			TargetTemp  string
 			Heating     bool
 			Running     bool
 			IsTempF     bool
@@ -83,7 +83,7 @@ func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 			T:           tr,
 			C:           c,
 			CurrentTemp: fmt.Sprintf("%.1f", currentTemp),
-			TargetTemp:  targetTemp,
+			TargetTemp:  fmt.Sprintf("%.0f", targetTemp),
 			IsTempF:     c.TemperatureUnit == "F",
 			Running:     p.Running,
 			Heating:     p.Heating,

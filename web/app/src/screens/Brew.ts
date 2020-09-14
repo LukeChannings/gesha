@@ -1,4 +1,4 @@
-import { AfixRangeSlider } from "https://cdn.skypack.dev/afix-range-slider@latest"
+import { AfixRangeSlider } from "https://unpkg.com/afix-range-slider@latest"
 import { getStateStream, StateEvent } from "../api/api"
 import { MountableComponent } from "../util/mount"
 import { getInstances } from "../util/mount"
@@ -95,6 +95,23 @@ export class BrewScreen extends MountableComponent {
         "There was an internal error getting an instance of the shot timer modal. Please report a bug.",
       )
     }
+  }
+
+  updateTemperature(temp: number, unit: string): void {
+    const tempSlider = this.shotVariables.temperature.querySelector(
+      "afix-range-slider",
+    )
+    const tempInput = this.shotVariables.temperature.querySelector(
+      "input",
+    )
+    const label = this.shotVariables.temperature.querySelector(
+      ".ShotVariables_Variable_Label_Unit",
+    )
+    assert(tempSlider instanceof AfixRangeSlider)
+    assert(tempInput instanceof HTMLInputElement)
+    tempSlider.setValue(temp)
+    assert(label instanceof HTMLElement)
+    label.innerHTML = `(° ${unit})`
   }
 }
 

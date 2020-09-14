@@ -45,9 +45,8 @@ func Load(path string) Config {
 	return c
 }
 
-// Write - updates the running configuration and writes the update to disk
-func (c *Config) Write(nc *Config, path string) error {
-	*c = *nc
+// Update - updates the running configuration and writes the update to disk
+func (c *Config) Update(nc *Config, path string) error {
 	confData, err := yaml.Marshal(c)
 	if err != nil {
 		return err
@@ -56,6 +55,19 @@ func (c *Config) Write(nc *Config, path string) error {
 	if err != nil {
 		return err
 	}
+
+	c.Port = nc.Port
+	c.BoilerPin = nc.BoilerPin
+	c.SpiPort = nc.SpiPort
+	c.TemperatureSampleRate = nc.TemperatureSampleRate
+	c.TemperatureUnit = nc.TemperatureUnit
+	c.TemperatureTarget = nc.TemperatureTarget
+	c.TemperatureGHBR = nc.TemperatureGHBR
+	c.PID = nc.PID
+	c.PidFrequency = nc.PidFrequency
+	c.PidAutostart = nc.PidAutostart
+	c.Verbose = nc.Verbose
+	c.ThemeColorHue = nc.ThemeColorHue
 
 	return nil
 }

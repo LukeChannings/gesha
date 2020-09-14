@@ -71,18 +71,18 @@
 
 @keyframes HeatingIndicator {
   0% {
-    color: hsl(calc(var(--base-color) + 180), 55%, 60%, 90%);
+    color: hsl(calc(var(--base-color) + -80), 55%, 60%, 90%);
   }
   50% {
-    color: hsl(calc(var(--base-color) + 180), 35%, 60%, 70%);
+    color: hsl(calc(var(--base-color) + -80), 35%, 60%, 70%);
   }
   100% {
-    color: hsl(calc(var(--base-color) + 180), 55%, 60%, 90%);
+    color: hsl(calc(var(--base-color) + -80), 55%, 60%, 90%);
   }
 }
 
 .ShotVariables_Variable.temp afix-range-slider {
-  color: hsl(calc(var(--base-color) + 180), 20%, 60%, 70%);
+  color: hsl(calc(var(--base-color) + -80), 20%, 60%, 70%);
 }
 
 .ShotVariables_Variable.temp.is-heating afix-range-slider {
@@ -90,11 +90,11 @@
 }
 
 .ShotVariables_Variable.dose afix-range-slider {
-  color: hsl(calc(var(--base-color) + 180), 20%, 60%);
+  color: hsl(calc(var(--base-color) + -80), 20%, 60%);
 }
 
 .ShotVariables_Variable.grind afix-range-slider {
-  color: hsl(calc(var(--base-color) + 180), 20%, 75%);
+  color: hsl(calc(var(--base-color) + -80), 20%, 75%);
 }
 
 .ShotVariables_Variable_Label {

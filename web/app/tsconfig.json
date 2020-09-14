@@ -12,13 +12,13 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "https://cdn.skypack.dev/afix-range-slider@latest": [
+      "https://unpkg.com/afix-range-slider@latest": [
         "./node_modules/afix-range-slider/src/Component.d.ts"
       ],
-      "https://cdn.skypack.dev/afix-dialog@latest": [
+      "https://unpkg.com/afix-dialog@latest": [
         "./node_modules/afix-dialog/src/Component.d.ts"
       ],
-      "https://cdn.skypack.dev/afix-list-item@latest": [
+      "https://unpkg.com/afix-list-item@latest": [
         "./node_modules/afix-list-item/src/Component.d.ts"
       ]
     }
