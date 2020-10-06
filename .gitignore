@@ -6,3 +6,4 @@ pkged.go
 *.sketch
 web/app/node_modules
 web/static/*.html
+.vscode
