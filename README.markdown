@@ -53,4 +53,5 @@ The app should load instantly. As you edit, reload the browser to update.
 - [silvia-pi](https://github.com/brycesub/silvia-pi)
 - [Silvia PID manual](https://www.seattlecoffeegear.com/assets/files/silvia-pid-operation-manual.pdf)
 - [PID without a PhD](https://m.eet.com/media/1112634/f-wescot.pdf)
+- [PID for Dummies](https://www.csimn.com/CSI_pages/PIDforDummies.html)
 - [Rancilio Silvia User Manual](https://www.ranciliogroupna.com/filebin/images/Downloadables/User_Manuals/Homeline/Silvia_User_Manual_2017.PDF) (vector electrical diagrams from page 32)

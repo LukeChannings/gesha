@@ -82,6 +82,7 @@
 }
 
 .ShotVariables_Variable.temp afix-range-slider {
+  --afix-range-slider-track-line-color: var(--navigation-fg-active);
   color: hsl(calc(var(--base-color) + -80), 20%, 60%, 70%);
 }
 

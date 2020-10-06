@@ -64,24 +64,33 @@ func (h *Handle) Start(c *config.Config) {
 
 			var b *temp.CurrentTemp
 
-			a, _ := h.t.Get()
+			a, err := h.t.Get()
 			b = a
 
+			if err != nil {
+				log.Fatalf("Error reading temperature! %v\n", err)
+			}
+
 			for {
-				temp, _ := h.t.Get()
+				temp, err := h.t.Get()
 				a = b
 				b = temp
+
+				if err != nil {
+					log.Fatalf("Error reading temperature! %v\n", err)
+					break
+				}
 
 				pidOutput := pid.UpdateDuration(b.Temp.Celsius(), time.Time(b.Time).Sub(time.Time(a.Time)))
 
 				h.pidOutput = pidOutput
 
-				if pidOutput != 1.0 {
-					h.heatPin.Out(gpio.Low)
-					h.Heating = false
-				} else {
+				if pidOutput == 1.0 && temp.Temp < c.TemperatureTarget+5.0*physic.Celsius {
 					h.heatPin.Out(gpio.High)
 					h.Heating = true
+				} else {
+					h.heatPin.Out(gpio.Low)
+					h.Heating = false
 				}
 
 				if h.c.Verbose {

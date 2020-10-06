@@ -47,15 +47,6 @@ func Load(path string) Config {
 
 // Update - updates the running configuration and writes the update to disk
 func (c *Config) Update(nc *Config, path string) error {
-	confData, err := yaml.Marshal(c)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(path, confData, 0x740)
-	if err != nil {
-		return err
-	}
-
 	c.Port = nc.Port
 	c.BoilerPin = nc.BoilerPin
 	c.SpiPort = nc.SpiPort
@@ -68,6 +59,15 @@ func (c *Config) Update(nc *Config, path string) error {
 	c.PidAutostart = nc.PidAutostart
 	c.Verbose = nc.Verbose
 	c.ThemeColorHue = nc.ThemeColorHue
+
+	confData, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(path, confData, 0740)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
