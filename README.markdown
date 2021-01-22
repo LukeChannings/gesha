@@ -5,6 +5,7 @@
 Gesha is an app for your modded espresso machine. It integrates with a [MAX31855](https://www.adafruit.com/product/3328) and a relay to control brew temperature, and lets you track variables like dose, grind, ratio, etc. to make perfecting your espresso easier.
 
 ![Gesha in light and dark modes](web/app/screenshots/composed.png)
+<video src="https://github.com/LukeChannings/gesha/blob/main/web/app/screenshots/gesha.mp4?raw=true" loop muted autoplay></video>
 
 ## Features
 
