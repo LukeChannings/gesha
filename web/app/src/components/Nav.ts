@@ -11,8 +11,11 @@ export class Nav extends MountableComponent {
 
     const validateHash = (e?: HashChangeEvent) => {
       if (!validHashes.includes(location.hash)) {
-        const { hash } = new URL(e?.oldURL ?? "#Brew")
-        location.hash = hash
+        const newUrl = new URL(e?.oldURL ?? location.href)
+        if (!newUrl.hash) {
+          newUrl.hash = "#Brew"
+        }
+        location.hash = newUrl.hash
       }
     }
 
