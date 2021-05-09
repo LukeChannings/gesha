@@ -1,34 +1,36 @@
 TAGGED_VERSION = $(shell git tag --points-at HEAD)
 GIT_HASH = $(shell git rev-parse --short HEAD)
 LD_FLAGS = -s -w -X main.gitHash=${GIT_HASH} -X main.taggedVersion=${TAGGED_VERSION}
+ESBUILD_FLAGS = --format=esm --bundle --sourcemap
+WEB_APP = web/app
 WEB_SRC = web/app/src
 WEB_DEST = web/static/dist
 
 all: build/linux-arm/gesha build/linux-arm64/gesha build/linux-amd64/gesha build/linux-i386/gesha build/darwin/gesha
 
-build/linux-arm/gesha: cmd/**/*.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css pkged.go
+build/linux-arm/gesha: cmd/**/*.go ${WEB_DEST}/* pkged.go
 	GOOS=linux GOARCH=arm GOARM=6 go build -ldflags="${LD_FLAGS}" -o $@
 
-build/linux-arm64/gesha: cmd/**/*.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css pkged.go
+build/linux-arm64/gesha: cmd/**/*.go ${WEB_DEST}/* pkged.go
 	GOOS=linux GOARCH=arm64 go build -ldflags="${LD_FLAGS}" -o $@
 
-build/linux-amd64/gesha: cmd/**/*.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css pkged.go
+build/linux-amd64/gesha: cmd/**/*.go ${WEB_DEST}/* pkged.go
 	GOOS=linux GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o $@
 
-build/linux-i386/gesha: cmd/**/*.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css pkged.go
+build/linux-i386/gesha: cmd/**/*.go ${WEB_DEST}/* pkged.go
 	GOOS=linux GOARCH=386 go build -ldflags="${LD_FLAGS}" -o $@
 	
-build/darwin/gesha: cmd/**/*.go ${WEB_DEST}/main.js ${WEB_DEST}/main.css pkged.go
+build/darwin/gesha: cmd/**/*.go ${WEB_DEST}/* pkged.go
 	GOOS=darwin GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o $@
 
 docs/api: api/openapi-spec/v1.openapi.yaml
 	openapi-generator generate -i $? -g markdown -o $@
 
-pkged.go: internal/**/*.go web/template/index.html web/web.go i18n/**.yaml ${WEB_DEST}/main.js ${WEB_DEST}/main.css
+pkged.go: internal/**/*.go web/template/index.html web/web.go i18n/**.yaml ${WEB_DEST}/*
 	pkger
 
-${WEB_DEST}/main.js: ${WEB_SRC}/*.ts ${WEB_SRC}/**/*.ts web/app/node_modules
-	hammer bundle --sourcemap=external --extract-css ${WEB_SRC}/main.ts $@
+${WEB_DEST}/*: ${WEB_SRC}/*.ts ${WEB_SRC}/**/*.ts web/app/node_modules
+	cd web/app && npx esbuild ${ESBUILD_FLAGS} --minify ./src/main.ts --outdir=../static/dist
 
 clean:
 	rm -rf build pkged.go web/static/dist
@@ -44,7 +46,7 @@ pi: build/linux-arm/gesha
 	scp build/linux-arm/gesha coffee-machine:~
 
 dev:
-	hammer serve --define=window.__API_BASE__='"http://192.168.20.24"' web/app/src web/static
+	cd web/app && npx esbuild ./src/main.ts --servedir=../static --outdir=../static/dist --define:window.__API_BASE__='"http://silvia.local"' ${ESBUILD_FLAGS}
 
 format:
 	cd web/app && npm run format

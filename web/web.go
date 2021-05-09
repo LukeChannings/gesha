@@ -1,8 +1,8 @@
 package web
 
 import (
+	_ "embed"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"text/template"
@@ -12,25 +12,15 @@ import (
 	"github.com/lukechannings/gesha/internal/i18n"
 	"github.com/lukechannings/gesha/internal/pid"
 	"github.com/lukechannings/gesha/internal/temp"
-	"github.com/markbates/pkger"
 )
 
-func getIndexTemplate() (*template.Template, error) {
-	tmpl, err := pkger.Open("/web/template/index.html")
-
-	if err != nil {
-		log.Fatal("Could not load index.tmpl")
-	}
-
-	b, _ := ioutil.ReadAll(tmpl)
-
-	return template.New("index").Parse(string(b))
-}
+//go:embed template/index.html
+var templateText string
 
 // Index - serves the interpolated index page
 func Index(c *config.Config, t *temp.Handle, p *pid.Handle) http.Handler {
 
-	tmpl, err := getIndexTemplate()
+	tmpl, err := template.New("index").Parse(templateText)
 
 	if err != nil {
 		log.Fatal("Failed to read template", err.Error())
