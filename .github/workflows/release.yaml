@@ -32,13 +32,6 @@ jobs:
           response=$(curl -s -H "Accept: application/json" https://api.github.com/repos/lukechannings/gesha/releases)
           EXISTING_RELEASE=$( [[ "$(echo $response | jq ".[]|select(.tag_name==\"${VERSION}\")")" == "" ]] && echo "false" || echo "true" )
           echo "::set-output name=existing_release::${EXISTING_RELEASE}"
-      - name: Check we're building the right version
-        run: |
-          if [[ "$(cat VERSION)" != "${{steps.metadata.outputs.version}}" ]]; then
-            echo "Tag version is "${{steps.metadata.outputs.version}}", but the source code version is "$(cat VERSION)". These need to match!"
-            exit 1
-          fi
-        shell: bash
   build:
     name: Upload Release Asset
     runs-on: ubuntu-latest
