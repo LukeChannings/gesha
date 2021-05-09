@@ -177,7 +177,7 @@ func installFile(fromPath string, toPath string, overwrite bool, bundle bool) {
 	if _, err := os.Stat(toPath); os.IsNotExist(err) || overwrite {
 		var data []byte
 
-		if !bundle {
+		if bundle {
 			if d, err := EmbeddedStaticFiles.ReadFile(fromPath); err == nil {
 				data = d
 			}
