@@ -1,6 +1,5 @@
 build
 dist
-pkged.go
 .env
 .DS_Store
 *.sketch

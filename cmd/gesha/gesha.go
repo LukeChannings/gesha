@@ -1,7 +1,9 @@
 package gesha
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -20,8 +22,9 @@ import (
 	"github.com/lukechannings/gesha/internal/pid"
 	"github.com/lukechannings/gesha/internal/temp"
 	"github.com/lukechannings/gesha/web"
-	"github.com/markbates/pkger"
 )
+
+var EmbeddedStaticFiles embed.FS
 
 // Usage - the CLI definition, used as a DSL by docopt.
 const Usage string = `
@@ -125,7 +128,11 @@ func start(configPath string, verbose bool) {
 
 	r := api.NewRouter(apiController)
 	r.Handle("/", web.Index(&c, t, &pid))
-	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(pkger.Dir("/web/static"))))
+	webStatic, err := fs.Sub(EmbeddedStaticFiles, "web/static")
+	if err != nil {
+		log.Fatalf("Failed to create a subfilesystem for web/static.")
+	}
+	r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.FS(webStatic))))
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -149,13 +156,10 @@ func start(configPath string, verbose bool) {
 
 func install() {
 	if hasSystemd() {
-		pkger.Include("/init/gesha.service")
-		pkger.Include("/configs/rancilio-silvia.yaml")
-
 		fmt.Println("Installing...")
 
-		installFile("/init/gesha.service", "/etc/systemd/system/gesha.service", true, true)
-		installFile("/configs/rancilio-silvia.yaml", "/etc/gesha/config.yaml", false, true)
+		installFile("init/gesha.service", "/etc/systemd/system/gesha.service", true, true)
+		installFile("configs/rancilio-silvia.yaml", "/etc/gesha/config.yaml", false, true)
 
 		geshaPath, _ := os.Executable()
 		installFile(geshaPath, "/usr/local/bin/gesha", true, false)
@@ -172,14 +176,11 @@ func install() {
 func installFile(fromPath string, toPath string, overwrite bool, bundle bool) {
 	if _, err := os.Stat(toPath); os.IsNotExist(err) || overwrite {
 		var data []byte
-		if bundle {
-			handle, openErr := pkger.Open(fromPath)
 
-			if openErr != nil {
-				log.Fatalf("Failed to load file %v: %v\n", fromPath, openErr)
+		if !bundle {
+			if d, err := EmbeddedStaticFiles.ReadFile(fromPath); err == nil {
+				data = d
 			}
-
-			data, _ = ioutil.ReadAll(handle)
 		} else {
 			sysData, err := ioutil.ReadFile(fromPath)
 			if err != nil {

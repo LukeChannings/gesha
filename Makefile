@@ -8,32 +8,29 @@ WEB_DEST = web/static/dist
 
 all: build/linux-arm/gesha build/linux-arm64/gesha build/linux-amd64/gesha build/linux-i386/gesha build/darwin/gesha
 
-build/linux-arm/gesha: cmd/**/*.go ${WEB_DEST}/* pkged.go
+build/linux-arm/gesha: cmd/**/*.go internal/**/*.go ${WEB_DEST}/*
 	GOOS=linux GOARCH=arm GOARM=6 go build -ldflags="${LD_FLAGS}" -o $@
 
-build/linux-arm64/gesha: cmd/**/*.go ${WEB_DEST}/* pkged.go
+build/linux-arm64/gesha: cmd/**/*.go internal/**/*.go ${WEB_DEST}/*
 	GOOS=linux GOARCH=arm64 go build -ldflags="${LD_FLAGS}" -o $@
 
-build/linux-amd64/gesha: cmd/**/*.go ${WEB_DEST}/* pkged.go
+build/linux-amd64/gesha: cmd/**/*.go internal/**/*.go ${WEB_DEST}/*
 	GOOS=linux GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o $@
 
-build/linux-i386/gesha: cmd/**/*.go ${WEB_DEST}/* pkged.go
+build/linux-i386/gesha: cmd/**/*.go internal/**/*.go ${WEB_DEST}/*
 	GOOS=linux GOARCH=386 go build -ldflags="${LD_FLAGS}" -o $@
 	
-build/darwin/gesha: cmd/**/*.go ${WEB_DEST}/* pkged.go
+build/darwin/gesha: cmd/**/*.go internal/**/*.go ${WEB_DEST}/*
 	GOOS=darwin GOARCH=amd64 go build -ldflags="${LD_FLAGS}" -o $@
 
 docs/api: api/openapi-spec/v1.openapi.yaml
 	openapi-generator generate -i $? -g markdown -o $@
 
-pkged.go: internal/**/*.go web/template/index.html web/web.go i18n/**.yaml ${WEB_DEST}/*
-	pkger
-
 ${WEB_DEST}/*: ${WEB_SRC}/*.ts ${WEB_SRC}/**/*.ts web/app/node_modules
 	cd web/app && npx esbuild ${ESBUILD_FLAGS} --minify ./src/main.ts --outdir=../static/dist
 
 clean:
-	rm -rf build pkged.go web/static/dist
+	rm -rf build web/static/dist
 
 test: web/app/node_modules
 	go test -v ./...
@@ -43,7 +40,7 @@ web/app/node_modules: web/app/package.json
 	cd web/app && npm ci
 
 pi: build/linux-arm/gesha
-	scp build/linux-arm/gesha coffee-machine:~
+	scp build/linux-arm/gesha Silvia:~
 
 dev:
 	cd web/app && npx esbuild ./src/main.ts --servedir=../static --outdir=../static/dist --define:window.__API_BASE__='"http://silvia.local"' ${ESBUILD_FLAGS}

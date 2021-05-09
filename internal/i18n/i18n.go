@@ -1,17 +1,17 @@
 package i18n
 
 import (
+	"embed"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"path"
 	"strings"
 
-	"github.com/markbates/pkger"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v2"
 )
+
+var EmbeddedTranslations embed.FS
 
 // Translations - the structure of the translations doocument
 type Translations struct {
@@ -133,29 +133,24 @@ var availableTranslations map[language.Tag]*Translations = make(map[language.Tag
 
 // PopulateTranslations - populates available translations with translations files from /i18n/*.yaml
 func PopulateTranslations() error {
-	err := pkger.Walk("/i18n", func(filepath string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
+	entries, err := EmbeddedTranslations.ReadDir("i18n")
+	for _, entry := range entries {
+		filepath := "i18n/" + entry.Name()
 		extension := path.Ext(filepath)
-
-		if extension == ".yaml" {
-			lang := strings.Replace(path.Base(filepath), extension, "", 1)
+		if entry.Type().IsRegular() && extension == ".yaml" {
+			lang := strings.Replace(entry.Name(), extension, "", 1)
 			tag, langParseErr := language.Parse(lang)
 			if langParseErr != nil {
 				return langParseErr
 			}
-
 			translations := Translations{}
 
-			handle, openErr := pkger.Open(filepath)
+			data, err := EmbeddedTranslations.ReadFile(filepath)
 
-			if openErr != nil {
-				fmt.Println("Error opening ", filepath, openErr.Error())
+			if err != nil {
+				fmt.Println("Error opening ", filepath, err.Error())
+				continue
 			}
-
-			data, _ := ioutil.ReadAll(handle)
 
 			unmarshalErr := yaml.Unmarshal(data, &translations)
 
@@ -166,16 +161,14 @@ func PopulateTranslations() error {
 
 			availableTranslations[tag] = &translations
 		}
-
-		return nil
-	})
+	}
 
 	if err != nil {
 		return err
 	}
 
 	if langs := GetAvailableLanguages(); len(langs) == 0 {
-		return errors.New("There are no translations available")
+		return errors.New("there are no translations available")
 	}
 
 	return nil

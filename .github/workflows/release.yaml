@@ -15,10 +15,6 @@ jobs:
         with:
           go-version: ^1.16
         id: go
-      - name: Install dependencies
-        run: |
-          go get github.com/markbates/pkger/cmd/pkger
-          go get github.com/evanw/esbuild/cmd/esbuild
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project

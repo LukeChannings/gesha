@@ -9,7 +9,6 @@ require (
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/lukechannings/max31855 v1.1.0
-	github.com/markbates/pkger v0.17.1
 	golang.org/x/text v0.3.3
 	gopkg.in/yaml.v2 v2.2.7
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
