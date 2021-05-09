@@ -2,13 +2,48 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version
+        required: true
 
 name: Upload Release Asset
 
 jobs:
+  build_info:
+    name: Get build info
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
+      prerelease: ${{ steps.metadata.outputs.prerelease }}
+      existing_release: ${{ steps.metadata.outputs.existing_release }}
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+      - name: Get metadata
+        id: metadata
+        run: |
+          export VERSION="${{ github.event.inputs.version || github.ref }}"
+          VERSION="${VERSION#refs/tags/v}"
+          echo "::set-output name=version::${VERSION}"
+          PRERELEASE="$([[ "$VERSION" == *"alpha"* ]] || [[ "$VERSION" == *"beta"* ]] && echo "true" || echo "false")"
+          echo "::set-output name=prerelease::${PRERELEASE}"
+          response=$(curl -s -H "Accept: application/json" https://api.github.com/repos/lukechannings/gesha/releases)
+          EXISTING_RELEASE=$( [[ "$(echo $response | jq ".[]|select(.tag_name==\"${VERSION}\")")" == "" ]] && echo "false" || echo "true" )
+          echo "::set-output name=existing_release::${EXISTING_RELEASE}"
+      - name: Check we're building the right version
+        run: |
+          if [[ "$(cat VERSION)" != "${{steps.metadata.outputs.version}}" ]]; then
+            echo "Tag version is "${{steps.metadata.outputs.version}}", but the source code version is "$(cat VERSION)". These need to match!"
+            exit 1
+          fi
+        shell: bash
   build:
     name: Upload Release Asset
     runs-on: ubuntu-latest
+    needs:
+      - build_info
     steps:
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -21,6 +56,7 @@ jobs:
         run: make all
       - name: Create Release
         id: create_release
+        if: ${{ needs.build_info.outputs.existing_release == 'false' }}
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -29,53 +65,16 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
-      - name: Upload gesha-darwin
-        id: upload-release-asset-darwin
-        uses: actions/upload-release-asset@v1
+      - name: Upload binaries
+        run: |
+          set -x
+          targets=("linux-amd64" "linux-arm64" "macos-amd64" "macos-arm64" "windows-amd64")
+          assets=()
+          for target in ./build/*; do
+            zip -r -j "${target}.zip" ${target}/gesha
+            assets+=("-a" "${target}.zip")
+          done
+          hub release edit "${assets[@]}" -m "v${{ needs.build_info.outputs.version }}" "v${{ needs.build_info.outputs.version }}"
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/darwin/gesha
-          asset_name: gesha-darwin
-          asset_content_type: application/octet-stream
-      - name: Upload gesha-linux-arm
-        id: upload-release-asset-arm
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/linux-arm/gesha
-          asset_name: gesha-linux-arm
-          asset_content_type: application/octet-stream
-      - name: Upload gesha-linux-arm64
-        id: upload-release-asset-arm64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/linux-arm64/gesha
-          asset_name: gesha-linux-arm64
-          asset_content_type: application/octet-stream
-      - name: Upload gesha-linux-amd64
-        id: upload-release-asset-amd64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/linux-amd64/gesha
-          asset_name: gesha-linux-amd64
-          asset_content_type: application/octet-stream
-      - name: Upload gesha-linux-i386
-        id: upload-release-asset-i386
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/linux-i386/gesha
-          asset_name: gesha-linux-i386
-          asset_content_type: application/octet-stream
