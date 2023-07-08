@@ -1,0 +1,8 @@
+[build]
+target = "arm-unknown-linux-gnueabihf"
+
+[profile.release]
+strip = true # Automatically strip symbols from the binary.
+
+[target.arm-unknown-linux-gnueabihf]
+linker = "armv7-unknown-linux-gnueabihf-gcc"

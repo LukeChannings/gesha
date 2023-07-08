@@ -1,0 +1,4 @@
+controlMethod: !Threshold 90
+boiler: !Pi "0.0"
+grouphead: !Pi "0.1"
+thermofilter: !Pi "1.0"

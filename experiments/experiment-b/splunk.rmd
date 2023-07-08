@@ -1,0 +1,4 @@
+```{r}
+data <- read.csv("experiments/experiment-b/experiment-b.csv")
+as.POSIXct(data["time"])
+```

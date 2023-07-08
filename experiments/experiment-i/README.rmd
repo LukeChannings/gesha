@@ -1,0 +1,20 @@
+# Experiment `i`
+
+```{r, echo=F}
+library(stringr)
+library(anytime)
+library(ggplot2)
+
+boiler_temps <- read.csv("./experiment-i.csv")
+
+boiler_temps$time <- anytime(as.numeric(str_replace(boiler_temps$time, "s", "")))
+boiler_temps$is_heating <- ifelse(boiler_temps$is_heating == "true", 97, NA)
+```
+
+
+```{r, echo=F}
+ggplot(data = boiler_temps, aes(x = time)) +
+    geom_line(aes(y = boiler_thermocouple), colour = "blue") +
+    geom_line(aes(y = controller), colour = "black") +
+    geom_line(aes(y = is_heating), colour = "red")
+```

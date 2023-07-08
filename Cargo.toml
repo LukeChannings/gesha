@@ -1,0 +1,26 @@
+[package]
+name = "gesha"
+authors = ["Luke Channings"]
+description = "A temperature control programme for espresso machines"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+serde_json = "1.0.100"
+tokio = { version = "1.28.2", features = ["full"] }
+tokio-util = "0.7.8"
+embedded-hal = "0.2.7"
+max31855 = "0.1.0"
+ctrlc = "3.4.0"
+clap = { version = "4.3.8", features = ["derive"] }
+rumqttc = { version = "0.22.0", features = ["url"] }
+pretty_env_logger = "0.5.0"
+
+[target.'cfg(all(target_arch = "arm", target_os = "linux"))'.dependencies]
+rppal = { version = "0.14.1", features = ["hal-unproven"] }

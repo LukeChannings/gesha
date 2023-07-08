@@ -1,0 +1,31 @@
+# Thermocouple calibration
+
+In order to build an accurate model of the relationship between the temperatures of the boiler, group head, and thermofilter I must first ensure that the thermocouples are calibrated.
+
+## Initial temperature responses
+
+I am using 3 ungrounded type K thermocouples.
+
+I designed an experiment in which I used a sous-vide machine submerged in freezing water with the 3 thermocouples, and since the sous vide temperature probe is factory calibrated this could serve as a reference point. I found that the readings from the thermocouples began producing errors after a short time with a ground fault error. There is no adequate method of grounding the thermocouples, and so I adjusted my experiment.
+
+The adjusted experiment places the thermocouple junctions on a nonconductive thermal pad that is attached to the boiler temperature probe location on the espresso machine. I recorded the temperatures from each thermocouple
+
+```{r, echo=F}
+library(stringr)
+library(anytime)
+library(ggplot2)
+
+boiler_temps <- read.csv("./experiment-h/experiment-h.csv")
+
+boiler_temps$time <- anytime(as.numeric(str_replace(boiler_temps$time, "s", "")))
+
+boiler_temps$average <- mean(boiler_temps["boiler_thermocouple"], boiler_temps["grouphead_thermocouple"],boiler_temps["basket_thermocouple"])
+```
+
+
+```{r, echo=F}
+ggplot(data = boiler_temps, aes(x = time)) +
+    geom_line(aes(y = boiler_thermocouple), colour = "red", linetype = "dashed") +
+    geom_line(aes(y = grouphead_thermocouple), colour = "darkgreen", linetype = "twodash") +
+    geom_line(aes(y = basket_thermocouple), colour = "blue", linetype = "dotted")
+```
