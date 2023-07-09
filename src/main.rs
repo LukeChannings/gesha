@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     loop {
         select! {
             Ok(event) = rx.recv() => {
-                info!("Event: {:?}", event);
+                debug!("Event: {:?}", event);
 
                 match state.update(event) {
                     Ok(mqtt_messages) => {

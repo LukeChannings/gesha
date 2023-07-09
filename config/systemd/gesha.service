@@ -1,0 +1,9 @@
+[Unit]
+Description=Gesha
+
+[Service]
+ExecStart=/opt/gesha/bin/gesha -c /opt/gesha/etc/config.yaml
+Environment=RUST_LOG=info
+
+[Install]
+WantedBy=multi-user.target

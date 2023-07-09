@@ -23,6 +23,9 @@ pub struct Config {
 #[derive(Parser, Debug, Clone)]
 struct Args {
     #[arg(short, long)]
+    pub config_path: Option<String>,
+
+    #[arg(short, long)]
     pub control_method: Option<ControlMethod>,
 
     #[arg(short, long)]
@@ -56,9 +59,16 @@ impl Default for Config {
 
 impl Config {
     pub fn load() -> Result<Config> {
+        let args = Args::parse();
         let mut config: Config = Self::default();
 
-        for name in CONFIG_NAMES.iter() {
+        let config_paths: Vec<&str> = if let Some(config_path) = &args.config_path {
+            vec![config_path]
+        } else {
+            CONFIG_NAMES.to_vec()
+        };
+
+        for name in config_paths.iter() {
             match Self::from_file(Path::new(name)) {
                 Ok(config_from_file) => {
                     info!("Loaded {name}");
@@ -72,9 +82,7 @@ impl Config {
             }
         }
 
-        let config_from_args = Args::parse();
-
-        config.update_with_args(config_from_args);
+        config.update_with_args(args);
 
         Ok(config)
     }

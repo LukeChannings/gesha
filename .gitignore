@@ -1,3 +1,5 @@
 /target
 photos
 secrets.yaml
+ui/dist
+ui/node_modules
