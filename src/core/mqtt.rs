@@ -8,12 +8,10 @@ use rumqttc::v5::{
     AsyncClient, Event, MqttOptions,
 };
 use std::{str, time::UNIX_EPOCH};
-use tokio::{select, task, sync::broadcast::Sender, time};
+use tokio::{select, sync::broadcast::Sender, task, time};
 use tokio_util::sync::CancellationToken;
 
-use crate::{
-    core::state::{Event as GeshaEvent, PowerState},
-};
+use crate::core::state::{Event as GeshaEvent, PowerState};
 
 use super::{
     config::ControlMethod,
@@ -102,6 +100,9 @@ impl Mqtt {
 
         let tx = self.event_tx.clone();
 
+        self.publish(&MqttOutgoingMessage::StatusUpdate(Mode::Idle))
+            .await?;
+
         task::spawn(async move {
             loop {
                 select! {
@@ -185,8 +186,18 @@ impl Mqtt {
                 ));
             }
             MqttOutgoingMessage::TemperatureUpdate(measurement) => {
-                events.push((format!("gesha/temperature/last_updated"), measurement.timestamp.duration_since(UNIX_EPOCH)?.as_nanos().to_string()));
-                events.push((format!("gesha/temperature/boiler"), measurement.boiler_temp.to_string()));
+                events.push((
+                    format!("gesha/temperature/last_updated"),
+                    measurement
+                        .timestamp
+                        .duration_since(UNIX_EPOCH)?
+                        .as_nanos()
+                        .to_string(),
+                ));
+                events.push((
+                    format!("gesha/temperature/boiler"),
+                    measurement.boiler_temp.to_string(),
+                ));
 
                 events.push((
                     format!("gesha/temperature/grouphead"),
@@ -194,7 +205,10 @@ impl Mqtt {
                 ));
 
                 if let Some(thermofilter) = measurement.thermofilter_temp {
-                    events.push((format!("gesha/temperature/thermofilter"), thermofilter.to_string()));
+                    events.push((
+                        format!("gesha/temperature/thermofilter"),
+                        thermofilter.to_string(),
+                    ));
                 }
             }
             MqttOutgoingMessage::TargetTemperatureUpdate(temp) => {

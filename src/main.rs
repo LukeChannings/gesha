@@ -1,12 +1,17 @@
 mod controller;
 mod core;
 
-use crate::core::{config, mqtt::{self, MqttOutgoingMessage}, state::{self, Event}, thermocouple::poll_thermocouples};
-use log::{error, info, trace, debug};
+use crate::core::{
+    config,
+    mqtt::{self, MqttOutgoingMessage},
+    state::{self, Event},
+    thermocouple::poll_thermocouples,
+};
+use log::{debug, error, info, trace};
 use pretty_env_logger;
-use tokio_util::sync::CancellationToken;
 use std::error::Error;
 use tokio::{select, signal, sync::broadcast};
+use tokio_util::sync::CancellationToken;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -35,7 +40,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     controller_manager.start()?;
 
-    poll_thermocouples(config_clone, std::time::Duration::from_secs(1), tx.clone()).await?;
+    poll_thermocouples(config_clone, std::time::Duration::from_millis(100), tx.clone()).await?;
 
     loop {
         select! {

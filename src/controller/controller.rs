@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use log::{error, debug};
+use log::{debug, error};
 use rppal::gpio;
 use tokio::{select, sync::broadcast::Sender, task};
 use tokio_util::sync::CancellationToken;
@@ -7,6 +7,7 @@ use tokio_util::sync::CancellationToken;
 use super::{MpcController, PidController, ThresholdController};
 use crate::{
     config::ControlMethod,
+    core::state::Mode,
     state::{Event as GeshaEvent, PowerState},
 };
 
@@ -56,26 +57,49 @@ impl ControllerManager {
 
         task::spawn(async move {
             let controller: Option<Box<dyn Controller>> = (&control_method).into();
+            let mut mode: Option<Mode> = None;
 
             loop {
                 select! {
-                    Ok(GeshaEvent::TempUpdate(temp)) = rx.recv() => {
-                        if let Some(controller) = &controller {
-                            if controller.sample(temp.boiler_temp, temp.grouphead_temp) {
-                                output_pin.set_high();
-                            } else {
-                                output_pin.set_low();
+                    Ok(event) = rx.recv() => {
+                        match event {
+                            GeshaEvent::TempUpdate(temp) => {
+                                let mut boiler_state_changed = false;
+                                if let Some(Mode::Heat) = mode {
+                                    if let Some(controller) = &controller {
+                                        let should_heat = controller.sample(temp.boiler_temp, temp.grouphead_temp);
+
+                                        if should_heat && output_pin.is_set_low() {
+                                            output_pin.set_high();
+                                            boiler_state_changed = true;
+                                        } else if !should_heat && output_pin.is_set_high() {
+                                            output_pin.set_low();
+                                            boiler_state_changed = true;
+                                        }
+                                    }
+                                } else if output_pin.is_set_high() {
+                                    output_pin.set_low();
+                                    boiler_state_changed = true;
+                                }
+
+                                if boiler_state_changed {
+                                    if let Err(err) = tx.send(GeshaEvent::BoilerStateUpdate(
+                                        if output_pin.is_set_high() {
+                                            PowerState::On
+                                        } else {
+                                            PowerState::Off
+                                        })) {
+                                        error!("Error sending boiler state: {}", err);
+                                    };
+                                }
+                            },
+                            GeshaEvent::PowerStateUpdate(state) => {
+                                mode = Some(if state == PowerState::Off { Mode::Idle } else { Mode::Heat });
+                            },
+                            _ => {
+                                // ignore other events.
                             }
                         }
-
-                        if let Err(err) = tx.send(GeshaEvent::BoilerStateUpdate(
-                            if output_pin.is_set_high() {
-                                PowerState::On
-                            } else {
-                                PowerState::Off
-                            })) {
-                            error!("Error sending boiler state: {}", err);
-                            };
                     },
                     _ = cancel_token.cancelled() => {
                         debug!("Controller manager stopped");
@@ -112,7 +136,7 @@ impl ControllerManager {
 impl Into<Option<Box<dyn Controller>>> for &ControlMethod {
     fn into(self) -> Option<Box<dyn Controller>> {
         match self {
-            ControlMethod::Threshold => Some(Box::new(ThresholdController::new(98.0))),
+            ControlMethod::Threshold => Some(Box::new(ThresholdController::new(90.0))),
             ControlMethod::MPC => Some(Box::new(MpcController::new())),
             ControlMethod::PID => Some(Box::new(PidController::new(1.0, 1.0, 1.0))),
             ControlMethod::Manual => None,

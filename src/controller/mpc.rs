@@ -4,7 +4,7 @@ pub struct MpcController {}
 
 impl MpcController {
     pub fn new() -> Self {
-        MpcController { }
+        MpcController {}
     }
 }
 

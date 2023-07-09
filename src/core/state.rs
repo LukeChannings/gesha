@@ -92,7 +92,7 @@ impl State {
                 mqtt_messages.push(MqttOutgoingMessage::TemperatureUpdate(temp.clone()));
             }
             Event::BoilerStateUpdate(state) => {
-                if self.power_state == PowerState::On {
+                if self.power_state == PowerState::Off && state == PowerState::On {
                     Err(anyhow!(
                         "Cannot set boiler state to On when the machine is powered off!"
                     ))?;

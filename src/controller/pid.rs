@@ -8,11 +8,7 @@ pub struct PidController {
 
 impl PidController {
     pub fn new(p: f32, i: f32, d: f32) -> Self {
-        PidController {
-            p,
-            i,
-            d
-        }
+        PidController { p, i, d }
     }
 }
 

@@ -112,7 +112,9 @@ pub async fn poll_thermocouples(
 
         loop {
             let boiler_temp = boiler.read().expect("Error reading boiler temperature");
-            let grouphead_temp = grouphead.read().expect("Error reading grouphead temperature");
+            let grouphead_temp = grouphead
+                .read()
+                .expect("Error reading grouphead temperature");
             let thermofilter_temp = thermofilter.as_mut().map(|thermofilter| {
                 thermofilter
                     .read()
