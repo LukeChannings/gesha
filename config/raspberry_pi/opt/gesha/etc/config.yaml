@@ -1,0 +1,6 @@
+controlMethod: Threshold
+mqttUrl: "<<MQTT_URL>>"
+boilerSpi: Rpi0
+groupheadSpi: Rpi0_1
+thermofilterSpi: Rpi1
+boilerPin: 26
