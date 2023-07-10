@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use bytes::{BufMut, Bytes, BytesMut};
 use log::{debug, error};
 use rumqttc::v5::{
     mqttbytes::{
@@ -172,66 +173,111 @@ impl Mqtt {
         if self.client.is_none() {
             return Err(anyhow!("No MQTT client available"));
         }
+        struct Event<'a> {
+            topic: &'a str,
+            payload_string: Option<String>,
+            payload_f32: Option<f32>,
+            payload_u64: Option<u64>,
+        }
 
-        let mut events: Vec<(String, String)> = vec![];
+        let mut events: Vec<Event> = vec![];
 
         match message {
             MqttOutgoingMessage::StatusUpdate(status) => {
-                events.push((String::from("gesha/mode"), serde_json::to_string(status)?));
+                events.push(Event {
+                    topic: "gesha/mode",
+                    payload_string: Some(serde_json::to_string(status)?),
+                    payload_f32: None,
+                    payload_u64: None,
+                });
             }
             MqttOutgoingMessage::BoilerStatusUpdate(power_state) => {
-                events.push((
-                    String::from("gesha/boiler_status"),
-                    serde_json::to_string(power_state)?,
-                ));
+                events.push(Event {
+                    topic: "gesha/boiler_status",
+                    payload_string: Some(serde_json::to_string(power_state)?),
+                    payload_f32: None,
+                    payload_u64: None,
+                });
             }
             MqttOutgoingMessage::TemperatureUpdate(measurement) => {
-                events.push((
-                    format!("gesha/temperature/last_updated"),
-                    measurement
-                        .timestamp
-                        .duration_since(UNIX_EPOCH)?
-                        .as_nanos()
-                        .to_string(),
-                ));
-                events.push((
-                    format!("gesha/temperature/boiler"),
-                    measurement.boiler_temp.to_string(),
-                ));
+                // Cast to u64 since 64 bits takes us to 22 July 2554 *in nanoseconds*, let's not waste precious bytes!
+                let last_updated = measurement.timestamp.duration_since(UNIX_EPOCH)?.as_millis() as u64;
 
-                events.push((
-                    format!("gesha/temperature/grouphead"),
-                    measurement.grouphead_temp.to_string(),
-                ));
+                events.push(Event {
+                    topic: "gesha/temperature/last_updated",
+                    payload_string: None,
+                    payload_f32: None,
+                    payload_u64: Some(
+                        last_updated,
+                    ),
+                });
 
-                if let Some(thermofilter) = measurement.thermofilter_temp {
-                    events.push((
-                        format!("gesha/temperature/thermofilter"),
-                        thermofilter.to_string(),
-                    ));
+                events.push(Event {
+                    topic: "gesha/temperature/boiler",
+                    payload_string: None,
+                    payload_f32: Some(measurement.boiler_temp),
+                    payload_u64: None,
+                });
+
+                events.push(Event {
+                    topic: "gesha/temperature/grouphead",
+                    payload_string: None,
+                    payload_f32: Some(measurement.grouphead_temp),
+                    payload_u64: None,
+                });
+
+                if let Some(thermofilter_temp) = measurement.thermofilter_temp {
+                    events.push(Event {
+                        topic: "gesha/temperature/thermofilter",
+                        payload_string: None,
+                        payload_f32: Some(thermofilter_temp),
+                        payload_u64: None,
+                    });
                 }
             }
             MqttOutgoingMessage::TargetTemperatureUpdate(temp) => {
-                events.push((
-                    format!("gesha/temperature/target"),
-                    serde_json::to_string(temp)?,
-                ));
+                events.push(Event {
+                    topic: "gesha/temperature/target",
+                    payload_string: None,
+                    payload_f32: Some(*temp),
+                    payload_u64: None,
+                });
             }
             MqttOutgoingMessage::ControlMethodUpdate(control_method) => {
-                events.push((
-                    format!("gesha/control_method"),
-                    serde_json::to_string(control_method)?,
-                ));
+                events.push(Event {
+                    topic: "gesha/temperature/target",
+                    payload_string: Some(serde_json::to_string(control_method)?),
+                    payload_f32: None,
+                    payload_u64: None,
+                });
             }
         }
 
-        for (topic, payload) in events.iter() {
-            self.client
-                .as_ref()
-                .unwrap()
-                .publish(topic, QoS::ExactlyOnce, false, String::from(payload))
-                .await
-                .map_err(|err| anyhow!("Failed to publish status, got {}", err))?;
+        let client = self.client.as_ref().unwrap();
+
+        for event in events.iter() {
+            if let Some(payload) = &event.payload_string {
+                client
+                    .publish(event.topic, QoS::ExactlyOnce, true, String::from(payload))
+                    .await
+                    .map_err(|err| anyhow!("Failed to publish status, got {}", err))?;
+            } else if let Some(payload) = event.payload_f32 {
+                let mut bytes = BytesMut::with_capacity(4);
+                bytes.put_f32(payload);
+
+                client
+                    .publish(event.topic, QoS::ExactlyOnce, true, bytes)
+                    .await
+                    .map_err(|err| anyhow!("Failed to publish status, got {}", err))?;
+            } else if let Some(payload) = event.payload_u64 {
+                let mut bytes = BytesMut::with_capacity(16);
+                bytes.put_u64(payload);
+
+                client
+                    .publish(event.topic, QoS::ExactlyOnce, true, bytes)
+                    .await
+                    .map_err(|err| anyhow!("Failed to publish status, got {}", err))?;
+            }
         }
 
         Ok(())
