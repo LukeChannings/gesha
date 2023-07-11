@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     controller_manager.start()?;
 
-    poll_thermocouples(config_clone, std::time::Duration::from_millis(100), tx.clone()).await?;
+    poll_thermocouples(config_clone, std::time::Duration::from_millis(250), tx.clone()).await?;
 
     loop {
         select! {
