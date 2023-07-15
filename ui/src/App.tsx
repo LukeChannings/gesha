@@ -1,18 +1,22 @@
 import { connect } from "mqtt";
 import { createEffect, createSignal } from "solid-js";
 
-import { Datum, Series, updateSeries } from "./util";
+import { Datum, Series, last, updateSeries } from "./util";
 import { BarChart } from "./Chart";
+
+import styles from "./App.module.css";
+import { ResizeContainer } from "./ResizeContainer";
 
 function App() {
     const [boilerTempSeries, setBoilerTempSeries] = createSignal<Series>([]);
     const [groupheadTempSeries, setGroupheadTempSeries] = createSignal<Series>([]);
     const [thermofilterTempSeries, setThermofilterTempSeries] = createSignal<Series>([]);
-    const [isMachineOn, setIsMachineOn] = createSignal<boolean>(false);
+    const [isMachineOn, setIsMachineOn] = createSignal(false);
+    const [isBoilerHeating, setIsBoilerHeating] = createSignal(false);
 
     // We'll keep 30 minutes of data, and only show 5 minutes
     const retainedWindowMs = 30 * 60 * 1_000;
-    const timeWindowMs = 5 * 60 * 1_000;
+    const timeWindowMs = 10 * 60 * 1_000;
 
     const client = connect("ws://luke:5s9zcBneIiIgETZ0FXLKw0frf6GrjrukPIZdYbQc@silvia.iot:8080");
     client.subscribe("gesha/temperature/#");
@@ -50,6 +54,10 @@ function App() {
                     );
                     break;
                 }
+                case "gesha/boiler_status": {
+                    setIsBoilerHeating(value === "on");
+                    break;
+                }
                 case "ms-silvia-switch/switch/power/state": {
                     setIsMachineOn(value === "ON");
                     break;
@@ -63,26 +71,33 @@ function App() {
     };
 
     return (
-        <div>
-            <form>
-                <label>
-                    Power{" "}
-                    <input
-                        type="checkbox"
-                        checked={isMachineOn()}
-                        onChange={(el) => setMachinePower(el.target.checked)}
-                    />
-                </label>
+        <main class={styles.app}>
+            <form class={styles.controls}>
+                <button
+                    onClick={(e) => {
+                        setMachinePower(!isMachineOn());
+                        e.preventDefault();
+                    }}
+                >
+                    {isMachineOn() ? "Power off" : "Power on"}
+                </button>
+
+                <p>Heat: {isBoilerHeating() ? "on" : "off"}</p>
+                <p>Lag: {Math.max(0, Date.now() - (last(boilerTempSeries())?.x ?? 0))}ms</p>
             </form>
-            <BarChart
-                boilerTempSeries={boilerTempSeries}
-                groupheadTempSeries={groupheadTempSeries}
-                thermofilterTempSeries={thermofilterTempSeries}
-                width={1000}
-                height={500}
-                timeWindow={timeWindowMs}
-            />
-        </div>
+            <ResizeContainer class={styles.chart}>
+                {(width, height) => (
+                    <BarChart
+                        boilerTempSeries={boilerTempSeries}
+                        groupheadTempSeries={groupheadTempSeries}
+                        thermofilterTempSeries={thermofilterTempSeries}
+                        width={width}
+                        height={height}
+                        timeWindow={timeWindowMs}
+                    />
+                )}
+            </ResizeContainer>
+        </main>
     );
 }
 

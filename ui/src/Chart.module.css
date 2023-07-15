@@ -1,5 +1,29 @@
+.chart {
+    background-color: #f8f9fa;
+
+    --datavis-boiler-color: #6929c4;
+    --datavis-grouphead-color: #005d5d;
+    --datavis-thermofilter-color: #012749;
+}
+
 .line {
-    mix-blend-mode: difference;
-    stroke-linecap: round;
+    mix-blend-mode: hard-light;
     stroke-width: 3px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.xAxisGroup line {
+    stroke-dasharray: 5;
+    stroke: #aaa;
+}
+
+.xAxisGroup text {
+    font-weight: bold;
+}
+
+.legendTemp {
+    font-size: 12px;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
 }
