@@ -19,7 +19,7 @@ function App() {
     const timeWindowMs = 10 * 60 * 1_000;
 
     const client = connect("ws://luke:5s9zcBneIiIgETZ0FXLKw0frf6GrjrukPIZdYbQc@silvia.iot:8080");
-    client.subscribe("gesha/temperature/#");
+    client.subscribe("gesha/#");
     client.subscribe("ms-silvia-switch/switch/power/state");
 
     createEffect(() => {

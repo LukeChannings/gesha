@@ -1,16 +1,19 @@
 use std::time::{Duration, SystemTime};
 
 use anyhow::{anyhow, Result};
-use log::error;
+use log::{error, info};
 use max31855::Max31855;
 use rppal::{gpio, spi};
-use tokio::{sync::broadcast::Sender, task};
+use tokio::{
+    sync::broadcast::Sender,
+    task::{self, JoinHandle},
+};
 
 use crate::config::Spi;
 
 use super::{
     config::Config,
-    state::{Event as GeshaEvent, TemperatureMeasurement},
+    state::{Event as GeshaEvent, Mode, TemperatureMeasurement},
 };
 
 pub struct Thermocouple {
@@ -91,48 +94,114 @@ impl TryFrom<Spi> for Thermocouple {
     }
 }
 
-pub async fn poll_thermocouples(
-    config: &Config,
-    interval: Duration,
+pub struct ThermocouplePoller {
+    mode: Mode,
     event_tx: Sender<GeshaEvent>,
-) -> Result<()> {
-    let mut boiler: Thermocouple = config
-        .boiler_spi
-        .expect("Boiler SPI is not configured")
-        .try_into()?;
-    let mut grouphead: Thermocouple = config
-        .grouphead_spi
-        .expect("Group head SPI is not configured")
-        .try_into()?;
-    let mut thermofilter: Option<Thermocouple> =
-        config.thermofilter_spi.map(|spi| spi.try_into().unwrap());
+    config: Config,
+    poller: Option<JoinHandle<()>>,
+}
 
-    task::spawn(async move {
-        let mut interval = tokio::time::interval(interval);
-
-        loop {
-            let boiler_temp = boiler.read().expect("Error reading boiler temperature");
-            let grouphead_temp = grouphead
-                .read()
-                .expect("Error reading grouphead temperature");
-            let thermofilter_temp = thermofilter.as_mut().map(|thermofilter| {
-                thermofilter
-                    .read()
-                    .expect("Error reading thermofilter temperature")
-            });
-
-            if let Err(err) = event_tx.send(GeshaEvent::TempUpdate(TemperatureMeasurement {
-                boiler_temp,
-                grouphead_temp,
-                thermofilter_temp,
-                timestamp: SystemTime::now(),
-            })) {
-                error!("Error sending temperature update: {}", err);
-            };
-
-            interval.tick().await;
+impl ThermocouplePoller {
+    pub fn new(mode: Mode, event_tx: Sender<GeshaEvent>, config: Config) -> ThermocouplePoller {
+        ThermocouplePoller {
+            mode,
+            event_tx,
+            config: config.clone(),
+            poller: None,
         }
-    });
+    }
 
-    Ok(())
+    pub fn poll(&mut self) -> Result<()> {
+        let mut boiler: Thermocouple = self
+            .config
+            .boiler_spi
+            .expect("Boiler SPI is not configured")
+            .try_into()?;
+
+        let mut grouphead: Thermocouple = self
+            .config
+            .grouphead_spi
+            .expect("Group head SPI is not configured")
+            .try_into()?;
+
+        let mut thermofilter: Option<Thermocouple> = self
+            .config
+            .thermofilter_spi
+            .map(|spi| spi.try_into().unwrap());
+
+        let poller_tx = self.event_tx.clone();
+
+        let interval = self.get_interval();
+
+        info!("Thermocouple polling interval is {interval:#?}");
+
+        let poller = task::spawn(async move {
+            let mut interval = tokio::time::interval(interval);
+
+            loop {
+                let boiler_temp = boiler.read().expect("Error reading boiler temperature");
+                let grouphead_temp = grouphead
+                    .read()
+                    .expect("Error reading grouphead temperature");
+                let thermofilter_temp = thermofilter.as_mut().map(|thermofilter| {
+                    thermofilter
+                        .read()
+                        .expect("Error reading thermofilter temperature")
+                });
+
+                if let Err(err) = poller_tx.send(GeshaEvent::TempUpdate(TemperatureMeasurement {
+                    boiler_temp,
+                    grouphead_temp,
+                    thermofilter_temp,
+                    timestamp: SystemTime::now(),
+                })) {
+                    error!("Error sending temperature update: {}", err);
+                };
+
+                interval.tick().await;
+            }
+        });
+
+        let flush_tx = self.event_tx.clone();
+
+        task::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(5));
+
+            loop {
+                interval.tick().await;
+
+                if let Err(err) = flush_tx.send(GeshaEvent::FlushDb) {
+                    error!("Error sending flush event: {err}");
+                }
+            }
+        });
+
+        self.poller = Some(poller);
+
+        Ok(())
+    }
+
+    pub async fn update_mode(&mut self, mode: Mode) -> Result<()> {
+        if mode != self.mode {
+            self.mode = mode;
+
+            if let Some(poller) = self.poller.take() {
+                poller.abort();
+                let _ = poller.await;
+                self.poll()?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn get_interval(&self) -> Duration {
+        Duration::from_millis(match self.mode {
+            Mode::Idle => 1_000,
+            Mode::Heat => 100,
+            Mode::Brew => 50,
+            Mode::Steam => 100,
+            Mode::Offline => 0,
+        })
+    }
 }

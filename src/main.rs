@@ -2,10 +2,10 @@ mod controller;
 mod core;
 
 use crate::core::{
-    config,
+    config, db,
     mqtt::{self, MqttOutgoingMessage},
     state::{self, Event},
-    thermocouple::poll_thermocouples,
+    thermocouple::ThermocouplePoller,
 };
 use log::{debug, error, info, trace};
 use pretty_env_logger;
@@ -19,12 +19,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let panic_cancel_token = create_panic_cancel_token();
 
-    let config = config::Config::load()?;
+    let pool = db::open_or_create("/opt/gesha/var/db/gesha.db").await?;
+
+    let config = config::Config::load().await?;
     let config_clone = &config.clone();
 
     trace!("Using config:\n {:#?}", config);
 
-    let mut state = state::State::default();
+    let mut state = state::State::new(pool.clone());
 
     let (tx, mut rx) = broadcast::channel::<Event>(100);
 
@@ -35,12 +37,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     mqtt.start().await?;
 
-    let mut controller_manager =
-        controller::ControllerManager::new(config.boiler_pin, &config.control_method, tx.clone())?;
+    let mut controller_manager = controller::ControllerManager::new(
+        config.boiler_pin,
+        &config.control_method,
+        tx.clone(),
+        state.target_temp,
+    )?;
 
     controller_manager.start()?;
 
-    poll_thermocouples(config_clone, std::time::Duration::from_millis(250), tx.clone()).await?;
+    let mut thermocouples =
+        ThermocouplePoller::new(state.mode.clone(), tx.clone(), config_clone.clone());
+
+    thermocouples.poll()?;
 
     loop {
         select! {
@@ -53,6 +62,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             if let MqttOutgoingMessage::ControlMethodUpdate(control_method) = message {
                                 controller_manager.set_controller(control_method)?;
                             }
+
+                            if let MqttOutgoingMessage::StatusUpdate(mode) = message {
+                                thermocouples.update_mode(mode.clone()).await?;
+                            }
+
+                            if let MqttOutgoingMessage::TargetTemperatureUpdate(temp) = message {
+                                controller_manager.set_target_temp(temp.clone())?;
+                            }
+
                             mqtt.publish(&message).await?;
                         }
                     }
@@ -72,9 +90,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         };
     }
 
+    info!("Shutting down");
+
     mqtt.stop().await?;
     controller_manager.stop()?;
-    info!("Shutting down");
+    pool.close().await;
 
     Ok(())
 }

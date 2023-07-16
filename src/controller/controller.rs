@@ -20,6 +20,7 @@ pub struct ControllerManager {
     control_method: ControlMethod,
     cancel_token: CancellationToken,
     tx: Sender<GeshaEvent>,
+    target_temp: f32,
 }
 
 impl ControllerManager {
@@ -27,6 +28,7 @@ impl ControllerManager {
         boiler_pin: u8,
         control_method: &ControlMethod,
         tx: Sender<GeshaEvent>,
+        target_temp: f32
     ) -> Result<Self> {
         let output_pin = gpio::Gpio::new()?.get(boiler_pin)?.into_output();
 
@@ -43,6 +45,7 @@ impl ControllerManager {
             control_method: control_method.clone(),
             cancel_token: CancellationToken::new(),
             tx,
+            target_temp,
         })
     }
 
@@ -54,9 +57,10 @@ impl ControllerManager {
 
         let mut output_pin = gpio::Gpio::new()?.get(self.boiler_pin)?.into_output();
         let control_method = self.control_method.clone();
+        let target_temp = self.target_temp.clone();
 
         task::spawn(async move {
-            let controller: Option<Box<dyn Controller>> = (&control_method).into();
+            let controller: Option<Box<dyn Controller>> = ControllerManager::get_controller(&control_method, target_temp);
             let mut mode: Option<Mode> = None;
 
             loop {
@@ -95,7 +99,7 @@ impl ControllerManager {
                             },
                             GeshaEvent::PowerStateUpdate(state) => {
                                 mode = Some(if state == PowerState::Off { Mode::Idle } else { Mode::Heat });
-                            },
+                            }
                             _ => {
                                 // ignore other events.
                             }
@@ -131,14 +135,20 @@ impl ControllerManager {
 
         Ok(())
     }
-}
 
-impl Into<Option<Box<dyn Controller>>> for &ControlMethod {
-    fn into(self) -> Option<Box<dyn Controller>> {
-        match self {
-            ControlMethod::Threshold => Some(Box::new(ThresholdController::new(90.0))),
-            ControlMethod::MPC => Some(Box::new(MpcController::new())),
-            ControlMethod::PID => Some(Box::new(PidController::new(1.0, 1.0, 1.0))),
+    pub fn set_target_temp(&mut self, temp: f32) -> Result<()> {
+        self.stop()?;
+        self.target_temp = temp;
+        self.start()?;
+
+        Ok(())
+    }
+
+    pub fn get_controller(control_method: &ControlMethod, target_temp: f32) -> Option<Box<dyn Controller>> {
+        match control_method {
+            ControlMethod::Threshold => Some(Box::new(ThresholdController::new(target_temp))),
+            ControlMethod::MPC => Some(Box::new(MpcController::new(target_temp))),
+            ControlMethod::PID => Some(Box::new(PidController::new(1.0, 1.0, 1.0, target_temp))),
             ControlMethod::Manual => None,
         }
     }

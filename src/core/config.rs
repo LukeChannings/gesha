@@ -58,7 +58,7 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn load() -> Result<Config> {
+    pub async fn load() -> Result<Config> {
         let args = Args::parse();
         let mut config: Config = Self::default();
 

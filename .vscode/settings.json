@@ -5,6 +5,7 @@
         "Millis",
         "mqtt",
         "nanos",
+        "sqlx",
         "thermofilter"
     ]
 }

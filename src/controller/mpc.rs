@@ -1,10 +1,14 @@
 use crate::controller::Controller;
 
-pub struct MpcController {}
+pub struct MpcController {
+    target_temp: f32
+}
 
 impl MpcController {
-    pub fn new() -> Self {
-        MpcController {}
+    pub fn new(target_temp: f32) -> Self {
+        MpcController {
+            target_temp
+        }
     }
 }
 

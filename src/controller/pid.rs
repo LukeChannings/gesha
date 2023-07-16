@@ -1,14 +1,20 @@
 use super::Controller;
 
 pub struct PidController {
+    target_temp: f32,
     p: f32,
     i: f32,
     d: f32,
 }
 
 impl PidController {
-    pub fn new(p: f32, i: f32, d: f32) -> Self {
-        PidController { p, i, d }
+    pub fn new(p: f32, i: f32, d: f32, target_temp: f32) -> Self {
+        PidController {
+            p,
+            i,
+            d,
+            target_temp,
+        }
     }
 }
 
