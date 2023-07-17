@@ -1,26 +1,28 @@
-import { scaleLinear, select, axisBottom, axisLeft, line, scaleSqrt } from "d3";
-import type { Series } from "./util";
-import { Accessor, For } from "solid-js";
-import { Millis, formatMillis, last } from "./util";
-import styles from "./Chart.module.css";
+import { scaleLinear, select, axisBottom, axisLeft, line, scaleSqrt } from "d3"
+import type { Series } from "./util"
+import { Accessor, For, createEffect } from "solid-js"
+import { Millis, computeRects, formatMillis, last } from "./util"
+import styles from "./Chart.module.css"
 
 export interface BarChartProps {
-    width: number;
-    height: number;
-    marginLeft?: number;
-    marginTop?: number;
-    marginBottom?: number;
-    marginRight?: number;
-    boilerTempSeries: Accessor<Series>;
-    groupheadTempSeries: Accessor<Series>;
-    thermofilterTempSeries: Accessor<Series>;
-    timeWindow: Millis;
+    width: number
+    height: number
+    marginLeft?: number
+    marginTop?: number
+    marginBottom?: number
+    marginRight?: number
+    boilerTempSeries: Accessor<Series>
+    groupheadTempSeries: Accessor<Series>
+    thermofilterTempSeries: Accessor<Series>
+    heatSeries: Accessor<Series<boolean>>
+    timeWindow: Millis
 }
 
-export function BarChart({
+export function Chart({
     boilerTempSeries,
     groupheadTempSeries,
     thermofilterTempSeries,
+    heatSeries,
     width,
     height,
     marginLeft = 50,
@@ -29,20 +31,50 @@ export function BarChart({
     marginTop = 20,
     timeWindow,
 }: BarChartProps) {
-    const yAxis = scaleLinear([20, 120], [height - marginBottom, marginTop]);
-    const xAxis = scaleSqrt([-timeWindow, 0], [marginLeft, width - marginRight]);
+    const yAxis = scaleLinear([20, 120], [height - marginBottom, marginTop])
+    const xAxis = scaleSqrt([-timeWindow, 0], [marginLeft, width - marginRight])
 
     const createLine = line<{ x: number; y: number }>()
         .x((d) => xAxis(d.x))
-        .y((d) => yAxis(d.y));
+        .y((d) => yAxis(d.y))
 
-    const epochToRelativeMillis = ({ x, y }: { x: number; y: number }, index: number, list: Series) => ({
+    const epochToRelativeMillis = (
+        { x, y }: { x: number; y: number },
+        index: number,
+        list: Series,
+    ) => ({
         x: index === list.length - 1 ? 0 : x - Date.now(),
         y,
-    });
+    })
+
+    createEffect(() => {
+        console.log(computeRects(heatSeries()))
+    })
 
     return (
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} class={styles.chart}>
+        <svg
+            width={width}
+            height={height}
+            viewBox={`0 0 ${width} ${height}`}
+            class={styles.chart}
+        >
+            <For each={computeRects(heatSeries())}>
+                {([x1, x2]) => {
+                    const a = xAxis(x1 - Date.now());
+                    const b = xAxis(x2 - Date.now());
+
+                    return (
+                    <rect
+                        data-x1={x1}
+                        data-x2={x2}
+                        height={height}
+                        y="0"
+                        width={b - a}
+                        x={a}
+                        fill="rgba(255, 0, 0, 0.2)"
+                    />
+                )}}
+            </For>
             <g
                 data-name="xAxis"
                 transform={`translate(0, ${height - marginBottom})`}
@@ -58,7 +90,7 @@ export function BarChart({
                                 0, // now
                             ])
                             .tickFormat((v) => formatMillis(+v)),
-                    );
+                    )
                 }}
             />
             <g
@@ -74,28 +106,39 @@ export function BarChart({
                         )
                         .call((g) => g.select(".domain").remove())
                         .call((g) => {
-                            g.selectAll(".tick line").attr("x2", width);
-                            g.select(".tick line").remove();
-                        });
+                            g.selectAll(".tick line").attr("x2", width)
+                            g.select(".tick line").remove()
+                        })
                 }}
             />
             <path
                 fill="none"
                 stroke="var(--datavis-boiler-color)"
                 class={styles.line}
-                d={createLine(boilerTempSeries().map(epochToRelativeMillis)) ?? ""}
+                d={
+                    createLine(boilerTempSeries().map(epochToRelativeMillis)) ??
+                    ""
+                }
             />
             <path
                 fill="none"
                 stroke="var(--datavis-grouphead-color)"
                 class={styles.line}
-                d={createLine(groupheadTempSeries().map(epochToRelativeMillis)) ?? ""}
+                d={
+                    createLine(
+                        groupheadTempSeries().map(epochToRelativeMillis),
+                    ) ?? ""
+                }
             />
             <path
                 fill="none"
                 stroke="var(--datavis-thermofilter-color)"
                 class={styles.line}
-                d={createLine(thermofilterTempSeries().map(epochToRelativeMillis)) ?? ""}
+                d={
+                    createLine(
+                        thermofilterTempSeries().map(epochToRelativeMillis),
+                    ) ?? ""
+                }
             />
             <g data-name="legend" transform={`translate(${width - 160}, 0)`}>
                 <rect fill="#fff" stroke="#aaa" width="160" height="60" />
@@ -104,7 +147,10 @@ export function BarChart({
                         [
                             ["Boiler", last(boilerTempSeries())?.y ?? 0],
                             ["Grouphead", last(groupheadTempSeries())?.y ?? 0],
-                            ["Thermofilter", last(thermofilterTempSeries())?.y ?? 0],
+                            [
+                                "Thermofilter",
+                                last(thermofilterTempSeries())?.y ?? 0,
+                            ],
                         ] as Array<[string, number]>
                     }
                 >
@@ -131,5 +177,5 @@ export function BarChart({
                 </For>
             </g>
         </svg>
-    );
+    )
 }

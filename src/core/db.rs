@@ -2,7 +2,8 @@ use std::{fs::OpenOptions, path::Path};
 
 use anyhow::Result;
 use log::{error, info};
-use sqlx::{migrate, Pool, QueryBuilder, Sqlite, SqlitePool, Execute};
+use serde::Serialize;
+use sqlx::{migrate, Pool, QueryBuilder, Sqlite, SqlitePool};
 use tokio::task;
 
 pub type DBHandle = Pool<Sqlite>;
@@ -21,12 +22,14 @@ pub async fn open_or_create(path: &str) -> Result<DBHandle> {
     Ok(pool)
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Measurement {
     pub time: i64,
     pub target_temp_c: f32,
     pub boiler_temp_c: f32,
     pub grouphead_temp_c: f32,
-    pub thermofilter_temp_c: f32,
+    pub thermofilter_temp_c: Option<f32>,
     pub power: bool,
     pub heat: bool,
     pub pull: bool,

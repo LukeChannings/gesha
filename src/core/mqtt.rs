@@ -18,12 +18,13 @@ use super::{
     state::{Mode, TemperatureMeasurement},
 };
 
-// const TOPIC_POWER_STATUS: &str = "ms-silvia-switch/status";
 const TOPIC_POWER_STATE: &str = "ms-silvia-switch/switch/power/state";
-// const TOPIC_POWER_COMMAND: &str = "ms-silvia-switch/switch/power/command";
+const TOPIC_POWER_COMMAND: &str = "ms-silvia-switch/switch/power/command";
 
 const GESHA_TOPIC_CONTROL_METHOD_SET: &str = "gesha/control_method/set";
 const GESHA_TOPIC_TARGET_TEMP_SET: &str = "gesha/temperature/target/set";
+const GESHA_TOPIC_MODE_SET: &str = "gesha/mode/set";
+const GESHA_TOPIC_TEMP_HISTORY_SET: &str = "gesha/temperature/history/command";
 
 pub struct Mqtt {
     uri: String,
@@ -33,11 +34,13 @@ pub struct Mqtt {
 }
 
 pub enum MqttOutgoingMessage {
-    StatusUpdate(Mode),
+    ModeUpdate(Mode),
     BoilerStatusUpdate(PowerState),
     TemperatureUpdate(TemperatureMeasurement),
+    TemperatureHistoryResult(String),
     TargetTemperatureUpdate(f32),
     ControlMethodUpdate(ControlMethod),
+    PowerRelayStatus(PowerState),
 }
 
 impl TryInto<GeshaEvent> for Publish {
@@ -54,6 +57,14 @@ impl TryInto<GeshaEvent> for Publish {
             GESHA_TOPIC_TARGET_TEMP_SET => Ok(GeshaEvent::TargetTempSet(serde_yaml::from_slice(
                 &self.payload,
             )?)),
+            GESHA_TOPIC_MODE_SET => {
+                let mode = serde_yaml::from_slice(&self.payload)?;
+                Ok(GeshaEvent::ModeSet(mode))
+            },
+            GESHA_TOPIC_TEMP_HISTORY_SET => {
+                let history_request = serde_json::from_slice(&self.payload)?;
+                Ok(GeshaEvent::TempHistoryRequest(history_request))
+            }
             TOPIC_POWER_STATE => {
                 let power_state = if self.payload == "ON" {
                     PowerState::On
@@ -100,7 +111,7 @@ impl Mqtt {
 
         let tx = self.event_tx.clone();
 
-        self.publish(&MqttOutgoingMessage::StatusUpdate(Mode::Idle))
+        self.publish(&MqttOutgoingMessage::ModeUpdate(Mode::Idle))
             .await?;
 
         task::spawn(async move {
@@ -155,6 +166,8 @@ impl Mqtt {
                 TOPIC_POWER_STATE,
                 GESHA_TOPIC_CONTROL_METHOD_SET,
                 GESHA_TOPIC_TARGET_TEMP_SET,
+                GESHA_TOPIC_MODE_SET,
+                GESHA_TOPIC_TEMP_HISTORY_SET,
             ];
             for topic in topics {
                 client
@@ -173,16 +186,17 @@ impl Mqtt {
             return Err(anyhow!("No MQTT client available"));
         }
 
-        let mut events: Vec<(String, String)> = vec![];
+        let mut events: Vec<(String, String, bool)> = vec![];
 
         match message {
-            MqttOutgoingMessage::StatusUpdate(status) => {
-                events.push((String::from("gesha/mode"), serde_json::to_string(status)?));
+            MqttOutgoingMessage::ModeUpdate(status) => {
+                events.push((String::from("gesha/mode"), serde_json::to_string(status)?, true));
             }
             MqttOutgoingMessage::BoilerStatusUpdate(power_state) => {
                 events.push((
                     String::from("gesha/boiler_status"),
                     serde_json::to_string(power_state)?,
+                    true,
                 ));
             }
             MqttOutgoingMessage::TemperatureUpdate(measurement) => {
@@ -193,21 +207,25 @@ impl Mqtt {
                         .duration_since(UNIX_EPOCH)?
                         .as_millis()
                         .to_string(),
+                    true,
                 ));
                 events.push((
                     format!("gesha/temperature/boiler"),
                     measurement.boiler_temp.to_string(),
+                    true,
                 ));
 
                 events.push((
                     format!("gesha/temperature/grouphead"),
                     measurement.grouphead_temp.to_string(),
+                    true,
                 ));
 
                 if let Some(thermofilter) = measurement.thermofilter_temp {
                     events.push((
                         format!("gesha/temperature/thermofilter"),
                         thermofilter.to_string(),
+                        true,
                     ));
                 }
             }
@@ -215,21 +233,40 @@ impl Mqtt {
                 events.push((
                     format!("gesha/temperature/target"),
                     serde_json::to_string(temp)?,
+                    true,
                 ));
             }
             MqttOutgoingMessage::ControlMethodUpdate(control_method) => {
                 events.push((
                     format!("gesha/control_method"),
                     serde_json::to_string(control_method)?,
+                    true,
                 ));
+            }
+            MqttOutgoingMessage::PowerRelayStatus(power_status) => events.push((
+                TOPIC_POWER_COMMAND.to_string(),
+                (if power_status.clone() == PowerState::On {
+                    "ON"
+                } else {
+                    "OFF"
+                })
+                .to_string(),
+                false,
+            )),
+            MqttOutgoingMessage::TemperatureHistoryResult(result) => {
+                events.push((
+                    format!("gesha/temperature/history"),
+                    result.to_string(),
+                    false,
+                ))
             }
         }
 
-        for (topic, payload) in events.iter() {
+        for (topic, payload, retain) in events.iter() {
             self.client
                 .as_ref()
                 .unwrap()
-                .publish(topic, QoS::ExactlyOnce, true, String::from(payload))
+                .publish(topic, QoS::ExactlyOnce, retain.clone(), String::from(payload))
                 .await
                 .map_err(|err| anyhow!("Failed to publish status, got {}", err))?;
         }

@@ -1,49 +1,75 @@
-build:
-    cargo build --target arm-unknown-linux-gnueabihf --release
+export RUST_BACKTRACE := "1"
+export DATABASE_URL := "sqlite:gesha.db"
 
-deploy: build
-    ssh silvia.iot "sudo systemctl stop gesha"
-    scp target/arm-unknown-linux-gnueabihf/release/gesha silvia.iot:/opt/gesha/bin/gesha
-    ssh silvia.iot "sudo systemctl start gesha"
+# start thing="ui":
+#     #!/usr/bin/env bash
 
-log:
-    ssh silvia.iot "journalctl -fu gesha.service"
+#     if [[ "$thing" == "tauri" ]]; then
+#         cargo tauri dev --target aarch64-apple-darwin
+#     elif [[ "$thing" == "ui" ]]; then
+#         cd ui; npm start
+#     fi
 
-log-mosquitto:
-    ssh silvia.iot "journalctl -fu mosquitto.service"
+# build thing="ui":
+#     #!/usr/bin/env bash
 
-install-systemd:
+#     if [[ "$thing" == "tauri" ]]; then
+#         cargo tauri build --target aarch64-apple-darwin
+#     elif [[ "$thing" == "ui" ]]; then
+#         cd ui; npm run build
+#     else
+#         cargo build --release
+#     fi
+
+test thing="app":
     #!/usr/bin/env bash
 
-    ssh silvia.iot -t <<-EOF
-    echo '$(cat ./config/systemd/gesha.service)' | sudo tee /etc/systemd/system/gesha.service > /dev/null
-    sudo systemctl daemon-reload
-    EOF
+    if [[ "{{thing}}" = "ui" ]]; then
+        cd ui; npm test
+    else
+        cargo test --target aarch64-apple-darwin
+    fi
 
-initialise-silvia:
-    #!/usr/bin/env bash
-    ssh silvia.iot -t << EOF
-    sudo mkdir -p /opt/gesha/{etc,bin}
-    sudo chown -R luke:sudo /opt/gesha
-    EOF
+# format thing="ui":
+#     #!/usr/bin/env bash
 
-install-mosquitto:
-    #!/usr/bin/env bash
-    ssh silvia.iot -t << EOF
-        sudo apt install -y mosquitto
-        sudo chown -R luke:sudo /etc/mosquitto /var/lib/mosquitto
-    EOF
+#     if [[ "$thing" == "ui" ]]; then
+#         cd ui; npm run format
+#     else
+#         cargo fmt
+#     fi
 
-    rsync -av --usermap=luke:sudo ./config/raspberry_pi/etc/mosquitto/ silvia.iot:/etc/mosquitto/
+# deploy: build
+#     ssh silvia.iot "sudo systemctl stop gesha"
+#     scp target/arm-unknown-linux-gnueabihf/release/gesha silvia.iot:/opt/gesha/bin/gesha
+#     ssh silvia.iot "sudo systemctl start gesha"
 
-ui-dev:
-    cd ui; npm start
+# log service="gesha":
+#     ssh silvia.iot "journalctl -fu {{service}}.service"
 
-ui-prod:
-    cd ui; npm run build
+# install service:
+#     #!/usr/bin/env bash
 
-tauri-dev:
-    cargo tauri dev --target aarch64-apple-darwin
+#     if [ "$service" == "gesha" ]; then
+#         ssh silvia.iot -t <<-EOF
+#         echo '$(cat ./config/systemd/gesha.service)' | sudo tee /etc/systemd/system/gesha.service > /dev/null
+#         sudo systemctl daemon-reload
+#         EOF
+#     fi
 
-tauri-build:
-    cargo tauri build --target aarch64-apple-darwin
+#     if [ "$service" == "mosquitto" ]; then
+#         #!/usr/bin/env bash
+#         ssh silvia.iot -t << EOF
+#             sudo apt install -y mosquitto
+#             sudo chown -R luke:sudo /etc/mosquitto /var/lib/mosquitto
+#         EOF
+
+#         rsync -av --usermap=luke:sudo ./config/raspberry_pi/etc/mosquitto/ silvia.iot:/etc/mosquitto/
+#     fi
+
+# init silvia:
+#     #!/usr/bin/env bash
+#     ssh silvia.iot -t << EOF
+#     sudo mkdir -p /opt/gesha/{etc,bin}
+#     sudo chown -R luke:sudo /opt/gesha
+#     EOF

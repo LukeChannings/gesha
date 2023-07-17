@@ -56,19 +56,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Ok(event) = rx.recv() => {
                 debug!("Event: {:?}", event);
 
-                match state.update(event) {
+                match state.update(event).await {
                     Ok(mqtt_messages) => {
                         for message in mqtt_messages.iter() {
                             if let MqttOutgoingMessage::ControlMethodUpdate(control_method) = message {
-                                controller_manager.set_controller(control_method)?;
+                                controller_manager.set_controller(control_method).await?;
                             }
 
-                            if let MqttOutgoingMessage::StatusUpdate(mode) = message {
+                            if let MqttOutgoingMessage::ModeUpdate(mode) = message {
                                 thermocouples.update_mode(mode.clone()).await?;
                             }
 
                             if let MqttOutgoingMessage::TargetTemperatureUpdate(temp) = message {
-                                controller_manager.set_target_temp(temp.clone())?;
+                                controller_manager.set_target_temp(temp.clone()).await?;
                             }
 
                             mqtt.publish(&message).await?;
@@ -93,7 +93,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     info!("Shutting down");
 
     mqtt.stop().await?;
-    controller_manager.stop()?;
+    controller_manager.stop().await?;
     pool.close().await;
 
     Ok(())

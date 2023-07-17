@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use log::{debug, error};
 use rppal::gpio;
-use tokio::{select, sync::broadcast::Sender, task};
+use tokio::{select, sync::broadcast::Sender, task::{self, JoinHandle}};
 use tokio_util::sync::CancellationToken;
 
 use super::{MpcController, PidController, ThresholdController};
@@ -21,6 +21,7 @@ pub struct ControllerManager {
     cancel_token: CancellationToken,
     tx: Sender<GeshaEvent>,
     target_temp: f32,
+    controller_handle: Option<JoinHandle<()>>
 }
 
 impl ControllerManager {
@@ -46,10 +47,11 @@ impl ControllerManager {
             cancel_token: CancellationToken::new(),
             tx,
             target_temp,
+            controller_handle: None,
         })
     }
 
-    pub fn start(&self) -> Result<()> {
+    pub fn start(&mut self) -> Result<()> {
         let cancel_token = self.cancel_token.clone();
 
         let tx = self.tx.clone();
@@ -59,7 +61,7 @@ impl ControllerManager {
         let control_method = self.control_method.clone();
         let target_temp = self.target_temp.clone();
 
-        task::spawn(async move {
+        let handle = task::spawn(async move {
             let controller: Option<Box<dyn Controller>> = ControllerManager::get_controller(&control_method, target_temp);
             let mut mode: Option<Mode> = None;
 
@@ -118,16 +120,21 @@ impl ControllerManager {
             }
         });
 
+        self.controller_handle = Some(handle);
+
         Ok(())
     }
 
-    pub fn stop(&self) -> Result<()> {
-        self.cancel_token.cancel();
+    pub async fn stop(&mut self) -> Result<()> {
+        if let Some(handle) = self.controller_handle.take() {
+            self.cancel_token.cancel();
+            let _ = handle.await;
+        }
         Ok(())
     }
 
-    pub fn set_controller(&mut self, control_method: &ControlMethod) -> Result<()> {
-        self.stop()?;
+    pub async fn set_controller(&mut self, control_method: &ControlMethod) -> Result<()> {
+        self.stop().await?;
 
         self.control_method = control_method.clone();
 
@@ -136,8 +143,8 @@ impl ControllerManager {
         Ok(())
     }
 
-    pub fn set_target_temp(&mut self, temp: f32) -> Result<()> {
-        self.stop()?;
+    pub async fn set_target_temp(&mut self, temp: f32) -> Result<()> {
+        self.stop().await?;
         self.target_temp = temp;
         self.start()?;
 

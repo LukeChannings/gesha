@@ -7,5 +7,7 @@
         "nanos",
         "sqlx",
         "thermofilter"
-    ]
+    ],
+    "jestrunner.disableCodeLens": true,
+    "prettier.semi": false
 }
