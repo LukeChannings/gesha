@@ -64,7 +64,7 @@ impl State {
                     }
                     PowerState::On => {
                         self.power_state = PowerState::On;
-                        self.mode = Mode::Heat;
+                        self.mode = Mode::Active;
                     }
                 }
 
@@ -72,16 +72,16 @@ impl State {
             }
             Event::ModeSet(mode) => match mode {
                 Mode::Brew => {
-                    if self.mode == Mode::Heat {
+                    if self.mode == Mode::Active {
                         self.mode = Mode::Brew;
                         mqtt_messages.push(MqttOutgoingMessage::ModeUpdate(self.mode.clone()));
                     } else if self.mode != Mode::Brew {
                         error!("Cannot transition from {:?} to {:?}", self.mode, mode);
                     }
                 }
-                Mode::Heat => {
+                Mode::Active => {
                     if self.mode == Mode::Brew {
-                        self.mode = Mode::Heat;
+                        self.mode = Mode::Active;
                         mqtt_messages.push(MqttOutgoingMessage::ModeUpdate(self.mode.clone()));
                     } else if self.mode == Mode::Idle {
                         mqtt_messages.push(MqttOutgoingMessage::PowerRelayStatus(PowerState::On))
@@ -112,7 +112,7 @@ impl State {
                     thermofilter_temp_c: temp.thermofilter_temp,
                     power: self.power_state == PowerState::On,
                     heat: self.boiler_state == PowerState::On,
-                    pull: false,
+                    pull: self.mode == Mode::Brew,
                     steam: false,
                 });
             }
@@ -174,7 +174,7 @@ impl State {
 #[serde(rename_all = "camelCase")]
 pub enum Mode {
     Idle,
-    Heat,
+    Active,
     Brew,
     Steam,
     Offline,

@@ -71,7 +71,7 @@ impl ControllerManager {
                         match event {
                             GeshaEvent::TempUpdate(temp) => {
                                 let mut boiler_state_changed = false;
-                                if let Some(Mode::Heat) = mode {
+                                if let Some(Mode::Active) = mode {
                                     if let Some(controller) = &controller {
                                         let should_heat = controller.sample(temp.boiler_temp, temp.grouphead_temp);
 
@@ -100,7 +100,7 @@ impl ControllerManager {
                                 }
                             },
                             GeshaEvent::PowerStateUpdate(state) => {
-                                mode = Some(if state == PowerState::Off { Mode::Idle } else { Mode::Heat });
+                                mode = Some(if state == PowerState::Off { Mode::Idle } else { Mode::Active });
                             }
                             _ => {
                                 // ignore other events.

@@ -1,7 +1,7 @@
 {
   "build": {
-    "beforeBuildCommand": "just ui-prod",
-    "beforeDevCommand": "just ui-dev",
+    "beforeBuildCommand": "just build ui",
+    "beforeDevCommand": "just start ui",
     "devPath": "http://localhost:5173/",
     "distDir": "../ui/dist"
   },

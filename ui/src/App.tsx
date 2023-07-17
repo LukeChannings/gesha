@@ -1,7 +1,7 @@
 import { connect } from "mqtt"
 import { createEffect, createSignal } from "solid-js"
 
-import { Datum, Series, last, updateSeries } from "./util"
+import { Datum, Millis, Series, last, updateSeries } from "./util"
 import { Chart } from "./Chart"
 
 import styles from "./App.module.css"
@@ -17,10 +17,9 @@ function App() {
     const [heatSeries, setHeatSeries] = createSignal<Series<boolean>>([])
     const [mode, setMode] = createSignal("")
     const [targetTemp, setTargetTemp] = createSignal<number>(-1000)
+    const [timeWindow, setTimeWindow] = createSignal<Millis>(10 * 60 * 1_000);
 
-    // We'll keep 30 minutes of data, and only show 5 minutes
     const retainedWindowMs = 30 * 60 * 1_000
-    const timeWindowMs = 10 * 60 * 1_000
 
     const client = connect(
         "ws://luke:5s9zcBneIiIgETZ0FXLKw0frf6GrjrukPIZdYbQc@silvia.iot:8080",
@@ -107,7 +106,7 @@ function App() {
             target: HTMLSelectElement
         },
     ) => {
-        client.publish("gesha/mode/set", event.target.value)
+        client.publish("gesha/mode/set", event.target.value, { retain: false })
         event.preventDefault()
     }
 
@@ -134,10 +133,11 @@ function App() {
             client.publish(
                 "gesha/temperature/history/command",
                 JSON.stringify({ from, to }),
+                { retain: false, qos: 2 }
             )
         })
 
-    getHistory(Date.now() - 11 * 60 * 1000, Date.now()).then((measurements) => {
+    getHistory(Date.now() - retainedWindowMs, Date.now()).then((measurements) => {
         const allSeries = measurements
             .sort((a, b) => a.time - b.time)
             .map(
@@ -170,10 +170,10 @@ function App() {
 
     return (
         <main class={styles.app}>
-            <form class={styles.controls}>
+            <form class={styles.controls} onSubmit={e => e.preventDefault()}>
                 <select value={mode()} onChange={handleModeChange}>
                     <option value="idle">Idle</option>
-                    <option value="heat">Heat</option>
+                    <option value="active">Active</option>
                     <option value="brew">Brew</option>
                     <option value="steam">Steam</option>
                 </select>
@@ -197,6 +197,15 @@ function App() {
                     &deg;C
                 </label>
                 |
+                <label>
+                    Time window
+                    <select value={timeWindow()} onChange={e => setTimeWindow(+e.target.value)}>
+                        <option value={30 * 60 * 1_000}>30m</option>
+                        <option value={10 * 60 * 1_000}>10m</option>
+                        <option value={5 * 60 * 1_000}>5m</option>
+                    </select>
+                </label>
+                |
                 <p>
                     Lag:{" "}
                     {Math.max(
@@ -216,7 +225,7 @@ function App() {
                         targetTemp={targetTemp}
                         width={width}
                         height={height}
-                        timeWindow={timeWindowMs}
+                        timeWindow={timeWindow}
                     />
                 )}
             </ResizeContainer>

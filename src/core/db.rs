@@ -1,7 +1,7 @@
 use std::{fs::OpenOptions, path::Path};
 
 use anyhow::Result;
-use log::{error, info};
+use log::{error, info, debug};
 use serde::Serialize;
 use sqlx::{migrate, Pool, QueryBuilder, Sqlite, SqlitePool};
 use tokio::task;
@@ -40,7 +40,7 @@ pub fn write_measurements(measurements: Vec<Measurement>, pool: &DBHandle) -> Re
     if measurements.len() > 0 {
         let pool = pool.clone();
 
-        info!("Writing {} measurements to the DB", measurements.len());
+        debug!("Writing {} measurements to the DB", measurements.len());
 
         task::spawn(async move {
             let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(

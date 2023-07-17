@@ -6,3 +6,4 @@
 # Enable SPI0 and SPI1 (with 1 Chip Select)
 dtparam=spi=on
 dtoverlay=spi1-1cs
+dtoverlay=pwm-2chan

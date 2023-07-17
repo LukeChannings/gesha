@@ -1,6 +1,6 @@
 import { scaleLinear, select, axisBottom, axisLeft, line, scaleSqrt } from "d3"
 import type { Series } from "./util"
-import { Accessor, For, createEffect } from "solid-js"
+import { Accessor, For, createEffect, createMemo, createSignal } from "solid-js"
 import { Millis, computeLineSegments, formatMillis, last } from "./util"
 import styles from "./Chart.module.css"
 
@@ -16,7 +16,7 @@ export interface BarChartProps {
     thermofilterTempSeries: Accessor<Series>
     heatSeries: Accessor<Series<boolean>>
     targetTemp: Accessor<number>
-    timeWindow: Millis
+    timeWindow: Accessor<Millis>
 }
 
 export function Chart({
@@ -34,10 +34,11 @@ export function Chart({
     timeWindow,
 }: BarChartProps) {
     const yAxis = scaleLinear([20, 120], [height - marginBottom, marginTop])
-    const xAxis = scaleSqrt([-timeWindow, 0], [marginLeft, width - marginRight])
+    const xAxis = () =>
+        scaleSqrt([-timeWindow(), 0], [marginLeft, width - marginRight])
 
     const createLine = line<{ x: number; y: number }>()
-        .x((d) => xAxis(d.x))
+        .x((d) => xAxis()(d.x))
         .y((d) => yAxis(d.y))
 
     const epochToRelativeMillis = (
@@ -49,9 +50,25 @@ export function Chart({
         y,
     })
 
+    let xAxisRef: SVGGElement;
+
     createEffect(() => {
-        console.log(computeLineSegments(heatSeries()).entries())
+        select(xAxisRef).call(
+            axisBottom(xAxis())
+                .tickValues([
+                    -timeWindow(),
+                    -(timeWindow() / 2),
+                    -(timeWindow() / 5),
+                    -60 * 1_000,
+                    -30 * 1_000,
+                    -10 * 1_000,
+                    0, // now
+                ])
+                .tickFormat((v) => formatMillis(+v)),
+        )
     })
+
+    const heatingLineSegments = createMemo(() => [...computeLineSegments(heatSeries()).entries()])
 
     return (
         <svg
@@ -60,13 +77,17 @@ export function Chart({
             viewBox={`0 0 ${width} ${height}`}
             class={styles.chart}
         >
-            <For each={[...computeLineSegments(heatSeries()).entries()]}>
+            <For each={heatingLineSegments()}>
                 {([from, to]) => {
-                    const a = xAxis(+from - Date.now());
-                    const b = xAxis(to - Date.now());
+                    const a = xAxis()(+from - Date.now())
+                    const b = xAxis()(to - Date.now())
 
                     return (
-                        <g data-from={from} data-to={to} transform={`translate(${a}, 0)`}>
+                        <g
+                            data-from={from}
+                            data-to={to}
+                            transform={`translate(${a}, 0)`}
+                        >
                             <rect
                                 y="0"
                                 x="0"
@@ -74,29 +95,34 @@ export function Chart({
                                 width={b - a}
                                 fill="rgba(255, 0, 0, 0.2)"
                             />
-                            <text x={(b - a) - 10} y="10" font-size="10" font-weight="bold" fill="rgba(255, 0, 0, 0.7)">{formatMillis(to - +from)}</text>
+                            {to - from > 500 && (
+                                <text
+                                    x={b - a - 10}
+                                    y="10"
+                                    font-size="10"
+                                    font-weight="bold"
+                                    fill="rgba(255, 0, 0, 0.7)"
+                                >
+                                    {formatMillis(to - +from)}
+                                </text>
+                            )}
                         </g>
-                )}}
+                    )
+                }}
             </For>
-            <line x1={0} x2={width} y1={yAxis(targetTemp())} y2={yAxis(targetTemp())} stroke="cyan" stroke-width={2} />
+            <line
+                x1={0}
+                x2={width}
+                y1={yAxis(targetTemp())}
+                y2={yAxis(targetTemp())}
+                stroke="cyan"
+                stroke-width={2}
+            />
             <g
                 data-name="xAxis"
                 transform={`translate(0, ${height - marginBottom})`}
-                ref={(g) => {
-                    select(g).call(
-                        axisBottom(xAxis)
-                            .tickValues([
-                                -10 * 60 * 1_000, // -10m
-                                -7.5 * 60 * 1_000, // -7.5m
-                                -5 * 60 * 1_000, // -5m
-                                -1 * 60 * 1_000, // -1m
-                                -30 * 1_000, // -30s
-                                0, // now
-                            ])
-                            .tickFormat((v) => formatMillis(+v)),
-                    )
-                }}
-            />
+                ref={el => xAxisRef = el}
+            ></g>
             <g
                 data-name="yAxis"
                 transform={`translate(${marginLeft - 10}, 0)`}
