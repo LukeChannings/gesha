@@ -27,24 +27,23 @@ export const updateSeries = <V = number>(
 export const last = <T>(list: T[]): T | null =>
     list.length > 0 ? list[list.length - 1] : null
 
-export const computeRects = (
-    series: Series<boolean>,
-): [x1: number, x2: number][] => {
-    let rects: [x1: number, x2: number][] = []
+export const computeLineSegments = (series: Series<boolean>): Map<number, number> => {
+    let rects: Map<number, number> = new Map()
 
-    let rectStart;
+    let x1
 
     for (const { x, y } of series) {
-        if (y && !rectStart) {
-            rectStart = x
-        } else if (!y && rectStart) {
-            rects.push([rectStart, x]);
-            rectStart = null;
+        if (y && !x1) {
+            x1 = x
+        } else if (!y && x1) {
+            rects.set(x1, x)
+            x1 = null
         }
     }
 
-    if (rectStart) {
-        rects.push([rectStart, series[series.length - 1].x])
+    // If the rect is never closed
+    if (x1) {
+        rects.set(x1, series[series.length - 1].x)
     }
 
     return rects

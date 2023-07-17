@@ -16,6 +16,7 @@ function App() {
         createSignal<Series>([])
     const [heatSeries, setHeatSeries] = createSignal<Series<boolean>>([])
     const [mode, setMode] = createSignal("")
+    const [targetTemp, setTargetTemp] = createSignal<number>(-1000)
 
     // We'll keep 30 minutes of data, and only show 5 minutes
     const retainedWindowMs = 30 * 60 * 1_000
@@ -84,6 +85,10 @@ function App() {
                     )
                     break
                 }
+                case "gesha/temperature/target": {
+                    setTargetTemp(+value)
+                    break
+                }
                 case "gesha/boiler_status": {
                     heat = value === "on"
                     break
@@ -103,6 +108,15 @@ function App() {
         },
     ) => {
         client.publish("gesha/mode/set", event.target.value)
+        event.preventDefault()
+    }
+
+    const handleTargetTempChange = (event: Event & {
+        currentTarget: HTMLInputElement
+        target: HTMLInputElement
+    }) => {
+        client.publish("gesha/temperature/target", event.target.value);
+        event.preventDefault()
     }
 
     const getHistory = (from: number, to: number): Promise<Measurement[]> =>
@@ -124,27 +138,29 @@ function App() {
         })
 
     getHistory(Date.now() - 11 * 60 * 1000, Date.now()).then((measurements) => {
-        const allSeries = measurements.sort((a, b) => a.time - b.time).map(
-            (measurement) =>
-                [
-                    {
-                        x: measurement.time,
-                        y: measurement.boilerTempC,
-                    },
-                    {
-                        x: measurement.time,
-                        y: measurement.groupheadTempC,
-                    },
-                    {
-                        x: measurement.time,
-                        y: measurement.thermofilterTempC ?? 0,
-                    },
-                    {
-                        x: measurement.time,
-                        y: measurement.heat,
-                    },
-                ] as const,
-        )
+        const allSeries = measurements
+            .sort((a, b) => a.time - b.time)
+            .map(
+                (measurement) =>
+                    [
+                        {
+                            x: measurement.time,
+                            y: measurement.boilerTempC,
+                        },
+                        {
+                            x: measurement.time,
+                            y: measurement.groupheadTempC,
+                        },
+                        {
+                            x: measurement.time,
+                            y: measurement.thermofilterTempC ?? 0,
+                        },
+                        {
+                            x: measurement.time,
+                            y: measurement.heat,
+                        },
+                    ] as const,
+            )
 
         setBoilerTempSeries(allSeries.map(([v]) => v))
         setGroupheadTempSeries(allSeries.map(([, v]) => v))
@@ -162,6 +178,25 @@ function App() {
                     <option value="steam">Steam</option>
                 </select>
                 <p>Heat: {last(heatSeries())?.y ? "on" : "off"}</p>
+                |
+                <label>
+                    Target temp:{" "}
+                    <input
+                        type="number"
+                        value={targetTemp()}
+                        step={0.5}
+                        style={{
+                            width: "50px",
+                            appearance: "none",
+                            background: "transparent",
+                            border: "none",
+                            "font-weight": "bold"
+                        }}
+                        onChange={handleTargetTempChange}
+                    />{" "}
+                    &deg;C
+                </label>
+                |
                 <p>
                     Lag:{" "}
                     {Math.max(
@@ -178,6 +213,7 @@ function App() {
                         groupheadTempSeries={groupheadTempSeries}
                         thermofilterTempSeries={thermofilterTempSeries}
                         heatSeries={heatSeries}
+                        targetTemp={targetTemp}
                         width={width}
                         height={height}
                         timeWindow={timeWindowMs}

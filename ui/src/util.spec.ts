@@ -1,13 +1,13 @@
-import { Series, computeRects } from "./util"
+import { Series, computeLineSegments } from "./util"
 
-describe("computeRects", () => {
+describe("computeLineSegments", () => {
     it("returns an empty list when all values are false", () => {
         const series: Series<boolean> = Array.from({ length: 150 }, (_, i) => ({
             x: Date.now() - i * 250,
             y: false,
         }))
 
-        expect(computeRects(series)).toEqual([])
+        expect(computeLineSegments(series)).toEqual(new Map([]))
     })
 
     it("returns a single rect", () => {
@@ -16,7 +16,7 @@ describe("computeRects", () => {
             y: i > 50 && i < 80,
         }))
 
-        expect(computeRects(series)).toEqual([[51, 80]])
+        expect(computeLineSegments(series)).toEqual(new Map([[51, 80]]))
     })
 
     it("returns multiple rects", () => {
@@ -28,11 +28,13 @@ describe("computeRects", () => {
                 (i >= 67 && i < 90),
         }))
 
-        expect(computeRects(series)).toEqual([
-            [10, 15],
-            [30, 32],
-            [67, 90],
-        ])
+        expect(computeLineSegments(series)).toEqual(
+            new Map([
+                [10, 15],
+                [30, 32],
+                [67, 90],
+            ]),
+        )
     })
 
     it("returns a rect at the end of the series", () => {
@@ -41,6 +43,6 @@ describe("computeRects", () => {
             y: i >= 40,
         }))
 
-        expect(computeRects(series)).toEqual([[40, 49]])
+        expect(computeLineSegments(series)).toEqual(new Map([[40, 49]]))
     })
 })

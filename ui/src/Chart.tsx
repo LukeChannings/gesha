@@ -1,7 +1,7 @@
 import { scaleLinear, select, axisBottom, axisLeft, line, scaleSqrt } from "d3"
 import type { Series } from "./util"
 import { Accessor, For, createEffect } from "solid-js"
-import { Millis, computeRects, formatMillis, last } from "./util"
+import { Millis, computeLineSegments, formatMillis, last } from "./util"
 import styles from "./Chart.module.css"
 
 export interface BarChartProps {
@@ -15,6 +15,7 @@ export interface BarChartProps {
     groupheadTempSeries: Accessor<Series>
     thermofilterTempSeries: Accessor<Series>
     heatSeries: Accessor<Series<boolean>>
+    targetTemp: Accessor<number>
     timeWindow: Millis
 }
 
@@ -23,6 +24,7 @@ export function Chart({
     groupheadTempSeries,
     thermofilterTempSeries,
     heatSeries,
+    targetTemp,
     width,
     height,
     marginLeft = 50,
@@ -48,7 +50,7 @@ export function Chart({
     })
 
     createEffect(() => {
-        console.log(computeRects(heatSeries()))
+        console.log(computeLineSegments(heatSeries()).entries())
     })
 
     return (
@@ -58,23 +60,25 @@ export function Chart({
             viewBox={`0 0 ${width} ${height}`}
             class={styles.chart}
         >
-            <For each={computeRects(heatSeries())}>
-                {([x1, x2]) => {
-                    const a = xAxis(x1 - Date.now());
-                    const b = xAxis(x2 - Date.now());
+            <For each={[...computeLineSegments(heatSeries()).entries()]}>
+                {([from, to]) => {
+                    const a = xAxis(+from - Date.now());
+                    const b = xAxis(to - Date.now());
 
                     return (
-                    <rect
-                        data-x1={x1}
-                        data-x2={x2}
-                        height={height}
-                        y="0"
-                        width={b - a}
-                        x={a}
-                        fill="rgba(255, 0, 0, 0.2)"
-                    />
+                        <g data-from={from} data-to={to} transform={`translate(${a}, 0)`}>
+                            <rect
+                                y="0"
+                                x="0"
+                                height={height}
+                                width={b - a}
+                                fill="rgba(255, 0, 0, 0.2)"
+                            />
+                            <text x={(b - a) - 10} y="10" font-size="10" font-weight="bold" fill="rgba(255, 0, 0, 0.7)">{formatMillis(to - +from)}</text>
+                        </g>
                 )}}
             </For>
+            <line x1={0} x2={width} y1={yAxis(targetTemp())} y2={yAxis(targetTemp())} stroke="cyan" stroke-width={2} />
             <g
                 data-name="xAxis"
                 transform={`translate(0, ${height - marginBottom})`}
