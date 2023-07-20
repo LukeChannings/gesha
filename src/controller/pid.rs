@@ -19,7 +19,7 @@ impl PidController {
 }
 
 impl Controller for PidController {
-    fn sample(&self, _boiler_temp: f32, _group_head_temp: f32) -> bool {
+    fn sample(&self, _boiler_temp: f32, _group_head_temp: f32) -> f32 {
         println!("P: {}, I: {}, D: {}", self.p, self.i, self.d);
         todo!("PID Controller not implemented")
     }

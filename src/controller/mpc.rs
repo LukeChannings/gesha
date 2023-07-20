@@ -13,7 +13,7 @@ impl MpcController {
 }
 
 impl Controller for MpcController {
-    fn sample(&self, _boiler_temp: f32, _group_head_temp: f32) -> bool {
+    fn sample(&self, _boiler_temp: f32, _group_head_temp: f32) -> f32 {
         todo!("MPC Controller not implemented")
     }
 }

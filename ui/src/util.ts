@@ -27,13 +27,13 @@ export const updateSeries = <V = number>(
 export const last = <T>(list: T[]): T | null =>
     list.length > 0 ? list[list.length - 1] : null
 
-export const computeLineSegments = (series: Series<boolean>): Map<number, number> => {
+export const computeLineSegments = (series: Series): Map<number, number> => {
     let rects: Map<number, number> = new Map()
 
     let x1
 
     for (const { x, y } of series) {
-        if (y && !x1) {
+        if (y > 0 && !x1) {
             x1 = x
         } else if (!y && x1) {
             rects.set(x1, x)

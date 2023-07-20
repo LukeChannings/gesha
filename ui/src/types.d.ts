@@ -11,7 +11,7 @@ interface Measurement {
     groupheadTempC: number
     thermofilterTempC?: number
     power: boolean
-    heat: boolean
+    heatLevel: number
     pull: boolean
     steam: boolean
 }

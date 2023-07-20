@@ -14,7 +14,7 @@ function App() {
     )
     const [thermofilterTempSeries, setThermofilterTempSeries] =
         createSignal<Series>([])
-    const [heatSeries, setHeatSeries] = createSignal<Series<boolean>>([])
+    const [heatSeries, setHeatSeries] = createSignal<Series>([])
     const [mode, setMode] = createSignal("")
     const [targetTemp, setTargetTemp] = createSignal<number>(-1000)
     const [timeWindow, setTimeWindow] = createSignal<Millis>(10 * 60 * 1_000);
@@ -29,7 +29,7 @@ function App() {
 
     createEffect(() => {
         let lastT: number = Date.now() - 250
-        let heat = false
+        let heat: number = 0
 
         client.on("message", (topic, msg) => {
             let value = msg.toString()
@@ -88,8 +88,9 @@ function App() {
                     setTargetTemp(+value)
                     break
                 }
-                case "gesha/boiler_status": {
-                    heat = value === "on"
+                case "gesha/boiler_level": {
+                    console.log(value)
+                    heat = +value
                     break
                 }
                 case "gesha/mode": {
@@ -157,7 +158,7 @@ function App() {
                         },
                         {
                             x: measurement.time,
-                            y: measurement.heat,
+                            y: measurement.heatLevel,
                         },
                     ] as const,
             )
@@ -168,6 +169,8 @@ function App() {
         setHeatSeries(allSeries.map(([, , , v]) => v))
     })
 
+    const formatHeat = (n?: number) => n === 0 || !n ? 'Off' : `${(n * 100).toFixed(0)}%`
+
     return (
         <main class={styles.app}>
             <form class={styles.controls} onSubmit={e => e.preventDefault()}>
@@ -177,7 +180,7 @@ function App() {
                     <option value="brew">Brew</option>
                     <option value="steam">Steam</option>
                 </select>
-                <p>Heat: {last(heatSeries())?.y ? "on" : "off"}</p>
+                <p>Heat: {formatHeat(last(heatSeries())?.y)}</p>
                 |
                 <label>
                     Target temp:{" "}

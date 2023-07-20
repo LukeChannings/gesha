@@ -73,6 +73,3 @@ init silvia:
     sudo mkdir -p /opt/gesha/{etc,bin}
     sudo chown -R luke:sudo /opt/gesha
     EOF
-
-sync db:
-    scp silvia.iot:/opt/gesha/var/db/gesha.db .

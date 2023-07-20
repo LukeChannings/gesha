@@ -11,7 +11,7 @@ impl ThresholdController {
 }
 
 impl Controller for ThresholdController {
-    fn sample(&self, boiler_temp: f32, _group_head_temp: f32) -> bool {
-        boiler_temp < self.threshold
+    fn sample(&self, boiler_temp: f32, _group_head_temp: f32) -> f32 {
+        if boiler_temp < self.threshold { 1.0 } else { 0.0 }
     }
 }

@@ -1,7 +1,7 @@
 use std::{fs::OpenOptions, path::Path};
 
 use anyhow::Result;
-use log::{error, info, debug};
+use log::{debug, error};
 use serde::Serialize;
 use sqlx::{migrate, Pool, QueryBuilder, Sqlite, SqlitePool};
 use tokio::task;
@@ -31,7 +31,7 @@ pub struct Measurement {
     pub grouphead_temp_c: f32,
     pub thermofilter_temp_c: Option<f32>,
     pub power: bool,
-    pub heat: bool,
+    pub heat_level: Option<f32>,
     pub pull: bool,
     pub steam: bool,
 }
@@ -44,7 +44,7 @@ pub fn write_measurements(measurements: Vec<Measurement>, pool: &DBHandle) -> Re
 
         task::spawn(async move {
             let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
-                "INSERT INTO measurement (time, target_temp_c, boiler_temp_c, grouphead_temp_c, thermofilter_temp_c, power, heat, pull, steam) "
+                "INSERT INTO measurement (time, target_temp_c, boiler_temp_c, grouphead_temp_c, thermofilter_temp_c, power, heat_level, pull, steam) "
             );
 
             query_builder.push_values(measurements, |mut b, measurement| {
@@ -54,7 +54,7 @@ pub fn write_measurements(measurements: Vec<Measurement>, pool: &DBHandle) -> Re
                     .push_bind(measurement.grouphead_temp_c)
                     .push_bind(measurement.thermofilter_temp_c)
                     .push_bind(measurement.power)
-                    .push_bind(measurement.heat)
+                    .push_bind(measurement.heat_level)
                     .push_bind(measurement.pull)
                     .push_bind(measurement.steam);
             });

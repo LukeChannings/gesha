@@ -4,7 +4,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Result};
-use log::{error, info};
+use log::error;
 use serde::{Deserialize, Serialize};
 use sqlx::query_as;
 
@@ -18,7 +18,7 @@ pub struct State {
     pub mode: Mode,
     pub power_state: PowerState,
     pub control_method: ControlMethod,
-    pub boiler_state: PowerState,
+    pub boiler_state: f32,
     pub temp: Option<TemperatureMeasurement>,
     pub target_temp: f32,
     pub is_brewing: bool,
@@ -32,7 +32,7 @@ impl State {
             mode: Mode::Idle,
             control_method: ControlMethod::Threshold,
             power_state: PowerState::Off,
-            boiler_state: PowerState::Off,
+            boiler_state: 0.0,
             temp: None,
             target_temp: 95.0,
             is_brewing: false,
@@ -111,13 +111,13 @@ impl State {
                     grouphead_temp_c: temp.grouphead_temp,
                     thermofilter_temp_c: temp.thermofilter_temp,
                     power: self.power_state == PowerState::On,
-                    heat: self.boiler_state == PowerState::On,
+                    heat_level: Some(self.boiler_state),
                     pull: self.mode == Mode::Brew,
                     steam: false,
                 });
             }
             Event::BoilerStateUpdate(state) => {
-                if self.power_state == PowerState::Off && state == PowerState::On {
+                if self.power_state == PowerState::Off && state > 0.0 {
                     Err(anyhow!(
                         "Cannot set boiler state to On when the machine is powered off!"
                     ))?;
@@ -135,9 +135,9 @@ impl State {
                 self.control_method = control_method.clone();
                 mqtt_messages.push(MqttOutgoingMessage::ControlMethodUpdate(control_method));
             }
-            Event::BoilerStateSet(power_state) => {
-                self.boiler_state = power_state.clone();
-                mqtt_messages.push(MqttOutgoingMessage::BoilerStatusUpdate(power_state));
+            Event::BoilerStateSet(power_level) => {
+                self.boiler_state = power_level.clone();
+                mqtt_messages.push(MqttOutgoingMessage::BoilerStatusUpdate(power_level));
             }
             Event::FlushDb => {
                 self.flush_measurements()?;
@@ -146,7 +146,8 @@ impl State {
                 let result = query_as!(
                     Measurement,
                     r#"
-                    SELECT time, power, heat, pull, steam,
+                    SELECT time, power, pull, steam,
+                        heat_level as "heat_level: f32",
                         target_temp_c as "target_temp_c: f32",
                         boiler_temp_c as "boiler_temp_c: f32",
                         grouphead_temp_c as "grouphead_temp_c: f32",
@@ -211,12 +212,12 @@ pub struct TempHistoryRange {
 pub enum Event {
     TempUpdate(TemperatureMeasurement),
     PowerStateUpdate(PowerState),
-    BoilerStateUpdate(PowerState),
+    BoilerStateUpdate(f32),
     ModeSet(Mode),
     FlushDb,
     TempHistoryRequest(TempHistoryRange),
 
     TargetTempSet(f32),
     ControlMethodSet(ControlMethod),
-    BoilerStateSet(PowerState),
+    BoilerStateSet(f32),
 }

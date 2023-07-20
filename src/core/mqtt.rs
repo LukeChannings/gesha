@@ -35,7 +35,7 @@ pub struct Mqtt {
 
 pub enum MqttOutgoingMessage {
     ModeUpdate(Mode),
-    BoilerStatusUpdate(PowerState),
+    BoilerStatusUpdate(f32),
     TemperatureUpdate(TemperatureMeasurement),
     TemperatureHistoryResult(String),
     TargetTemperatureUpdate(f32),
@@ -192,10 +192,10 @@ impl Mqtt {
             MqttOutgoingMessage::ModeUpdate(status) => {
                 events.push((String::from("gesha/mode"), serde_json::to_string(status)?, true));
             }
-            MqttOutgoingMessage::BoilerStatusUpdate(power_state) => {
+            MqttOutgoingMessage::BoilerStatusUpdate(heat_level) => {
                 events.push((
-                    String::from("gesha/boiler_status"),
-                    serde_json::to_string(power_state)?,
+                    String::from("gesha/boiler_level"),
+                    serde_json::to_string(heat_level)?,
                     true,
                 ));
             }

@@ -1,6 +1,6 @@
 import { scaleLinear, select, axisBottom, axisLeft, line, scaleSqrt } from "d3"
 import type { Series } from "./util"
-import { Accessor, For, createEffect, createMemo, createSignal } from "solid-js"
+import { Accessor, For, createEffect, createMemo } from "solid-js"
 import { Millis, computeLineSegments, formatMillis, last } from "./util"
 import styles from "./Chart.module.css"
 
@@ -14,7 +14,7 @@ export interface BarChartProps {
     boilerTempSeries: Accessor<Series>
     groupheadTempSeries: Accessor<Series>
     thermofilterTempSeries: Accessor<Series>
-    heatSeries: Accessor<Series<boolean>>
+    heatSeries: Accessor<Series>
     targetTemp: Accessor<number>
     timeWindow: Accessor<Millis>
 }
