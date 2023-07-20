@@ -104,7 +104,7 @@ impl State {
 
                 mqtt_messages.push(MqttOutgoingMessage::TemperatureUpdate(temp.clone()));
 
-                self.measurement_write_queue.push_back(Measurement {
+                self.measurement_write_queue.push_front(Measurement {
                     time: temp.timestamp.duration_since(UNIX_EPOCH)?.as_millis() as i64,
                     target_temp_c: self.target_temp,
                     boiler_temp_c: temp.boiler_temp,
@@ -143,7 +143,7 @@ impl State {
                 self.flush_measurements()?;
             }
             Event::TempHistoryRequest(request) => {
-                let result = query_as!(
+                let mut result = query_as!(
                     Measurement,
                     r#"
                     SELECT time, power, pull, steam,
@@ -160,6 +160,8 @@ impl State {
                 )
                 .fetch_all(&self.pool)
                 .await?;
+
+                result.extend( self.measurement_write_queue.iter().clone().cloned());
 
                 let json_result = serde_json::to_string(&result)?;
 

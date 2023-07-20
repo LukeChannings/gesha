@@ -10,7 +10,7 @@ use crate::core::{
 use log::{debug, error, info, trace};
 use pretty_env_logger;
 use std::error::Error;
-use tokio::{select, signal, sync::broadcast};
+use tokio::{select, signal::unix::{signal, SignalKind}, sync::broadcast};
 use tokio_util::sync::CancellationToken;
 
 #[tokio::main]
@@ -51,6 +51,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     thermocouples.poll()?;
 
+    let mut hangup_signal = signal(SignalKind::hangup())?;
+    let mut interrupt_signal = signal(SignalKind::interrupt())?;
+
     loop {
         select! {
             Ok(event) = rx.recv() => {
@@ -79,10 +82,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     }
                 }
             },
-            _ = signal::ctrl_c() => {
-                debug!("Ctrl+C received");
+            _ = interrupt_signal.recv() => {
+                debug!("SIGINT received");
                 break;
             },
+            _ = hangup_signal.recv() => {
+                debug!("SIGHUP received");
+                break;
+            }
             _ = panic_cancel_token.cancelled() => {
                 debug!("Panic Cancel Token triggered");
                 break;
@@ -92,6 +99,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     info!("Shutting down");
 
+    state.flush_measurements()?;
     mqtt.stop().await?;
     controller_manager.stop().await?;
     pool.close().await;

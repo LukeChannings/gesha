@@ -22,7 +22,7 @@ pub async fn open_or_create(path: &str) -> Result<DBHandle> {
     Ok(pool)
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone, Copy)]
 #[serde(rename_all = "camelCase")]
 pub struct Measurement {
     pub time: i64,

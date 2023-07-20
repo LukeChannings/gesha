@@ -165,7 +165,7 @@ impl ThermocouplePoller {
         let flush_tx = self.event_tx.clone();
 
         task::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_secs(5));
+            let mut interval = tokio::time::interval(Duration::from_secs(60));
 
             loop {
                 interval.tick().await;

@@ -89,7 +89,6 @@ function App() {
                     break
                 }
                 case "gesha/boiler_level": {
-                    console.log(value)
                     heat = +value
                     break
                 }
@@ -138,7 +137,8 @@ function App() {
             )
         })
 
-    getHistory(Date.now() - retainedWindowMs, Date.now()).then((measurements) => {
+    getHistory(Date.now() - 30 * 1000, Date.now()).then((measurements) => {
+        console.log(measurements.map((m, i, ms) => i === 0 ? 0 : ms[i - 1]?.time - ms[i].time));
         const allSeries = measurements
             .sort((a, b) => a.time - b.time)
             .map(
