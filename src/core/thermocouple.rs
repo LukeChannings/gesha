@@ -13,7 +13,7 @@ use crate::config::Spi;
 
 use super::{
     config::Config,
-    state::{Event as GeshaEvent, Mode, TemperatureMeasurement},
+    state::{Event as StateEvent, Mode, TemperatureMeasurement},
 };
 
 pub struct Thermocouple {
@@ -96,13 +96,13 @@ impl TryFrom<Spi> for Thermocouple {
 
 pub struct ThermocouplePoller {
     mode: Mode,
-    event_tx: Sender<GeshaEvent>,
+    event_tx: Sender<StateEvent>,
     config: Config,
     poller: Option<JoinHandle<()>>,
 }
 
 impl ThermocouplePoller {
-    pub fn new(mode: Mode, event_tx: Sender<GeshaEvent>, config: Config) -> ThermocouplePoller {
+    pub fn new(mode: Mode, event_tx: Sender<StateEvent>, config: Config) -> ThermocouplePoller {
         ThermocouplePoller {
             mode,
             event_tx,
@@ -149,12 +149,14 @@ impl ThermocouplePoller {
                         .expect("Error reading thermofilter temperature")
                 });
 
-                if let Err(err) = poller_tx.send(GeshaEvent::TempUpdate(TemperatureMeasurement {
-                    boiler_temp,
-                    grouphead_temp,
-                    thermofilter_temp,
-                    timestamp: SystemTime::now(),
-                })) {
+                if let Err(err) =
+                    poller_tx.send(StateEvent::TemperatureChange(TemperatureMeasurement {
+                        boiler_temp,
+                        grouphead_temp,
+                        thermofilter_temp,
+                        timestamp: SystemTime::now(),
+                    }))
+                {
                     error!("Error sending temperature update: {}", err);
                 };
 
@@ -170,7 +172,9 @@ impl ThermocouplePoller {
             loop {
                 interval.tick().await;
 
-                if let Err(err) = flush_tx.send(GeshaEvent::FlushDb) {
+                if let Err(err) =
+                    flush_tx.send(StateEvent::FlushTemperatureMeasurementBufferRequest)
+                {
                     error!("Error sending flush event: {err}");
                 }
             }

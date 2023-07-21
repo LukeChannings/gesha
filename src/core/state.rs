@@ -4,12 +4,13 @@ use std::{
 };
 
 use anyhow::{anyhow, Result};
-use log::error;
+use log::{error, info};
 use serde::{Deserialize, Serialize};
-use sqlx::query_as;
+use sqlx::{query, query_as};
+
+use crate::controller::ControlMethod;
 
 use super::{
-    config::ControlMethod,
     db::{write_measurements, DBHandle, Measurement},
     mqtt::MqttOutgoingMessage,
 };
@@ -20,25 +21,74 @@ pub struct State {
     pub control_method: ControlMethod,
     pub boiler_state: f32,
     pub temp: Option<TemperatureMeasurement>,
-    pub target_temp: f32,
+    pub target_temperature: f32,
     pub is_brewing: bool,
     measurement_write_queue: VecDeque<Measurement>,
     pool: DBHandle,
 }
 
+const DB_KEY_TARGET_TEMPERATURE: &str = "TargetTemperature";
+const DB_KEY_CONTROL_METHOD: &str = "ControlMethod";
+
 impl State {
-    pub fn new(pool: DBHandle) -> State {
-        State {
+    pub async fn new(pool: DBHandle) -> Result<State> {
+        let mut state = State {
             mode: Mode::Idle,
-            control_method: ControlMethod::Threshold,
+            control_method: ControlMethod::None,
             power_state: PowerState::Off,
             boiler_state: 0.0,
             temp: None,
-            target_temp: 95.0,
+            target_temperature: 0.0,
             is_brewing: false,
             measurement_write_queue: VecDeque::new(),
             pool,
+        };
+
+        State::load_db_config(&mut state).await?;
+
+        Ok(state)
+    }
+
+    async fn load_db_config(&mut self) -> Result<()> {
+        let result = query!("SELECT key, value FROM config")
+            .fetch_all(&self.pool)
+            .await?;
+
+        for record in result {
+            info!("Reading '{}={}'", record.key, record.value);
+
+            match record.key.as_str() {
+                DB_KEY_TARGET_TEMPERATURE => {
+                    self.target_temperature = serde_plain::from_str(&record.value)?
+                }
+                DB_KEY_CONTROL_METHOD => {
+                    self.control_method = serde_plain::from_str(&record.value)?;
+                }
+                _ => {
+                    info!("Unknown config key: {:?}", record.key);
+                }
+            }
         }
+
+        Ok(())
+    }
+
+    async fn write_config(&mut self, key: &str, value: &str) -> Result<()> {
+        query!(
+            r#"
+        INSERT INTO config VALUES (?1, ?2)
+        ON CONFLICT(key) DO
+        UPDATE SET value = ?2 WHERE key = ?1;
+        "#,
+            key,
+            value
+        )
+        .execute(&self.pool)
+        .await?;
+
+        info!("Wrote {key}={value} to the DB");
+
+        Ok(())
     }
 
     pub fn flush_measurements(&mut self) -> Result<()> {
@@ -52,11 +102,29 @@ impl State {
         Ok(())
     }
 
-    pub async fn update(&mut self, event: Event) -> Result<Vec<MqttOutgoingMessage>> {
+    async fn set_target_temperature(&mut self, target_temperature: f32) -> Result<()> {
+        self.target_temperature = target_temperature;
+        let value: String = serde_plain::to_string::<f32>(&target_temperature)?;
+
+        self.write_config(DB_KEY_TARGET_TEMPERATURE, &value).await?;
+
+        Ok(())
+    }
+
+    async fn set_control_method(&mut self, control_method: &ControlMethod) -> Result<()> {
+        self.control_method = control_method.clone();
+        let value: String = serde_plain::to_string::<ControlMethod>(control_method)?;
+
+        self.write_config(DB_KEY_CONTROL_METHOD, &value).await?;
+
+        Ok(())
+    }
+
+    pub async fn handle_event(&mut self, event: Event) -> Result<Vec<MqttOutgoingMessage>> {
         let mut mqtt_messages: Vec<MqttOutgoingMessage> = vec![];
 
         match event {
-            Event::PowerStateUpdate(state) => {
+            Event::PowerStateChange(state) => {
                 match state {
                     PowerState::Off => {
                         self.power_state = PowerState::Off;
@@ -70,7 +138,7 @@ impl State {
 
                 mqtt_messages.push(MqttOutgoingMessage::ModeUpdate(self.mode.clone()));
             }
-            Event::ModeSet(mode) => match mode {
+            Event::ModeChange(mode) => match mode {
                 Mode::Brew => {
                     if self.mode == Mode::Active {
                         self.mode = Mode::Brew;
@@ -99,14 +167,14 @@ impl State {
                     error!("Cannot set mode to Steam (yet).");
                 }
             },
-            Event::TempUpdate(temp) => {
+            Event::TemperatureChange(temp) => {
                 self.temp = Some(temp.clone());
 
                 mqtt_messages.push(MqttOutgoingMessage::TemperatureUpdate(temp.clone()));
 
                 self.measurement_write_queue.push_front(Measurement {
                     time: temp.timestamp.duration_since(UNIX_EPOCH)?.as_millis() as i64,
-                    target_temp_c: self.target_temp,
+                    target_temp_c: self.target_temperature,
                     boiler_temp_c: temp.boiler_temp,
                     grouphead_temp_c: temp.grouphead_temp,
                     thermofilter_temp_c: temp.thermofilter_temp,
@@ -116,7 +184,7 @@ impl State {
                     steam: false,
                 });
             }
-            Event::BoilerStateUpdate(state) => {
+            Event::BoilerHeatLevelChange(state) => {
                 if self.power_state == PowerState::Off && state > 0.0 {
                     Err(anyhow!(
                         "Cannot set boiler state to On when the machine is powered off!"
@@ -127,22 +195,20 @@ impl State {
 
                 mqtt_messages.push(MqttOutgoingMessage::BoilerStatusUpdate(state.clone()));
             }
-            Event::TargetTempSet(temp) => {
-                self.target_temp = temp;
-                mqtt_messages.push(MqttOutgoingMessage::TargetTemperatureUpdate(temp));
+            Event::TargetTemperatureChangeRequest(target_temperature) => {
+                self.set_target_temperature(target_temperature).await?;
+                mqtt_messages.push(MqttOutgoingMessage::TargetTemperatureUpdate(
+                    target_temperature,
+                ));
             }
-            Event::ControlMethodSet(control_method) => {
-                self.control_method = control_method.clone();
+            Event::ControlMethodChangeRequest(control_method) => {
+                self.set_control_method(&control_method).await?;
                 mqtt_messages.push(MqttOutgoingMessage::ControlMethodUpdate(control_method));
             }
-            Event::BoilerStateSet(power_level) => {
-                self.boiler_state = power_level.clone();
-                mqtt_messages.push(MqttOutgoingMessage::BoilerStatusUpdate(power_level));
-            }
-            Event::FlushDb => {
+            Event::FlushTemperatureMeasurementBufferRequest => {
                 self.flush_measurements()?;
             }
-            Event::TempHistoryRequest(request) => {
+            Event::TemperatureHistoryRequest { from, to } => {
                 let mut result = query_as!(
                     Measurement,
                     r#"
@@ -155,18 +221,35 @@ impl State {
                     FROM measurement
                     WHERE time > ? AND TIME < ?
                     ORDER BY time DESC"#,
-                    request.from,
-                    request.to
+                    from,
+                    to
                 )
                 .fetch_all(&self.pool)
                 .await?;
 
-                result.extend( self.measurement_write_queue.iter().clone().cloned());
+                result.extend(self.measurement_write_queue.iter().clone().cloned());
 
-                let json_result = serde_json::to_string(&result)?;
+                let mut summary: Vec<Measurement> = vec![];
 
-                mqtt_messages.push(MqttOutgoingMessage::TemperatureHistoryResult(json_result))
+                for i in 0..(result.len() / 25) {
+                    summary.push(result[i * 25]);
+                }
+
+                summary.sort_by(|a, b| a.time.cmp(&b.time));
+
+                info!(
+                    "Temperature History request {}-{} found {} measurements. Sending only {}",
+                    from,
+                    to,
+                    result.len(),
+                    summary.len(),
+                );
+
+                let json_result = serde_json::to_string(&summary)?;
+
+                mqtt_messages.push(MqttOutgoingMessage::TemperatureHistoryResponse(json_result))
             }
+            _ => {}
         }
 
         Ok(mqtt_messages)
@@ -212,14 +295,14 @@ pub struct TempHistoryRange {
 
 #[derive(Clone, Debug)]
 pub enum Event {
-    TempUpdate(TemperatureMeasurement),
-    PowerStateUpdate(PowerState),
-    BoilerStateUpdate(f32),
-    ModeSet(Mode),
-    FlushDb,
-    TempHistoryRequest(TempHistoryRange),
+    TemperatureChange(TemperatureMeasurement),
+    PowerStateChange(PowerState),
+    BoilerHeatLevelChange(f32),
+    ModeChange(Mode),
+    FlushTemperatureMeasurementBufferRequest,
+    TemperatureHistoryRequest { from: i64, to: i64 },
 
-    TargetTempSet(f32),
-    ControlMethodSet(ControlMethod),
-    BoilerStateSet(f32),
+    TargetTemperatureChangeRequest(f32),
+    ManualBoilerHeatLevelRequest(f32),
+    ControlMethodChangeRequest(ControlMethod),
 }

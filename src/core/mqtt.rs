@@ -7,28 +7,30 @@ use rumqttc::v5::{
     },
     AsyncClient, Event, MqttOptions,
 };
+use serde::Deserialize;
 use std::{str, time::UNIX_EPOCH};
 use tokio::{select, sync::broadcast::Sender, task, time};
 use tokio_util::sync::CancellationToken;
 
-use crate::core::state::{Event as GeshaEvent, PowerState};
-
-use super::{
-    config::ControlMethod,
-    state::{Mode, TemperatureMeasurement},
+use crate::{
+    controller::ControlMethod,
+    core::state::{Event as StateEvent, PowerState},
 };
 
-const TOPIC_POWER_STATE: &str = "ms-silvia-switch/switch/power/state";
-const TOPIC_POWER_COMMAND: &str = "ms-silvia-switch/switch/power/command";
+use super::state::{Mode, TemperatureMeasurement};
 
-const GESHA_TOPIC_CONTROL_METHOD_SET: &str = "gesha/control_method/set";
-const GESHA_TOPIC_TARGET_TEMP_SET: &str = "gesha/temperature/target/set";
-const GESHA_TOPIC_MODE_SET: &str = "gesha/mode/set";
-const GESHA_TOPIC_TEMP_HISTORY_SET: &str = "gesha/temperature/history/command";
+const TOPIC_EXTERN_POWER_STATE_CHANGE: &str = "ms-silvia-switch/switch/power/state";
+const TOPIC_EXTERN_POWER_COMMAND: &str = "ms-silvia-switch/switch/power/command";
+
+const TOPIC_CONTROL_METHOD_CHANGE_REQUEST: &str = "gesha/control_method/set";
+const TOPIC_TARGET_TEMPERATURE_CHANGE_REQUEST: &str = "gesha/temperature/target/set";
+const TOPIC_MODE_CHANGE: &str = "gesha/mode/set";
+const TOPIC_TEMPERATURE_HISTORY_REQUEST: &str = "gesha/temperature/history/command";
+const TOPIC_MANUAL_BOILER_HEAT_LEVEL_REQUEST: &str = "gesha/boiler_level/set";
 
 pub struct Mqtt {
     uri: String,
-    event_tx: Sender<GeshaEvent>,
+    event_tx: Sender<StateEvent>,
     cancel_token: CancellationToken,
     client: Option<AsyncClient>,
 }
@@ -37,42 +39,57 @@ pub enum MqttOutgoingMessage {
     ModeUpdate(Mode),
     BoilerStatusUpdate(f32),
     TemperatureUpdate(TemperatureMeasurement),
-    TemperatureHistoryResult(String),
+    TemperatureHistoryResponse(String),
     TargetTemperatureUpdate(f32),
     ControlMethodUpdate(ControlMethod),
     PowerRelayStatus(PowerState),
 }
 
-impl TryInto<GeshaEvent> for Publish {
+impl TryInto<StateEvent> for Publish {
     type Error = anyhow::Error;
 
-    fn try_into(self) -> std::result::Result<GeshaEvent, Self::Error> {
+    fn try_into(self) -> std::result::Result<StateEvent, Self::Error> {
         let topic = str::from_utf8(&self.topic)?;
 
         match topic {
-            GESHA_TOPIC_CONTROL_METHOD_SET => {
+            TOPIC_CONTROL_METHOD_CHANGE_REQUEST => {
                 let control_method = serde_yaml::from_slice(&self.payload)?;
-                Ok(GeshaEvent::ControlMethodSet(control_method))
+                Ok(StateEvent::ControlMethodChangeRequest(control_method))
             }
-            GESHA_TOPIC_TARGET_TEMP_SET => Ok(GeshaEvent::TargetTempSet(serde_yaml::from_slice(
-                &self.payload,
-            )?)),
-            GESHA_TOPIC_MODE_SET => {
+            TOPIC_TARGET_TEMPERATURE_CHANGE_REQUEST => Ok(
+                StateEvent::TargetTemperatureChangeRequest(serde_yaml::from_slice(&self.payload)?),
+            ),
+            TOPIC_MODE_CHANGE => {
                 let mode = serde_yaml::from_slice(&self.payload)?;
-                Ok(GeshaEvent::ModeSet(mode))
-            },
-            GESHA_TOPIC_TEMP_HISTORY_SET => {
-                let history_request = serde_json::from_slice(&self.payload)?;
-                Ok(GeshaEvent::TempHistoryRequest(history_request))
+                Ok(StateEvent::ModeChange(mode))
             }
-            TOPIC_POWER_STATE => {
+            TOPIC_TEMPERATURE_HISTORY_REQUEST => {
+                #[derive(Deserialize)]
+                struct Range {
+                    from: i64,
+                    to: i64,
+                }
+
+                let range: Range = serde_json::from_slice(&self.payload)?;
+
+                Ok(StateEvent::TemperatureHistoryRequest {
+                    from: range.from,
+                    to: range.to,
+                })
+            }
+            TOPIC_EXTERN_POWER_STATE_CHANGE => {
                 let power_state = if self.payload == "ON" {
                     PowerState::On
                 } else {
                     PowerState::Off
                 };
 
-                Ok(GeshaEvent::PowerStateUpdate(power_state))
+                Ok(StateEvent::PowerStateChange(power_state))
+            }
+            TOPIC_MANUAL_BOILER_HEAT_LEVEL_REQUEST => {
+                let heat_level: f32 = serde_yaml::from_slice(&self.payload)?;
+
+                Ok(StateEvent::ManualBoilerHeatLevelRequest(heat_level))
             }
             _ => Err(anyhow!(
                 "There is no incoming message for the topic {}",
@@ -83,7 +100,7 @@ impl TryInto<GeshaEvent> for Publish {
 }
 
 impl Mqtt {
-    pub fn new(uri: &str, event_tx: Sender<GeshaEvent>) -> Result<Self> {
+    pub fn new(uri: &str, event_tx: Sender<StateEvent>) -> Result<Self> {
         let cancel_token = CancellationToken::new();
 
         let mqtt = Mqtt {
@@ -121,7 +138,7 @@ impl Mqtt {
                         if let Event::Incoming(Packet::Publish(publish_event)) = notification {
                             debug!("Received = {:?}", publish_event);
 
-                            match TryInto::<GeshaEvent>::try_into(publish_event) {
+                            match TryInto::<StateEvent>::try_into(publish_event) {
                                 Ok(event) => {
                                     debug!("Sending event: {:?}", event);
                                     if let Err(err) = tx.send(event) {
@@ -163,11 +180,12 @@ impl Mqtt {
     pub async fn subscribe(&self) -> Result<()> {
         if let Some(client) = &self.client {
             let topics = vec![
-                TOPIC_POWER_STATE,
-                GESHA_TOPIC_CONTROL_METHOD_SET,
-                GESHA_TOPIC_TARGET_TEMP_SET,
-                GESHA_TOPIC_MODE_SET,
-                GESHA_TOPIC_TEMP_HISTORY_SET,
+                TOPIC_EXTERN_POWER_STATE_CHANGE,
+                TOPIC_CONTROL_METHOD_CHANGE_REQUEST,
+                TOPIC_TARGET_TEMPERATURE_CHANGE_REQUEST,
+                TOPIC_MODE_CHANGE,
+                TOPIC_TEMPERATURE_HISTORY_REQUEST,
+                TOPIC_MANUAL_BOILER_HEAT_LEVEL_REQUEST,
             ];
             for topic in topics {
                 client
@@ -190,7 +208,11 @@ impl Mqtt {
 
         match message {
             MqttOutgoingMessage::ModeUpdate(status) => {
-                events.push((String::from("gesha/mode"), serde_json::to_string(status)?, true));
+                events.push((
+                    String::from("gesha/mode"),
+                    serde_json::to_string(status)?,
+                    true,
+                ));
             }
             MqttOutgoingMessage::BoilerStatusUpdate(heat_level) => {
                 events.push((
@@ -244,7 +266,7 @@ impl Mqtt {
                 ));
             }
             MqttOutgoingMessage::PowerRelayStatus(power_status) => events.push((
-                TOPIC_POWER_COMMAND.to_string(),
+                TOPIC_EXTERN_POWER_COMMAND.to_string(),
                 (if power_status.clone() == PowerState::On {
                     "ON"
                 } else {
@@ -253,20 +275,23 @@ impl Mqtt {
                 .to_string(),
                 false,
             )),
-            MqttOutgoingMessage::TemperatureHistoryResult(result) => {
-                events.push((
-                    format!("gesha/temperature/history"),
-                    result.to_string(),
-                    false,
-                ))
-            }
+            MqttOutgoingMessage::TemperatureHistoryResponse(result) => events.push((
+                format!("gesha/temperature/history"),
+                result.to_string(),
+                false,
+            )),
         }
 
         for (topic, payload, retain) in events.iter() {
             self.client
                 .as_ref()
                 .unwrap()
-                .publish(topic, QoS::ExactlyOnce, retain.clone(), String::from(payload))
+                .publish(
+                    topic,
+                    QoS::ExactlyOnce,
+                    retain.clone(),
+                    String::from(payload),
+                )
                 .await
                 .map_err(|err| anyhow!("Failed to publish status, got {}", err))?;
         }

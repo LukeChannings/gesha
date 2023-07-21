@@ -7,26 +7,39 @@ use crate::core::{
     state::{self, Event},
     thermocouple::ThermocouplePoller,
 };
+use clap::Parser;
 use log::{debug, error, info, trace};
 use pretty_env_logger;
 use std::error::Error;
-use tokio::{select, signal::unix::{signal, SignalKind}, sync::broadcast};
+use tokio::{
+    select,
+    signal::unix::{signal, SignalKind},
+    sync::broadcast,
+};
 use tokio_util::sync::CancellationToken;
+
+#[derive(Parser, Debug, Clone)]
+struct Args {
+    #[arg(short, long)]
+    pub config_path: Option<String>,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     pretty_env_logger::init();
 
+    let args = Args::parse();
+
     let panic_cancel_token = create_panic_cancel_token();
 
     let pool = db::open_or_create("/opt/gesha/var/db/gesha.db").await?;
 
-    let config = config::Config::load().await?;
+    let config = config::Config::load(args.config_path).await?;
     let config_clone = &config.clone();
 
     trace!("Using config:\n {:#?}", config);
 
-    let mut state = state::State::new(pool.clone());
+    let mut state = state::State::new(pool.clone()).await?;
 
     let (tx, mut rx) = broadcast::channel::<Event>(100);
 
@@ -39,9 +52,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut controller_manager = controller::ControllerManager::new(
         config.boiler_pin,
-        &config.control_method,
+        &state.control_method,
         tx.clone(),
-        state.target_temp,
+        state.target_temperature,
+        state.mode.clone(),
     )?;
 
     controller_manager.start()?;
@@ -54,12 +68,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut hangup_signal = signal(SignalKind::hangup())?;
     let mut interrupt_signal = signal(SignalKind::interrupt())?;
 
+    mqtt.publish(&MqttOutgoingMessage::ControlMethodUpdate(
+        state.control_method.clone(),
+    ))
+    .await?;
+    mqtt.publish(&MqttOutgoingMessage::ModeUpdate(state.mode.clone()))
+        .await?;
+
     loop {
         select! {
             Ok(event) = rx.recv() => {
-                debug!("Event: {:?}", event);
 
-                match state.update(event).await {
+                match &event {
+                    Event::TemperatureChange(_) => {}
+                    event => {
+                        info!("Event: {:?}", event);
+                    }
+                }
+
+                match state.handle_event(event).await {
                     Ok(mqtt_messages) => {
                         for message in mqtt_messages.iter() {
                             if let MqttOutgoingMessage::ControlMethodUpdate(control_method) = message {
@@ -68,10 +95,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
                             if let MqttOutgoingMessage::ModeUpdate(mode) = message {
                                 thermocouples.update_mode(mode.clone()).await?;
-                            }
-
-                            if let MqttOutgoingMessage::TargetTemperatureUpdate(temp) = message {
-                                controller_manager.set_target_temp(temp.clone()).await?;
                             }
 
                             mqtt.publish(&message).await?;

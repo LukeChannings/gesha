@@ -1,5 +1,5 @@
 import { connect } from "mqtt"
-import { createEffect, createSignal } from "solid-js"
+import { Show, createEffect, createSignal } from "solid-js"
 
 import { Datum, Millis, Series, last, updateSeries } from "./util"
 import { Chart } from "./Chart"
@@ -17,7 +17,8 @@ function App() {
     const [heatSeries, setHeatSeries] = createSignal<Series>([])
     const [mode, setMode] = createSignal("")
     const [targetTemp, setTargetTemp] = createSignal<number>(-1000)
-    const [timeWindow, setTimeWindow] = createSignal<Millis>(10 * 60 * 1_000);
+    const [timeWindow, setTimeWindow] = createSignal<Millis>(10 * 60 * 1_000)
+    const [controlMethod, setControlMethod] = createSignal("")
 
     const retainedWindowMs = 30 * 60 * 1_000
 
@@ -96,6 +97,10 @@ function App() {
                     setMode(value)
                     break
                 }
+                case "gesha/control_method": {
+                    setControlMethod(value)
+                    break
+                }
             }
         })
     })
@@ -110,12 +115,36 @@ function App() {
         event.preventDefault()
     }
 
-    const handleTargetTempChange = (event: Event & {
-        currentTarget: HTMLInputElement
-        target: HTMLInputElement
-    }) => {
-        client.publish("gesha/temperature/target", event.target.value);
+    const handleTargetTempChange = (
+        event: Event & {
+            currentTarget: HTMLInputElement
+            target: HTMLInputElement
+        },
+    ) => {
+        client.publish("gesha/temperature/target/set", event.target.value, {
+            retain: false,
+        })
         event.preventDefault()
+    }
+
+    const handleControlMethodChange = (
+        event: Event & {
+            currentTarget: HTMLSelectElement
+            target: HTMLSelectElement
+        },
+    ) => {
+        client.publish("gesha/control_method/set", event.target.value, {
+            retain: false,
+        })
+        event.preventDefault()
+    }
+
+    const handleHeatLevelChange = (
+        event: Event & { target: HTMLInputElement },
+    ) => {
+        client.publish("gesha/boiler_level/set", event.target.value, {
+            retain: false,
+        })
     }
 
     const getHistory = (from: number, to: number): Promise<Measurement[]> =>
@@ -133,55 +162,56 @@ function App() {
             client.publish(
                 "gesha/temperature/history/command",
                 JSON.stringify({ from, to }),
-                { retain: false, qos: 2 }
+                { retain: false, qos: 2 },
             )
         })
 
-    getHistory(Date.now() - 30 * 1000, Date.now()).then((measurements) => {
-        console.log(measurements.map((m, i, ms) => i === 0 ? 0 : ms[i - 1]?.time - ms[i].time));
-        const allSeries = measurements
-            .sort((a, b) => a.time - b.time)
-            .map(
-                (measurement) =>
-                    [
-                        {
-                            x: measurement.time,
-                            y: measurement.boilerTempC,
-                        },
-                        {
-                            x: measurement.time,
-                            y: measurement.groupheadTempC,
-                        },
-                        {
-                            x: measurement.time,
-                            y: measurement.thermofilterTempC ?? 0,
-                        },
-                        {
-                            x: measurement.time,
-                            y: measurement.heatLevel,
-                        },
-                    ] as const,
-            )
+    getHistory(Date.now() - retainedWindowMs, Date.now()).then(
+        (measurements) => {
+            const allSeries = measurements
+                .sort((a, b) => a.time - b.time)
+                .map(
+                    (measurement) =>
+                        [
+                            {
+                                x: measurement.time,
+                                y: measurement.boilerTempC,
+                            },
+                            {
+                                x: measurement.time,
+                                y: measurement.groupheadTempC,
+                            },
+                            {
+                                x: measurement.time,
+                                y: measurement.thermofilterTempC ?? 0,
+                            },
+                            {
+                                x: measurement.time,
+                                y: measurement.heatLevel,
+                            },
+                        ] as const,
+                )
 
-        setBoilerTempSeries(allSeries.map(([v]) => v))
-        setGroupheadTempSeries(allSeries.map(([, v]) => v))
-        setThermofilterTempSeries(allSeries.map(([, , v]) => v))
-        setHeatSeries(allSeries.map(([, , , v]) => v))
-    })
+            setBoilerTempSeries(allSeries.map(([v]) => v))
+            setGroupheadTempSeries(allSeries.map(([, v]) => v))
+            setThermofilterTempSeries(allSeries.map(([, , v]) => v))
+            setHeatSeries(allSeries.map(([, , , v]) => v))
+        },
+    )
 
-    const formatHeat = (n?: number) => n === 0 || !n ? 'Off' : `${(n * 100).toFixed(0)}%`
+    const formatHeat = (n?: number) =>
+        n === 0 || !n ? "Off" : `${(n * 100).toFixed(0)}%`
 
     return (
         <main class={styles.app}>
-            <form class={styles.controls} onSubmit={e => e.preventDefault()}>
+            <form class={styles.controls} onSubmit={(e) => e.preventDefault()}>
                 <select value={mode()} onChange={handleModeChange}>
                     <option value="idle">Idle</option>
                     <option value="active">Active</option>
                     <option value="brew">Brew</option>
                     <option value="steam">Steam</option>
                 </select>
-                <p>Heat: {formatHeat(last(heatSeries())?.y)}</p>
-                |
+                <p>Heat: {formatHeat(last(heatSeries())?.y)}</p>|
                 <label>
                     Target temp:{" "}
                     <input
@@ -193,7 +223,7 @@ function App() {
                             appearance: "none",
                             background: "transparent",
                             border: "none",
-                            "font-weight": "bold"
+                            "font-weight": "bold",
                         }}
                         onChange={handleTargetTempChange}
                     />{" "}
@@ -201,8 +231,40 @@ function App() {
                 </label>
                 |
                 <label>
+                    Control Method
+                    <select
+                        value={controlMethod()}
+                        onChange={handleControlMethodChange}
+                    >
+                        <option value="None">Manual</option>
+                        <option value="Threshold">Threshold</option>
+                        <option value="PID">PID</option>
+                        <option value="MPC">MPC</option>
+                    </select>
+                </label>
+                <Show when={controlMethod() == "None"}>
+                    <>
+                        |
+                        <label>
+                            Heat level{" "}
+                            <input
+                                type="number"
+                                min="0"
+                                max="1"
+                                step="0.1"
+                                onChange={handleHeatLevelChange}
+                                value={last(heatSeries())?.y}
+                            />
+                        </label>
+                    </>
+                </Show>
+                |
+                <label>
                     Time window
-                    <select value={timeWindow()} onChange={e => setTimeWindow(+e.target.value)}>
+                    <select
+                        value={timeWindow()}
+                        onChange={(e) => setTimeWindow(+e.target.value)}
+                    >
                         <option value={30 * 60 * 1_000}>30m</option>
                         <option value={10 * 60 * 1_000}>10m</option>
                         <option value={5 * 60 * 1_000}>5m</option>

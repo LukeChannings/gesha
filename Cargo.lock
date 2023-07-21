@@ -601,6 +601,7 @@ dependencies = [
  "rumqttc",
  "serde",
  "serde_json",
+ "serde_plain",
  "serde_yaml",
  "sqlx",
  "tokio",
@@ -1451,6 +1452,15 @@ checksum = "0f1e14e89be7aa4c4b78bdbdc9eb5bf8517829a600ae8eaa39a6e1d960b5185c"
 dependencies = [
  "itoa",
  "ryu",
+ "serde",
+]
+
+[[package]]
+name = "serde_plain"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6018081315db179d0ce57b1fe4b62a12a0028c9cf9bbef868c9cf477b3c34ae"
+dependencies = [
  "serde",
 ]
 

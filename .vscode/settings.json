@@ -1,13 +1,13 @@
 {
-    "cSpell.words": [
-        "Gesha",
-        "grouphead",
-        "Millis",
-        "mqtt",
-        "nanos",
-        "sqlx",
-        "thermofilter"
-    ],
+    "cSpell.words": ["Gesha", "grouphead", "Millis", "mqtt", "nanos", "sqlx", "thermofilter"],
     "jestrunner.disableCodeLens": true,
-    "prettier.semi": false
+    "prettier.semi": false,
+    "editor.fontWeight": "normal",
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "rust-analyzer.rustfmt.enableRangeFormatting": true,
+    "[rust]": {
+        "editor.defaultFormatter": "rust-lang.rust-analyzer",
+        "editor.formatOnSave": true
+    }
 }
