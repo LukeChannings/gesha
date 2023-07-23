@@ -13,7 +13,7 @@ impl ThresholdController {
 }
 
 impl Controller for ThresholdController {
-    fn sample(&self, boiler_temp: f32, _group_head_temp: f32) -> f32 {
+    fn sample(&mut self, boiler_temp: f32, _group_head_temp: f32) -> f32 {
         info!(
             "Threshold sample: {}, {}, {:?}",
             boiler_temp,

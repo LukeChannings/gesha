@@ -144,9 +144,12 @@ impl ThermocouplePoller {
                     .read()
                     .expect("Error reading grouphead temperature");
                 let thermofilter_temp = thermofilter.as_mut().map(|thermofilter| {
-                    thermofilter
-                        .read()
-                        .expect("Error reading thermofilter temperature")
+                    let temp = thermofilter.read();
+                    if temp.is_err() {
+                        0.0
+                    } else {
+                        temp.unwrap()
+                    }
                 });
 
                 if let Err(err) =

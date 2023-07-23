@@ -21,7 +21,7 @@ use crate::{
 };
 
 pub trait Controller: Send + Sync {
-    fn sample(&self, boiler_temp: f32, group_head_temp: f32) -> f32;
+    fn sample(&mut self, boiler_temp: f32, group_head_temp: f32) -> f32;
     fn update_target_temperature(&mut self, target_temp: f32);
 }
 
@@ -90,7 +90,7 @@ impl ControllerManager {
                                 match mode.try_read() {
                                     Ok(mode) => {
                                         if let Mode::Active = *mode {
-                                            if let Some(controller) = &controller {
+                                            if let Some(controller) = &mut controller {
                                                 let duty_cycle = controller.sample(temp.boiler_temp, temp.grouphead_temp);
 
                                                 if duty_cycle != current_duty_cycle {
@@ -200,9 +200,9 @@ impl ControllerManager {
                 Some(Box::new(ThresholdController::new(target_temperature)))
             }
             ControlMethod::PID => Some(Box::new(PidController::new(
-                1.0,
-                1.0,
-                1.0,
+                0.0,
+                0.0,
+                0.0,
                 target_temperature,
             ))),
             ControlMethod::MPC => Some(Box::new(MpcController::new(target_temperature))),
@@ -214,7 +214,9 @@ impl ControllerManager {
 // The duty cycle is a percentage represented as 0.0 - 1.0, 0% and 100% respectively.
 fn duty_cycle_to_pulse_width(duty_cycle: f32) -> Result<(Duration, Duration)> {
     if duty_cycle > 1.0 || duty_cycle < 0.0 {
-        return Err(anyhow!("The duty cycle must be between 0.0 and 1.0"));
+        return Err(anyhow!(
+            "The duty cycle must be between 0.0 and 1.0, but got {duty_cycle}"
+        ));
     }
 
     let period = 50.0;

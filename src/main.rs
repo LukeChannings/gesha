@@ -72,8 +72,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         state.control_method.clone(),
     ))
     .await?;
+
     mqtt.publish(&MqttOutgoingMessage::ModeUpdate(state.mode.clone()))
         .await?;
+
+    mqtt.publish(&MqttOutgoingMessage::TargetTemperatureUpdate(
+        state.target_temperature,
+    ))
+    .await?;
 
     loop {
         select! {
