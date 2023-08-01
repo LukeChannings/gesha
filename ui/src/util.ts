@@ -82,7 +82,9 @@ export class RingBuffer<T> {
     }
 }
 
-export const computeLineSegments = (series: Series): Map<number, number> => {
+export const computeLineSegments = (
+    series: Series,
+): Array<[number, number]> => {
     let rects: Map<number, number> = new Map()
 
     let x1
@@ -101,7 +103,7 @@ export const computeLineSegments = (series: Series): Map<number, number> => {
         rects.set(x1, series[series.length - 1].x)
     }
 
-    return rects
+    return [...rects.entries()]
 }
 
 export const formatHeat = (n?: number) =>
@@ -109,7 +111,12 @@ export const formatHeat = (n?: number) =>
 
 export const getHistory = (
     client: MqttClient,
-    { from, to, limit }: { from: number; to: number; limit: number },
+    {
+        from,
+        to,
+        limit,
+        bucketSize,
+    }: { from: number; to: number; limit?: number; bucketSize?: number },
 ): Promise<Record<string, Series>> =>
     new Promise<Measurement[]>((resolve) => {
         const callback = (topic: string, payload: Buffer) => {
@@ -124,7 +131,7 @@ export const getHistory = (
 
         client.publish(
             "gesha/temperature/history/command",
-            JSON.stringify({ from, to, limit }),
+            JSON.stringify({ from, to, limit, bucketSize }),
             { retain: false, qos: 2 },
         )
     }).then((measurements) => {

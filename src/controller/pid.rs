@@ -1,5 +1,4 @@
 use super::Controller;
-use log::info;
 use pid::Pid;
 
 pub struct PidController {

@@ -206,7 +206,7 @@ impl ThermocouplePoller {
         Duration::from_millis(match self.mode {
             Mode::Idle => 1_000,
             Mode::Active => 100,
-            Mode::Brew => 50,
+            Mode::Brew => 100,
             Mode::Steam => 100,
             Mode::Offline => 0,
         })

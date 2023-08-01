@@ -7,13 +7,14 @@ import { Chart } from "./Chart"
 import styles from "./App.module.css"
 import { ResizeContainer } from "./ResizeContainer"
 import {
-    TIME_WINDOW_10M,
-    TIME_WINDOW_1M,
+    TIME_WINDOW_60M,
     TIME_WINDOW_30M,
+    TIME_WINDOW_10M,
     TIME_WINDOW_5M,
+    TIME_WINDOW_1M,
 } from "./types"
 
-const RING_BUFFER_SIZE = (1000 / 20) * 60 * 30 // 1 value every 20ms for 30 minutes
+const RING_BUFFER_SIZE = 1_000
 
 function App() {
     const [boilerTemperatures, setBoilerTemperatures] = createSignal<
@@ -149,11 +150,12 @@ function App() {
         setTimeWindow(newTimeWindow)
         const to = Date.now()
         const from = to - newTimeWindow
-        const limit = RING_BUFFER_SIZE
 
-        const history = await getHistory(client, { from, to, limit })
-
-        console.log(history)
+        const history = await getHistory(client, {
+            from,
+            to,
+            bucketSize: 5_000,
+        })
 
         setBoilerTemperatures(boilerTemperatures().load(history.boilerTemp))
         setGroupheadTemperatures(
@@ -229,8 +231,11 @@ function App() {
                     Time window
                     <select
                         value={timeWindow()}
-                        onChange={(e) => setTimeWindow(+e.target.value)}
+                        onChange={(e) =>
+                            handleRetainedWindowSizeChange(+e.target.value)
+                        }
                     >
+                        <option value={TIME_WINDOW_60M}>1h</option>
                         <option value={TIME_WINDOW_30M}>30m</option>
                         <option value={TIME_WINDOW_10M}>10m</option>
                         <option value={TIME_WINDOW_5M}>5m</option>

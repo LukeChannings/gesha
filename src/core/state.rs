@@ -208,8 +208,13 @@ impl State {
             Event::FlushTemperatureMeasurementBufferRequest => {
                 self.flush_measurements()?;
             }
-            Event::TemperatureHistoryRequest { from, to, limit } => {
-                let result = read_measurements(&self.pool, from, to, limit).await?;
+            Event::TemperatureHistoryRequest {
+                from,
+                to,
+                limit,
+                bucket_size,
+            } => {
+                let result = read_measurements(&self.pool, from, to, limit, bucket_size).await?;
 
                 let json_result = serde_json::to_string(&result)?;
 
@@ -266,7 +271,12 @@ pub enum Event {
     BoilerHeatLevelChange(f32),
     ModeChange(Mode),
     FlushTemperatureMeasurementBufferRequest,
-    TemperatureHistoryRequest { from: i64, to: i64, limit: i64 },
+    TemperatureHistoryRequest {
+        from: i64,
+        to: i64,
+        limit: Option<i64>,
+        bucket_size: Option<i64>,
+    },
 
     TargetTemperatureChangeRequest(f32),
     ManualBoilerHeatLevelRequest(f32),

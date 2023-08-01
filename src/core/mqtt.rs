@@ -65,10 +65,12 @@ impl TryInto<StateEvent> for Publish {
             }
             TOPIC_TEMPERATURE_HISTORY_REQUEST => {
                 #[derive(Deserialize)]
+                #[serde(rename_all = "camelCase")]
                 struct Range {
                     from: i64,
                     to: i64,
-                    limit: i64,
+                    limit: Option<i64>,
+                    bucket_size: Option<i64>,
                 }
 
                 let range: Range = serde_json::from_slice(&self.payload)?;
@@ -77,6 +79,7 @@ impl TryInto<StateEvent> for Publish {
                     from: range.from,
                     to: range.to,
                     limit: range.limit,
+                    bucket_size: range.bucket_size,
                 })
             }
             TOPIC_EXTERN_POWER_STATE_CHANGE => {

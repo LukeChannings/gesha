@@ -68,10 +68,6 @@ export function Chart({
         )
     })
 
-    const heatingLineSegments = createMemo(() => [
-        ...computeLineSegments(heatSeries().values).entries(),
-    ])
-
     return (
         <svg
             width={width}
@@ -79,7 +75,8 @@ export function Chart({
             viewBox={`0 0 ${width} ${height}`}
             class={styles.chart}
         >
-            <For each={heatingLineSegments()}>
+            {JSON.stringify(heatSeries().last)}
+            <For each={computeLineSegments(heatSeries().values)}>
                 {([from, to]) => {
                     const a = xAxis()(+from - Date.now())
                     const b = xAxis()(to - Date.now())
