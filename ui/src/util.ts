@@ -1,3 +1,6 @@
+import { MqttClient } from "mqtt"
+import { Measurement } from "./types"
+
 export type Millis = number
 
 export const formatMillis = (millis: Millis) => {
@@ -16,16 +19,68 @@ export const formatMillis = (millis: Millis) => {
 export type Datum<Value = number> = { x: number; y: Value }
 export type Series<Value = number> = Array<Datum<Value>>
 
-export const updateSeries = <V = number>(
-    series: Series<V>,
-    d: Datum<V>,
-    isExpired: (d: Datum<V>) => boolean,
-) => {
-    return [...series.filter(isExpired), d]
-}
+export class RingBuffer<T> {
+    #values: Array<T>
+    #size: number
+    #length = 0
+    #tail = 0
+    #head = 0
 
-export const last = <T>(list: T[]): T | null =>
-    list.length > 0 ? list[list.length - 1] : null
+    constructor(size: number) {
+        this.#size = size
+        this.#values = new Array(size)
+    }
+
+    get length() {
+        return this.#length
+    }
+
+    get values(): T[] {
+        const segment1 = this.#values.slice(0, this.#head)
+        const segment2 = this.#values.slice(this.#head, this.#length)
+
+        if (this.#head < this.#tail) {
+            return [...segment1, ...segment2]
+        } else {
+            return [...segment2, ...segment1]
+        }
+    }
+
+    get first(): T | undefined {
+        if (this.#length < this.#size) {
+            return this.#values[0]
+        }
+
+        return this.#values[this.#head]
+    }
+
+    get last(): T | undefined {
+        return this.#values[this.#tail]
+    }
+
+    push(value: T): this {
+        this.#values[this.#head] = value
+        this.#tail = this.#head
+        this.#head = (this.#head + 1) % this.#size
+
+        if (this.#length < this.#size) {
+            this.#length += 1
+        }
+
+        return this
+    }
+
+    load(values: T[]): this {
+        this.#values =
+            values.length < this.#size
+                ? values
+                : values.slice(values.length - this.#size)
+        this.#head = this.#values.length % this.#size
+        this.#length = this.#values.length
+
+        return this
+    }
+}
 
 export const computeLineSegments = (series: Series): Map<number, number> => {
     let rects: Map<number, number> = new Map()
@@ -48,3 +103,59 @@ export const computeLineSegments = (series: Series): Map<number, number> => {
 
     return rects
 }
+
+export const formatHeat = (n?: number) =>
+    n === 0 || !n ? "Off" : `${(n * 100).toFixed(0)}%`
+
+export const getHistory = (
+    client: MqttClient,
+    { from, to, limit }: { from: number; to: number; limit: number },
+): Promise<Record<string, Series>> =>
+    new Promise<Measurement[]>((resolve) => {
+        const callback = (topic: string, payload: Buffer) => {
+            if (topic === "gesha/temperature/history") {
+                client.off("message", callback)
+
+                resolve(JSON.parse(payload.toString()))
+            }
+        }
+
+        client.on("message", callback)
+
+        client.publish(
+            "gesha/temperature/history/command",
+            JSON.stringify({ from, to, limit }),
+            { retain: false, qos: 2 },
+        )
+    }).then((measurements) => {
+        const allSeries = measurements
+            .sort((a, b) => a.time - b.time)
+            .map(
+                (measurement) =>
+                    [
+                        {
+                            x: measurement.time,
+                            y: measurement.boilerTempC,
+                        },
+                        {
+                            x: measurement.time,
+                            y: measurement.groupheadTempC,
+                        },
+                        {
+                            x: measurement.time,
+                            y: measurement.thermofilterTempC ?? 0,
+                        },
+                        {
+                            x: measurement.time,
+                            y: measurement.heatLevel,
+                        },
+                    ] as const,
+            )
+
+        const boilerTemp = allSeries.map(([v]) => v)
+        const groupheadTemp = allSeries.map(([, v]) => v)
+        const thermofilterTemp = allSeries.map(([, , v]) => v)
+        const boilerLevel = allSeries.map(([, , , v]) => v)
+
+        return { boilerTemp, groupheadTemp, thermofilterTemp, boilerLevel }
+    })

@@ -1,26 +1,39 @@
-import { connect } from "mqtt"
-import { Show, createEffect, createSignal } from "solid-js"
+import { OnMessageCallback, connect } from "mqtt"
+import { Show, createEffect, createSignal, onCleanup } from "solid-js"
 
-import { Datum, Millis, Series, last, updateSeries } from "./util"
+import { Datum, Millis, RingBuffer, formatHeat, getHistory } from "./util"
 import { Chart } from "./Chart"
 
 import styles from "./App.module.css"
 import { ResizeContainer } from "./ResizeContainer"
+import {
+    TIME_WINDOW_10M,
+    TIME_WINDOW_1M,
+    TIME_WINDOW_30M,
+    TIME_WINDOW_5M,
+} from "./types"
+
+const RING_BUFFER_SIZE = (1000 / 20) * 60 * 30 // 1 value every 20ms for 30 minutes
 
 function App() {
-    const [boilerTempSeries, setBoilerTempSeries] = createSignal<Series>([])
-    const [groupheadTempSeries, setGroupheadTempSeries] = createSignal<Series>(
-        [],
+    const [boilerTemperatures, setBoilerTemperatures] = createSignal<
+        RingBuffer<Datum>
+    >(new RingBuffer(RING_BUFFER_SIZE), { equals: false })
+    const [groupheadTemperatures, setGroupheadTemperatures] = createSignal<
+        RingBuffer<Datum>
+    >(new RingBuffer(RING_BUFFER_SIZE), { equals: false })
+    const [thermofilterTemperatures, setThermofilterTemperatures] =
+        createSignal<RingBuffer<Datum>>(new RingBuffer(RING_BUFFER_SIZE), {
+            equals: false,
+        })
+    const [boilerLevels, setBoilerLevels] = createSignal<RingBuffer<Datum>>(
+        new RingBuffer(RING_BUFFER_SIZE),
+        { equals: false },
     )
-    const [thermofilterTempSeries, setThermofilterTempSeries] =
-        createSignal<Series>([])
-    const [heatSeries, setHeatSeries] = createSignal<Series>([])
     const [mode, setMode] = createSignal("")
     const [targetTemp, setTargetTemp] = createSignal<number>(-1000)
-    const [timeWindow, setTimeWindow] = createSignal<Millis>(10 * 60 * 1_000)
+    const [timeWindow, setTimeWindow] = createSignal<Millis>(TIME_WINDOW_30M)
     const [controlMethod, setControlMethod] = createSignal("")
-
-    const retainedWindowMs = 30 * 60 * 1_000
 
     const client = connect(
         "ws://luke:5s9zcBneIiIgETZ0FXLKw0frf6GrjrukPIZdYbQc@silvia.iot:8080",
@@ -29,59 +42,38 @@ function App() {
     client.subscribe("ms-silvia-switch/switch/power/state")
 
     createEffect(() => {
-        let lastT: number = Date.now() - 250
-        let heat: number = 0
+        let lastT: number = boilerLevels().last?.x ?? Date.now() - 5_000
 
-        client.on("message", (topic, msg) => {
+        const callback: OnMessageCallback = (topic, msg) => {
             let value = msg.toString()
 
             try {
                 value = JSON.parse(value)
             } catch {}
 
-            // expire any data older than the time window.
-            const isExpired = (d: Datum<any>) =>
-                d.x > Date.now() - retainedWindowMs
-
             switch (topic) {
                 case "gesha/temperature/last_updated": {
                     lastT = +value
-                    setHeatSeries(
-                        updateSeries(
-                            heatSeries(),
-                            { x: lastT, y: heat },
-                            isExpired,
-                        ),
-                    )
                     break
                 }
                 case "gesha/temperature/boiler": {
-                    setBoilerTempSeries(
-                        updateSeries(
-                            boilerTempSeries(),
-                            { x: lastT, y: +value },
-                            isExpired,
-                        ),
+                    setBoilerTemperatures(
+                        boilerTemperatures().push({ x: lastT, y: +value }),
                     )
                     break
                 }
                 case "gesha/temperature/grouphead": {
-                    setGroupheadTempSeries(
-                        updateSeries(
-                            groupheadTempSeries(),
-                            { x: lastT, y: +value },
-                            isExpired,
-                        ),
+                    setGroupheadTemperatures(
+                        groupheadTemperatures().push({ x: lastT, y: +value }),
                     )
                     break
                 }
                 case "gesha/temperature/thermofilter": {
-                    setThermofilterTempSeries(
-                        updateSeries(
-                            thermofilterTempSeries(),
-                            { x: lastT, y: +value },
-                            isExpired,
-                        ),
+                    setThermofilterTemperatures(
+                        thermofilterTemperatures().push({
+                            x: lastT,
+                            y: +value,
+                        }),
                     )
                     break
                 }
@@ -90,7 +82,9 @@ function App() {
                     break
                 }
                 case "gesha/boiler_level": {
-                    heat = +value
+                    setBoilerLevels(
+                        boilerLevels().push({ x: lastT, y: +value }),
+                    )
                     break
                 }
                 case "gesha/mode": {
@@ -102,7 +96,11 @@ function App() {
                     break
                 }
             }
-        })
+        }
+
+        client.on("message", callback)
+
+        onCleanup(() => client.off("message", callback))
     })
 
     const handleModeChange = (
@@ -147,60 +145,27 @@ function App() {
         })
     }
 
-    const getHistory = (from: number, to: number): Promise<Measurement[]> =>
-        new Promise((resolve) => {
-            const callback = (topic: string, payload: Buffer) => {
-                if (topic === "gesha/temperature/history") {
-                    client.off("message", callback)
+    const handleRetainedWindowSizeChange = async (newTimeWindow: number) => {
+        setTimeWindow(newTimeWindow)
+        const to = Date.now()
+        const from = to - newTimeWindow
+        const limit = RING_BUFFER_SIZE
 
-                    resolve(JSON.parse(payload.toString()))
-                }
-            }
+        const history = await getHistory(client, { from, to, limit })
 
-            client.on("message", callback)
+        console.log(history)
 
-            client.publish(
-                "gesha/temperature/history/command",
-                JSON.stringify({ from, to }),
-                { retain: false, qos: 2 },
-            )
-        })
+        setBoilerTemperatures(boilerTemperatures().load(history.boilerTemp))
+        setGroupheadTemperatures(
+            groupheadTemperatures().load(history.groupheadTemp),
+        )
+        setThermofilterTemperatures(
+            thermofilterTemperatures().load(history.thermofilterTemp),
+        )
+        setBoilerLevels(boilerLevels().load(history.boilerLevel))
+    }
 
-    getHistory(Date.now() - retainedWindowMs, Date.now()).then(
-        (measurements) => {
-            const allSeries = measurements
-                .sort((a, b) => a.time - b.time)
-                .map(
-                    (measurement) =>
-                        [
-                            {
-                                x: measurement.time,
-                                y: measurement.boilerTempC,
-                            },
-                            {
-                                x: measurement.time,
-                                y: measurement.groupheadTempC,
-                            },
-                            {
-                                x: measurement.time,
-                                y: measurement.thermofilterTempC ?? 0,
-                            },
-                            {
-                                x: measurement.time,
-                                y: measurement.heatLevel,
-                            },
-                        ] as const,
-                )
-
-            setBoilerTempSeries(allSeries.map(([v]) => v))
-            setGroupheadTempSeries(allSeries.map(([, v]) => v))
-            setThermofilterTempSeries(allSeries.map(([, , v]) => v))
-            setHeatSeries(allSeries.map(([, , , v]) => v))
-        },
-    )
-
-    const formatHeat = (n?: number) =>
-        n === 0 || !n ? "Off" : `${(n * 100).toFixed(0)}%`
+    handleRetainedWindowSizeChange(timeWindow())
 
     return (
         <main class={styles.app}>
@@ -211,7 +176,7 @@ function App() {
                     <option value="brew">Brew</option>
                     <option value="steam">Steam</option>
                 </select>
-                <p>Heat: {formatHeat(last(heatSeries())?.y)}</p>|
+                <p>Heat: {formatHeat(boilerLevels().last?.y)}</p>|
                 <label>
                     Target temp:{" "}
                     <input
@@ -248,13 +213,14 @@ function App() {
                         <label>
                             Heat level{" "}
                             <input
-                                type="number"
+                                type="range"
                                 min="0"
                                 max="1"
                                 step="0.1"
                                 onChange={handleHeatLevelChange}
-                                value={last(heatSeries())?.y}
+                                value={boilerLevels().last?.y}
                             />
+                            <span>{boilerLevels().last?.y}</span>
                         </label>
                     </>
                 </Show>
@@ -265,28 +231,32 @@ function App() {
                         value={timeWindow()}
                         onChange={(e) => setTimeWindow(+e.target.value)}
                     >
-                        <option value={30 * 60 * 1_000}>30m</option>
-                        <option value={10 * 60 * 1_000}>10m</option>
-                        <option value={5 * 60 * 1_000}>5m</option>
+                        <option value={TIME_WINDOW_30M}>30m</option>
+                        <option value={TIME_WINDOW_10M}>10m</option>
+                        <option value={TIME_WINDOW_5M}>5m</option>
+                        <option value={TIME_WINDOW_1M}>1m</option>
                     </select>
                 </label>
                 |
                 <p>
-                    Lag:{" "}
-                    {Math.max(
-                        0,
-                        Date.now() - (last(boilerTempSeries())?.x ?? 0),
-                    )}
-                    ms
+                    {"Last measurement: "}
+                    {(() => {
+                        let d = boilerTemperatures().last?.x
+                        if (d) {
+                            return new Date(d).toLocaleTimeString()
+                        } else {
+                            return "error"
+                        }
+                    })()}
                 </p>
             </form>
             <ResizeContainer class={styles.chart}>
                 {(width, height) => (
                     <Chart
-                        boilerTempSeries={boilerTempSeries}
-                        groupheadTempSeries={groupheadTempSeries}
-                        thermofilterTempSeries={thermofilterTempSeries}
-                        heatSeries={heatSeries}
+                        boilerTempSeries={boilerTemperatures}
+                        groupheadTempSeries={groupheadTemperatures}
+                        thermofilterTempSeries={thermofilterTemperatures}
+                        heatSeries={boilerLevels}
                         targetTemp={targetTemp}
                         width={width}
                         height={height}

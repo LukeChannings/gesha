@@ -200,9 +200,9 @@ impl ControllerManager {
                 Some(Box::new(ThresholdController::new(target_temperature)))
             }
             ControlMethod::PID => Some(Box::new(PidController::new(
-                0.0,
-                0.0,
-                0.0,
+                45.0,
+                1.0,
+                60.0,
                 target_temperature,
             ))),
             ControlMethod::MPC => Some(Box::new(MpcController::new(target_temperature))),

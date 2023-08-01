@@ -60,7 +60,7 @@ impl TryInto<StateEvent> for Publish {
                 StateEvent::TargetTemperatureChangeRequest(serde_yaml::from_slice(&self.payload)?),
             ),
             TOPIC_MODE_CHANGE => {
-                let mode = serde_yaml::from_slice(&self.payload)?;
+                let mode: Mode = serde_yaml::from_slice(&self.payload)?;
                 Ok(StateEvent::ModeChange(mode))
             }
             TOPIC_TEMPERATURE_HISTORY_REQUEST => {
@@ -68,6 +68,7 @@ impl TryInto<StateEvent> for Publish {
                 struct Range {
                     from: i64,
                     to: i64,
+                    limit: i64,
                 }
 
                 let range: Range = serde_json::from_slice(&self.payload)?;
@@ -75,6 +76,7 @@ impl TryInto<StateEvent> for Publish {
                 Ok(StateEvent::TemperatureHistoryRequest {
                     from: range.from,
                     to: range.to,
+                    limit: range.limit,
                 })
             }
             TOPIC_EXTERN_POWER_STATE_CHANGE => {

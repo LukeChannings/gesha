@@ -4,8 +4,8 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "start": "vite dev",
-        "build": "vite build",
+        "start": "vite dev --host",
+        "build": "vite build --sourcemap --manifest",
         "lint": "eslint .",
         "format": "prettier -w .",
         "test": "jest"

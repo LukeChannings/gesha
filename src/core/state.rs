@@ -6,12 +6,12 @@ use std::{
 use anyhow::{anyhow, Result};
 use log::{error, info};
 use serde::{Deserialize, Serialize};
-use sqlx::{query, query_as};
+use sqlx::query;
 
 use crate::controller::ControlMethod;
 
 use super::{
-    db::{write_measurements, DBHandle, Measurement},
+    db::{read_measurements, write_measurements, DBHandle, Measurement},
     mqtt::MqttOutgoingMessage,
 };
 
@@ -208,44 +208,10 @@ impl State {
             Event::FlushTemperatureMeasurementBufferRequest => {
                 self.flush_measurements()?;
             }
-            Event::TemperatureHistoryRequest { from, to } => {
-                let mut result = query_as!(
-                    Measurement,
-                    r#"
-                    SELECT time, power, pull, steam,
-                        heat_level as "heat_level: f32",
-                        target_temp_c as "target_temp_c: f32",
-                        boiler_temp_c as "boiler_temp_c: f32",
-                        grouphead_temp_c as "grouphead_temp_c: f32",
-                        thermofilter_temp_c as "thermofilter_temp_c: f32"
-                    FROM measurement
-                    WHERE time > ? AND TIME < ?
-                    ORDER BY time DESC"#,
-                    from,
-                    to
-                )
-                .fetch_all(&self.pool)
-                .await?;
+            Event::TemperatureHistoryRequest { from, to, limit } => {
+                let result = read_measurements(&self.pool, from, to, limit).await?;
 
-                result.extend(self.measurement_write_queue.iter().clone().cloned());
-
-                let mut summary: Vec<Measurement> = vec![];
-
-                for i in 0..(result.len() / 25) {
-                    summary.push(result[i * 25]);
-                }
-
-                summary.sort_by(|a, b| a.time.cmp(&b.time));
-
-                info!(
-                    "Temperature History request {}-{} found {} measurements. Sending only {}",
-                    from,
-                    to,
-                    result.len(),
-                    summary.len(),
-                );
-
-                let json_result = serde_json::to_string(&summary)?;
+                let json_result = serde_json::to_string(&result)?;
 
                 mqtt_messages.push(MqttOutgoingMessage::TemperatureHistoryResponse(json_result))
             }
@@ -300,7 +266,7 @@ pub enum Event {
     BoilerHeatLevelChange(f32),
     ModeChange(Mode),
     FlushTemperatureMeasurementBufferRequest,
-    TemperatureHistoryRequest { from: i64, to: i64 },
+    TemperatureHistoryRequest { from: i64, to: i64, limit: i64 },
 
     TargetTemperatureChangeRequest(f32),
     ManualBoilerHeatLevelRequest(f32),

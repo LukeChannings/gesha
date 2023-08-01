@@ -1,7 +1,7 @@
 import { scaleLinear, select, axisBottom, axisLeft, line, scaleSqrt } from "d3"
-import type { Series } from "./util"
+import type { Datum, RingBuffer, Series } from "./util"
 import { Accessor, For, createEffect, createMemo } from "solid-js"
-import { Millis, computeLineSegments, formatMillis, last } from "./util"
+import { Millis, computeLineSegments, formatMillis } from "./util"
 import styles from "./Chart.module.css"
 
 export interface BarChartProps {
@@ -11,10 +11,10 @@ export interface BarChartProps {
     marginTop?: number
     marginBottom?: number
     marginRight?: number
-    boilerTempSeries: Accessor<Series>
-    groupheadTempSeries: Accessor<Series>
-    thermofilterTempSeries: Accessor<Series>
-    heatSeries: Accessor<Series>
+    boilerTempSeries: Accessor<RingBuffer<Datum>>
+    groupheadTempSeries: Accessor<RingBuffer<Datum>>
+    thermofilterTempSeries: Accessor<RingBuffer<Datum>>
+    heatSeries: Accessor<RingBuffer<Datum>>
     targetTemp: Accessor<number>
     timeWindow: Accessor<Millis>
 }
@@ -50,7 +50,7 @@ export function Chart({
         y,
     })
 
-    let xAxisRef: SVGGElement;
+    let xAxisRef: SVGGElement
 
     createEffect(() => {
         select(xAxisRef).call(
@@ -68,7 +68,9 @@ export function Chart({
         )
     })
 
-    const heatingLineSegments = createMemo(() => [...computeLineSegments(heatSeries()).entries()])
+    const heatingLineSegments = createMemo(() => [
+        ...computeLineSegments(heatSeries().values).entries(),
+    ])
 
     return (
         <svg
@@ -121,7 +123,7 @@ export function Chart({
             <g
                 data-name="xAxis"
                 transform={`translate(0, ${height - marginBottom})`}
-                ref={el => xAxisRef = el}
+                ref={(el) => (xAxisRef = el)}
             ></g>
             <g
                 data-name="yAxis"
@@ -146,8 +148,9 @@ export function Chart({
                 stroke="var(--datavis-boiler-color)"
                 class={styles.line}
                 d={
-                    createLine(boilerTempSeries().map(epochToRelativeMillis)) ??
-                    ""
+                    createLine(
+                        boilerTempSeries().values.map(epochToRelativeMillis),
+                    ) ?? ""
                 }
             />
             <path
@@ -156,7 +159,7 @@ export function Chart({
                 class={styles.line}
                 d={
                     createLine(
-                        groupheadTempSeries().map(epochToRelativeMillis),
+                        groupheadTempSeries().values.map(epochToRelativeMillis),
                     ) ?? ""
                 }
             />
@@ -166,7 +169,9 @@ export function Chart({
                 class={styles.line}
                 d={
                     createLine(
-                        thermofilterTempSeries().map(epochToRelativeMillis),
+                        thermofilterTempSeries().values.map(
+                            epochToRelativeMillis,
+                        ),
                     ) ?? ""
                 }
             />
@@ -175,11 +180,11 @@ export function Chart({
                 <For
                     each={
                         [
-                            ["Boiler", last(boilerTempSeries())?.y ?? 0],
-                            ["Grouphead", last(groupheadTempSeries())?.y ?? 0],
+                            ["Boiler", boilerTempSeries().last?.y ?? 0],
+                            ["Grouphead", groupheadTempSeries().last?.y ?? 0],
                             [
                                 "Thermofilter",
-                                last(thermofilterTempSeries())?.y ?? 0,
+                                thermofilterTempSeries().last?.y ?? 0,
                             ],
                         ] as Array<[string, number]>
                     }

@@ -3,7 +3,7 @@ use std::{fs::OpenOptions, path::Path};
 use anyhow::Result;
 use log::{debug, error};
 use serde::Serialize;
-use sqlx::{migrate, Pool, QueryBuilder, Sqlite, SqlitePool};
+use sqlx::{migrate, query_as, Pool, QueryBuilder, Sqlite, SqlitePool};
 use tokio::task;
 
 pub type DBHandle = Pool<Sqlite>;
@@ -68,4 +68,33 @@ pub fn write_measurements(measurements: Vec<Measurement>, pool: &DBHandle) -> Re
     }
 
     Ok(())
+}
+
+pub async fn read_measurements(
+    pool: &DBHandle,
+    from: i64,
+    to: i64,
+    limit: i64,
+) -> Result<Vec<Measurement>> {
+    let result = query_as!(
+        Measurement,
+        r#"
+        SELECT time, power, pull, steam,
+            heat_level as "heat_level: f32",
+            target_temp_c as "target_temp_c: f32",
+            boiler_temp_c as "boiler_temp_c: f32",
+            grouphead_temp_c as "grouphead_temp_c: f32",
+            thermofilter_temp_c as "thermofilter_temp_c: f32"
+        FROM measurement
+        WHERE time > ? AND TIME < ?
+        ORDER BY time DESC
+        LIMIT ?"#,
+        from,
+        to,
+        limit
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(result)
 }
