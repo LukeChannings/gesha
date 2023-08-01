@@ -7,3 +7,9 @@ ui/node_modules
 .sqlx
 gesha.db
 .env
+*.pdf
+*.aux
+*.fdb_latexmk
+*.log
+*.synctex.gz
+*.fls
