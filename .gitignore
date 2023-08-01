@@ -4,7 +4,6 @@ secrets.yaml
 ui/dist
 ui/node_modules
 .DS_Store
-.sqlx
 gesha.db
 .env
 *.pdf
