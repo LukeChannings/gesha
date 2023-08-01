@@ -17,6 +17,8 @@ build thing="app":
         cargo tauri build --target aarch64-apple-darwin
     elif [[ "{{thing}}" == "ui" ]]; then
         cd ui; npm run build
+    elif [[ "{{thing}}" == "db" ]]; then
+        cargo sqlx prepare --database-url sqlite:gesha.db
     else
         cargo build --release
     fi
@@ -39,10 +41,16 @@ format thing="ui":
         cargo fmt
     fi
 
-deploy: build
-    ssh silvia.iot "sudo systemctl stop gesha"
-    scp target/arm-unknown-linux-gnueabihf/release/gesha silvia.iot:/opt/gesha/bin/gesha
-    ssh silvia.iot "sudo systemctl start gesha"
+deploy service="gesha": (build service)
+    #!/usr/bin/env bash
+
+    if [[ "{{service}}" == "gesha" ]]; then
+        ssh silvia.iot "sudo systemctl stop gesha"
+        scp target/arm-unknown-linux-gnueabihf/release/gesha silvia.iot:/opt/gesha/bin/gesha
+        ssh silvia.iot "sudo systemctl start gesha"
+    elif [[ "{{service}}" == "ui" ]]; then
+        scp -r ui/dist/* silvia.iot:/opt/gesha/web/
+    fi
 
 log service="gesha":
     ssh silvia.iot "journalctl -fu {{service}}.service"
@@ -50,14 +58,14 @@ log service="gesha":
 install service:
     #!/usr/bin/env bash
 
-    if [ "$service" == "gesha" ]; then
+    if [[ "{{service}}" == "gesha" ]]; then
         ssh silvia.iot -t <<-EOF
         echo '$(cat ./config/systemd/gesha.service)' | sudo tee /etc/systemd/system/gesha.service > /dev/null
         sudo systemctl daemon-reload
         EOF
     fi
 
-    if [ "$service" == "mosquitto" ]; then
+    if [[ "{{service}}" == "mosquitto" ]]; then
         #!/usr/bin/env bash
         ssh silvia.iot -t << EOF
             sudo apt install -y mosquitto
@@ -73,3 +81,9 @@ init silvia:
     sudo mkdir -p /opt/gesha/{etc,bin}
     sudo chown -R luke:sudo /opt/gesha
     EOF
+
+export-diagrams:
+    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 0 -f png --width 1500 -o docs/diagrams/silvia-e-electrical-diagram.png docs/diagrams/silvia-e-diagrams.drawio
+    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 1 -f png --width 1500 -o docs/diagrams/silvia-shelly-electrical-diagram.png docs/diagrams/silvia-e-diagrams.drawio
+    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 2 -f png --width 1500 -o docs/diagrams/silvia-shelly-pi-electrical-diagram.png docs/diagrams/silvia-e-diagrams.drawio
+    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 3 -f png --width 1500 -o docs/diagrams/pi-zero-pinout.png docs/diagrams/silvia-e-diagrams.drawio
