@@ -2,7 +2,7 @@ mod controller;
 mod core;
 
 use crate::core::{
-    config, db,
+    config,
     mqtt::{self, MqttOutgoingMessage},
     state::{self, Event},
     thermocouple::ThermocouplePoller,
@@ -32,14 +32,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let panic_cancel_token = create_panic_cancel_token();
 
-    let pool = db::open_or_create("/opt/gesha/var/db/gesha.db").await?;
-
     let config = config::Config::load(args.config_path).await?;
     let config_clone = &config.clone();
 
     trace!("Using config:\n {:#?}", config);
 
-    let mut state = state::State::new(pool.clone()).await?;
+    let mut state = state::State::new().await?;
 
     let (tx, mut rx) = broadcast::channel::<Event>(100);
 
@@ -128,10 +126,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     info!("Shutting down");
 
-    state.flush_measurements()?;
+    state.close()?;
     mqtt.stop().await?;
     controller_manager.stop().await?;
-    pool.close().await;
 
     Ok(())
 }

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO shot (start_time, end_time, total_time, brew_temp_average_c, grouphead_temp_avg_c) VALUES (?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "c82496261cef7981730da06df63d5190c433563caacaa447206087c9e77c9173"
+}

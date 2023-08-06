@@ -11,8 +11,10 @@ export const formatMillis = (millis: Millis) => {
     return (
         (millis < 0 ? "-" : "") +
         (mins > 0
-            ? `${mins}m ${remainingSecs > 0 ? remainingSecs + "s" : ""}`
-            : `${remainingSecs}s`)
+            ? `${mins}m ${
+                  remainingSecs > 0 ? remainingSecs.toFixed(0) + "s" : ""
+              }`
+            : `${remainingSecs.toFixed(0)}s`)
     )
 }
 
@@ -100,7 +102,7 @@ export const computeLineSegments = (
 
     // If the rect is never closed
     if (x1) {
-        rects.set(x1, series[series.length - 1].x)
+        rects.set(x1, Date.now())
     }
 
     return [...rects.entries()]

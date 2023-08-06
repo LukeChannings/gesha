@@ -22,6 +22,7 @@
     height: 100dvw;
     grid-template-rows: 50px 1fr;
     max-height: 100vh;
+    max-height: 100dvh;
     max-width: 100vw;
 }
 

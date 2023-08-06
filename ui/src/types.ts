@@ -10,8 +10,14 @@ export interface Measurement {
     steam: boolean
 }
 
-export const TIME_WINDOW_1M = 60 * 1_000
-export const TIME_WINDOW_5M = 5 * 60 * 1_000
-export const TIME_WINDOW_10M = 10 * 60 * 1_000
-export const TIME_WINDOW_30M = 30 * 60 * 1_000
-export const TIME_WINDOW_60M = 60 * 60 * 1_000
+export enum TimeWindow {
+    OneMinute = 60 * 1_000,
+    FiveMinutes = 5 * 60 * 1_000,
+    TenMinutes = 10 * 60 * 1_000,
+    ThirtyMinutes = 30 * 60 * 1_000,
+    OneHour = 60 * 60 * 1_000,
+}
+
+export type Mode = "idle" | "active" | "brew" | "steam"
+
+export type ControlMethod = "None" | "Threshold" | "PID" | "MPC"

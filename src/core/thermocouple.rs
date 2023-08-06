@@ -1,4 +1,7 @@
-use std::time::{Duration, SystemTime};
+use std::{
+    time::{Duration, SystemTime},
+    vec,
+};
 
 use anyhow::{anyhow, Result};
 use log::{error, info};
@@ -136,34 +139,109 @@ impl ThermocouplePoller {
         info!("Thermocouple polling interval is {interval:#?}");
 
         let poller = task::spawn(async move {
-            let mut interval = tokio::time::interval(interval);
-
             loop {
-                let boiler_temp = boiler.read().expect("Error reading boiler temperature");
-                let grouphead_temp = grouphead
-                    .read()
-                    .expect("Error reading grouphead temperature");
-                let thermofilter_temp = thermofilter.as_mut().map(|thermofilter| {
-                    let temp = thermofilter.read();
-                    if temp.is_err() {
-                        0.0
-                    } else {
-                        temp.unwrap()
+                let mut smoothing_interval = tokio::time::interval(interval / 10);
+
+                let mut boiler_temp_samples: Vec<f32> = vec![];
+                let mut grouphead_temp_samples: Vec<f32> = vec![];
+                let mut thermofilter_temp_samples: Vec<f32> = vec![];
+
+                // Sample 5 times for the given `interval` period and only emit the median reading.
+                // This smooths out fluctuations in readings.
+                for _i in 0..10 {
+                    if let Ok(boiler_temp) = boiler.read() {
+                        boiler_temp_samples.push(boiler_temp);
                     }
-                });
+
+                    if let Ok(grouphead_temp) = grouphead.read() {
+                        grouphead_temp_samples.push(grouphead_temp);
+                    }
+
+                    let thermofilter_temp = thermofilter.as_mut().map(|thermofilter| {
+                        let temp = thermofilter.read();
+                        if temp.is_err() {
+                            0.0
+                        } else {
+                            temp.unwrap()
+                        }
+                    });
+
+                    if let Some(thermofilter_temp) = thermofilter_temp {
+                        thermofilter_temp_samples.push(thermofilter_temp);
+                    }
+
+                    smoothing_interval.tick().await;
+                }
+
+                if boiler_temp_samples.len() < 2 || grouphead_temp_samples.len() < 2 {
+                    if boiler_temp_samples.len() < 2 {
+                        let _ = poller_tx.send(StateEvent::TemperatureReadError(String::from(
+                            format!(
+                                "Error reading the boiler temperature. Got {} / 10 samples",
+                                boiler_temp_samples.len()
+                            ),
+                        )));
+                    }
+
+                    if grouphead_temp_samples.len() < 2 {
+                        let _ = poller_tx.send(StateEvent::TemperatureReadError(String::from(
+                            format!(
+                                "Error reading the boiler temperature. Got {} / 10 samples",
+                                grouphead_temp_samples.len()
+                            ),
+                        )));
+                    }
+
+                    continue;
+                }
+
+                boiler_temp_samples.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+                if (boiler_temp_samples.first().unwrap() - boiler_temp_samples.last().unwrap())
+                    .abs()
+                    > 5.0
+                {
+                    info!(
+                        "Temperature swing detected in boiler samples: {:#?}",
+                        boiler_temp_samples
+                    );
+                }
+
+                let boiler_temp = boiler_temp_samples
+                    .get(boiler_temp_samples.len() / 2)
+                    .expect("Failed to get the median boiler temp");
+
+                grouphead_temp_samples.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                let grouphead_temp = grouphead_temp_samples
+                    .get(grouphead_temp_samples.len() / 2)
+                    .expect("Failed to get the median grouphead temp");
+
+                let mut thermofilter_temp: Option<f32> = None;
+
+                if thermofilter_temp_samples.len() != 0 {
+                    thermofilter_temp_samples.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                    let filtered_thermofilter_temp_samples = thermofilter_temp_samples
+                        .into_iter()
+                        .filter(|v| v > &0.0)
+                        .collect::<Vec<_>>();
+
+                    if filtered_thermofilter_temp_samples.len() > 2 {
+                        thermofilter_temp = filtered_thermofilter_temp_samples
+                            .get(filtered_thermofilter_temp_samples.len() / 2)
+                            .copied();
+                    }
+                }
 
                 if let Err(err) =
                     poller_tx.send(StateEvent::TemperatureChange(TemperatureMeasurement {
-                        boiler_temp,
-                        grouphead_temp,
+                        boiler_temp: *boiler_temp,
+                        grouphead_temp: *grouphead_temp,
                         thermofilter_temp,
                         timestamp: SystemTime::now(),
                     }))
                 {
                     error!("Error sending temperature update: {}", err);
                 };
-
-                interval.tick().await;
             }
         });
 

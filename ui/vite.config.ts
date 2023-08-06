@@ -1,8 +1,11 @@
+import path from "node:path"
 import { defineConfig } from "vite"
 import solid from "vite-plugin-solid"
 import { nodePolyfills } from "vite-plugin-node-polyfills"
 
 export default defineConfig({
+    envDir: path.resolve(process.cwd(), "../"),
+    envPrefix: "GESHA_",
     build: {
         target: "modules",
     },

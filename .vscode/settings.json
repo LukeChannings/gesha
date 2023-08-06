@@ -1,5 +1,5 @@
 {
-    "cSpell.words": ["Gesha", "grouphead", "Millis", "mqtt", "nanos", "sqlx", "thermofilter"],
+    "cSpell.words": ["dotenv", "Gesha", "grouphead", "Millis", "mqtt", "nanos", "sqlx", "thermofilter"],
     "jestrunner.disableCodeLens": true,
     "prettier.semi": false,
     "editor.fontWeight": "normal",
@@ -10,5 +10,6 @@
         "editor.defaultFormatter": "rust-lang.rust-analyzer",
         "editor.formatOnSave": true
     },
-    "cSpell.enableFiletypes": ["rmd"]
+    "cSpell.enableFiletypes": ["rmd"],
+    "python.analysis.typeCheckingMode": "off"
 }

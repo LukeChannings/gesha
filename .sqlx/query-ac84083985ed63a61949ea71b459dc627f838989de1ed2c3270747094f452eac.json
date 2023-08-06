@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT time, power, pull, steam,\n            heat_level as \"heat_level: f32\",\n            target_temp_c as \"target_temp_c: f32\",\n            boiler_temp_c as \"boiler_temp_c: f32\",\n            grouphead_temp_c as \"grouphead_temp_c: f32\",\n            thermofilter_temp_c as \"thermofilter_temp_c: f32\"\n        FROM measurement\n        WHERE time > ? AND time < ?\n        ORDER BY time DESC\n        LIMIT ?",
+  "query": "\n            SELECT time, power, pull, steam,\n                heat_level as \"heat_level: f32\",\n                target_temp_c as \"target_temp_c: f32\",\n                boiler_temp_c as \"boiler_temp_c: f32\",\n                grouphead_temp_c as \"grouphead_temp_c: f32\",\n                thermofilter_temp_c as \"thermofilter_temp_c: f32\"\n            FROM measurement\n            WHERE time > ? AND time < ?\n            ORDER BY time DESC\n            LIMIT ?",
   "describe": {
     "columns": [
       {
@@ -64,5 +64,5 @@
       true
     ]
   },
-  "hash": "ad69538b9e9f8df94fd29c49ec7c3a8d30e251cf129fd4a43387c0a8d464028b"
+  "hash": "ac84083985ed63a61949ea71b459dc627f838989de1ed2c3270747094f452eac"
 }

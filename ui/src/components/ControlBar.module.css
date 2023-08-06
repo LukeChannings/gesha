@@ -1,0 +1,60 @@
+.container {
+    background-color: #c6aada;
+    border-bottom: 1px solid #aaa;
+    padding: 2px 10px 2px 10px;
+    display: inline-flex;
+    flex-direction: row;
+    gap: 1rem;
+    font-size: 0.75rem;
+}
+
+.verticalLabel {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.verticalLabelKey {
+    font-size: 0.65rem;
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.verticalLabelValue {
+    font-size: 0.8rem;
+}
+
+.streamStateOnline {
+    composes: verticalLabel;
+    padding: 0 1rem;
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+}
+
+.streamStateOffline {
+    composes: streamStateOnline;
+    background-color: rgb(192, 25, 25);
+    color: #fff;
+}
+
+.brewButton {
+    appearance: none;
+    border: 3px solid cyan;
+    background-color: cyan;
+    color: #333;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 1rem;
+    padding: 2px 8px;
+    border-radius: 8px;
+    margin: 3px 0;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    min-width: 100px;
+}
+
+.brewButtonBrewing {
+    composes: brewButton;
+    background-color: aquamarine;
+}

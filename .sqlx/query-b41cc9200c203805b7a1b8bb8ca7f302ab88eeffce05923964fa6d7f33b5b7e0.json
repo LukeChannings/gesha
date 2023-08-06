@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT start_time, end_time, total_time, brew_temp_average_c as \"brew_temp_average_c: f32\", grouphead_temp_avg_c as \"grouphead_temp_avg_c: f32\"\n            FROM shot\n            WHERE start_time > ? AND start_time < ?\n            ORDER BY start_time DESC\n            LIMIT ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "start_time",
+        "ordinal": 0,
+        "type_info": "Int64"
+      },
+      {
+        "name": "end_time",
+        "ordinal": 1,
+        "type_info": "Int64"
+      },
+      {
+        "name": "total_time",
+        "ordinal": 2,
+        "type_info": "Int64"
+      },
+      {
+        "name": "brew_temp_average_c: f32",
+        "ordinal": 3,
+        "type_info": "Float"
+      },
+      {
+        "name": "grouphead_temp_avg_c: f32",
+        "ordinal": 4,
+        "type_info": "Float"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b41cc9200c203805b7a1b8bb8ca7f302ab88eeffce05923964fa6d7f33b5b7e0"
+}
