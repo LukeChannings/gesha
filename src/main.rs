@@ -4,7 +4,7 @@ mod core;
 use crate::core::{
     config,
     mqtt::{self, MqttOutgoingMessage},
-    state::{self, Event},
+    state::{self, Event, Mode},
     thermocouple::ThermocouplePoller,
 };
 use clap::Parser;
@@ -79,6 +79,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     ))
     .await?;
 
+    tx.send(Event::ReadConfig)?;
+
     loop {
         select! {
             Ok(event) = rx.recv() => {
@@ -87,6 +89,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     Event::TemperatureChange(_) => {}
                     event => {
                         info!("Event: {:?}", event);
+                    }
+                }
+
+                if let Event::ModeChange(mode) = &event {
+                    if state.mode == Mode::Steam && mode != &Mode::Steam {
+                        controller_manager.set_target_temperature(state.target_temperature);
+                        controller_manager.set_controller(&state.control_method).await?;
+                    } else if mode == &Mode::Steam {
+                        controller_manager.set_target_temperature(130.0);
+                        controller_manager.set_controller(&controller::ControlMethod::Threshold).await?;
                     }
                 }
 

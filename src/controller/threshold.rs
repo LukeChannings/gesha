@@ -1,5 +1,3 @@
-use log::info;
-
 use super::Controller;
 
 pub struct ThresholdController {
@@ -14,12 +12,6 @@ impl ThresholdController {
 
 impl Controller for ThresholdController {
     fn sample(&mut self, boiler_temp: f32, _group_head_temp: f32) -> f32 {
-        info!(
-            "Threshold sample: {}, {}, {:?}",
-            boiler_temp,
-            self.target_temperature,
-            boiler_temp < self.target_temperature
-        );
         if boiler_temp < self.target_temperature {
             1.0
         } else {

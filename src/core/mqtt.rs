@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use log::{debug, error};
+use log::{debug, error, info};
 use rumqttc::v5::{
     mqttbytes::{
         v5::{Packet, Publish},
@@ -17,7 +17,10 @@ use crate::{
     core::state::{Event as StateEvent, PowerState},
 };
 
-use super::state::{Mode, TemperatureMeasurement};
+use super::{
+    db::ConfigItem,
+    state::{Mode, TemperatureMeasurement},
+};
 
 const TOPIC_EXTERN_POWER_STATE_CHANGE: &str = "ms-silvia-switch/switch/power/state";
 const TOPIC_EXTERN_POWER_COMMAND: &str = "ms-silvia-switch/switch/power/command";
@@ -27,6 +30,8 @@ const TOPIC_TARGET_TEMPERATURE_CHANGE_REQUEST: &str = "gesha/temperature/target/
 const TOPIC_MODE_CHANGE: &str = "gesha/mode/set";
 const TOPIC_TEMPERATURE_HISTORY_REQUEST: &str = "gesha/temperature/history/command";
 const TOPIC_MANUAL_BOILER_HEAT_LEVEL_REQUEST: &str = "gesha/boiler_level/set";
+const TOPIC_SHOT_HISTORY_REQUEST: &str = "gesha/shot/history/command";
+const TOPIC_CONFIG_SET: &str = "gesha/config/set";
 
 pub struct Mqtt {
     uri: String,
@@ -43,6 +48,8 @@ pub enum MqttOutgoingMessage {
     TargetTemperatureUpdate(f32),
     ControlMethodUpdate(ControlMethod),
     PowerRelayStatus(PowerState),
+    ShotHistoryResponse(String),
+    ConfigUpdate(Vec<ConfigItem>),
 }
 
 impl TryInto<StateEvent> for Publish {
@@ -95,6 +102,19 @@ impl TryInto<StateEvent> for Publish {
                 let heat_level: f32 = serde_yaml::from_slice(&self.payload)?;
 
                 Ok(StateEvent::ManualBoilerHeatLevelRequest(heat_level))
+            }
+            TOPIC_CONFIG_SET => {
+                let config_item: ConfigItem = serde_json::from_slice(&self.payload)?;
+
+                if config_item.key.starts_with("ui_") {
+                    info!("Setting config {:?}", config_item);
+
+                    Ok(StateEvent::WriteConfigItem(config_item))
+                } else {
+                    Err(anyhow!(
+                        "Refusing to set a config entry that isn't prefixed with 'ui_'."
+                    ))
+                }
             }
             _ => Err(anyhow!(
                 "There is no incoming message for the topic {}",
@@ -191,6 +211,8 @@ impl Mqtt {
                 TOPIC_MODE_CHANGE,
                 TOPIC_TEMPERATURE_HISTORY_REQUEST,
                 TOPIC_MANUAL_BOILER_HEAT_LEVEL_REQUEST,
+                TOPIC_SHOT_HISTORY_REQUEST,
+                TOPIC_CONFIG_SET,
             ];
             for topic in topics {
                 client
@@ -285,6 +307,21 @@ impl Mqtt {
                 result.to_string(),
                 false,
             )),
+            MqttOutgoingMessage::ShotHistoryResponse(result) => {
+                events.push((format!("gesha/shot/history"), result.to_string(), false))
+            }
+            MqttOutgoingMessage::ConfigUpdate(entries) => {
+                for entry in entries {
+                    // I only want to broadcast UI config entries, not internal ones.
+                    if entry.key.starts_with("ui_") {
+                        events.push((
+                            format!("gesha/config/{}", entry.key),
+                            entry.value.to_string(),
+                            true,
+                        ))
+                    }
+                }
+            }
         }
 
         for (topic, payload, retain) in events.iter() {

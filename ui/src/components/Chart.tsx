@@ -17,6 +17,7 @@ export interface BarChartProps {
     boilerLevels: Accessor<RingBuffer<Datum>>
     targetTemp: Accessor<number>
     timeWindow: Accessor<Millis>
+    yAxisMax: Accessor<number>
 }
 
 export function Chart({
@@ -32,14 +33,17 @@ export function Chart({
     marginRight = 10,
     marginTop = 20,
     timeWindow,
+    yAxisMax,
 }: BarChartProps) {
-    const yAxis = scaleLinear([20, 120], [height - marginBottom, marginTop])
+    const yAxis = () =>
+        scaleLinear([20, yAxisMax()], [height - marginBottom, marginTop])
+
     const xAxis = () =>
         scaleSqrt([-timeWindow(), 0], [marginLeft, width - marginRight])
 
     const createLine = line<{ x: number; y: number }>()
         .x((d) => xAxis()(d.x))
-        .y((d) => yAxis(d.y))
+        .y((d) => yAxis()(d.y))
 
     const epochToRelativeMillis = (
         { x, y }: { x: number; y: number },
@@ -63,8 +67,23 @@ export function Chart({
     })
 
     let xAxisRef: SVGGElement
+    let yAxisRef: SVGGElement
 
-    createEffect(() => {
+    createEffect(function updateYAxis() {
+        select(yAxisRef)
+            .call(
+                axisLeft(yAxis())
+                    .ticks(10)
+                    .tickFormat((d) => `${d} °C`),
+            )
+            .call((g) => g.select(".domain").remove())
+            .call((g) => {
+                g.selectAll(".tick line").attr("x2", width)
+                g.select(".tick line").remove()
+            })
+    })
+
+    createEffect(function updateXAxis() {
         select(xAxisRef).call(
             axisBottom(xAxis())
                 .tickValues([
@@ -124,8 +143,8 @@ export function Chart({
                 <line
                     x1={0}
                     x2={width}
-                    y1={yAxis(targetTemp())}
-                    y2={yAxis(targetTemp())}
+                    y1={yAxis()(targetTemp())}
+                    y2={yAxis()(targetTemp())}
                     stroke="cyan"
                     stroke-width={2}
                 />
@@ -138,19 +157,7 @@ export function Chart({
                     data-name="yAxis"
                     transform={`translate(${marginLeft - 10}, 0)`}
                     class={styles.xAxisGroup}
-                    ref={(g) => {
-                        select(g)
-                            .call(
-                                axisLeft(yAxis)
-                                    .ticks(10)
-                                    .tickFormat((d) => `${d} °C`),
-                            )
-                            .call((g) => g.select(".domain").remove())
-                            .call((g) => {
-                                g.selectAll(".tick line").attr("x2", width)
-                                g.select(".tick line").remove()
-                            })
-                    }}
+                    ref={(el) => (yAxisRef = el)}
                 />
                 <path
                     fill="none"

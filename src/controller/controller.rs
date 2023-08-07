@@ -30,7 +30,7 @@ pub struct ControllerManager {
     control_method: ControlMethod,
     cancel_token: CancellationToken,
     tx: Sender<StateEvent>,
-    target_temp: f32,
+    target_temperature: f32,
     controller_handle: Option<JoinHandle<()>>,
     mode: Arc<RwLock<Mode>>,
 }
@@ -55,7 +55,7 @@ impl ControllerManager {
             control_method: control_method.clone(),
             cancel_token: CancellationToken::new(),
             tx,
-            target_temp,
+            target_temperature: target_temp,
             controller_handle: None,
             mode: Arc::new(RwLock::new(mode)),
         })
@@ -71,7 +71,7 @@ impl ControllerManager {
 
         let mut output_pin = gpio::Gpio::new()?.get(self.boiler_pin)?.into_output();
         let control_method = self.control_method.clone();
-        let target_temp = self.target_temp.clone();
+        let target_temp = self.target_temperature.clone();
 
         let mode = Arc::clone(&self.mode);
 
@@ -79,7 +79,6 @@ impl ControllerManager {
             let mut controller: Option<Box<dyn Controller>> =
                 ControllerManager::get_controller(&control_method, target_temp);
             let mut current_duty_cycle: f32 = 0.0;
-            let mut current_pulse_width = Duration::from_millis(0);
 
             loop {
                 select! {
@@ -92,21 +91,19 @@ impl ControllerManager {
                                     Ok(mode) => {
                                         if let Mode::Active = *mode {
                                             if let Some(controller) = &mut controller {
-                                                let duty_cycle = controller.sample(temp.boiler_temp, temp.grouphead_temp);
-                                                let (period, pulse_width) = duty_cycle_to_pulse_width(duty_cycle).unwrap();
+                                                let duty_cycle = normalize_duty_cycle(controller.sample(temp.boiler_temp, temp.grouphead_temp));
 
-                                                if pulse_width != current_pulse_width {
+                                                if current_duty_cycle != duty_cycle {
+                                                    let (period, pulse_width) = duty_cycle_to_pulse_width(duty_cycle).unwrap();
                                                     info!("Duty Cycle: {}, Period: {:?}, Pulse Width: {:?}", duty_cycle, period, pulse_width);
                                                     output_pin.set_pwm(period, pulse_width).unwrap();
                                                     current_duty_cycle = duty_cycle;
-                                                    current_pulse_width = pulse_width;
                                                     boiler_state_changed = true;
                                                 }
                                             }
                                         } else if output_pin.is_set_high() {
                                             output_pin.set_low();
                                             current_duty_cycle = 0.0;
-                                            current_pulse_width = Duration::from_millis(0);
                                             boiler_state_changed = true;
                                         }
 
@@ -213,6 +210,32 @@ impl ControllerManager {
             ControlMethod::None => None,
         }
     }
+
+    pub fn set_target_temperature(&mut self, target_temperature: f32) {
+        self.target_temperature = target_temperature;
+    }
+}
+
+// Round the duty cycle to increments of 0.1
+// This is to avoid resetting the software PWM unnecessarily
+fn normalize_duty_cycle(duty_cycle: f32) -> f32 {
+    if duty_cycle < 0.0 || duty_cycle > 100.0 {
+        info!("Duty cycle out of range: {duty_cycle} (will return 0.0)");
+    }
+
+    match (duty_cycle * 100.0) as usize {
+        0..=9 => 0.0,
+        10..=19 => 0.1,
+        20..=29 => 0.2,
+        30..=39 => 0.4,
+        40..=49 => 0.5,
+        50..=59 => 0.6,
+        60..=69 => 0.7,
+        70..=79 => 0.8,
+        80..=89 => 0.9,
+        90..=100 => 1.0,
+        _ => 0.0,
+    }
 }
 
 // The duty cycle is a percentage represented as 0.0 - 1.0, 0% and 100% respectively.
@@ -225,27 +248,11 @@ fn duty_cycle_to_pulse_width(duty_cycle: f32) -> Result<(Duration, Duration)> {
 
     let period = 100.0;
 
-    // Round the duty cycle to increments of 0.1
-    // This is to avoid resetting the software PWM unnecessarily
-    let normalized_duty_cycle: f64 = match (duty_cycle * 100.0) as usize {
-        0..=9 => 0.0,
-        10..=19 => 0.1,
-        20..=29 => 0.2,
-        30..=39 => 0.4,
-        40..=49 => 0.5,
-        50..=59 => 0.6,
-        60..=69 => 0.7,
-        70..=79 => 0.8,
-        80..=89 => 0.9,
-        90..=100 => 1.0,
-        _ => 0.0,
-    };
-
     // 0.1 = 10ms
     // 0.2 = 20ms
     // 1.0 = 100ms
     // etc
-    let pulse_width = (period * normalized_duty_cycle).ceil();
+    let pulse_width = (period * duty_cycle).ceil();
 
     let period_duration = Duration::from_millis(period as u64);
     let pulse_width_duration = Duration::from_millis(pulse_width as u64);

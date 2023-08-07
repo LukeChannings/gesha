@@ -2,7 +2,7 @@ use std::{collections::VecDeque, fs::OpenOptions, path::Path};
 
 use anyhow::{anyhow, Result};
 use log::{debug, error, info};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::{migrate, query, query_as, Pool, QueryBuilder, Sqlite, SqlitePool};
 use tokio::task;
 
@@ -30,7 +30,7 @@ impl Db {
         })
     }
 
-    pub async fn load_config(&self) -> Result<Vec<ConfigItem>> {
+    pub async fn read_config(&self) -> Result<Vec<ConfigItem>> {
         let result = query_as!(ConfigItem, "SELECT key, value FROM config")
             .fetch_all(&self.handle)
             .await?;
@@ -38,20 +38,20 @@ impl Db {
         Ok(result)
     }
 
-    pub async fn write_config(&self, key: &str, value: &str) -> Result<()> {
+    pub async fn write_config(&self, config_item: &ConfigItem) -> Result<()> {
         query!(
             r#"
         INSERT INTO config VALUES (?1, ?2)
         ON CONFLICT(key) DO
         UPDATE SET value = ?2 WHERE key = ?1;
         "#,
-            key,
-            value
+            config_item.key,
+            config_item.value
         )
         .execute(&self.handle)
         .await?;
 
-        info!("Wrote {key}={value} to the DB");
+        info!("Wrote {}={} to the DB", config_item.key, config_item.value);
 
         Ok(())
     }
@@ -279,6 +279,7 @@ pub struct Shot {
     pub grouphead_temp_avg_c: f32,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ConfigItem {
     pub key: String,
     pub value: String,

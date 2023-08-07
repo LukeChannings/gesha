@@ -66,6 +66,9 @@ export function ControlBar(props: ControlBarProps) {
                     value={props.mode()}
                     onChange={(e) => props.onModeChange(e.target.value as Mode)}
                 >
+                    <option disabled value="offline">
+                        Offline
+                    </option>
                     <option value="idle">Idle</option>
                     <option value="active">Active</option>
                     <option value="brew">Brew</option>

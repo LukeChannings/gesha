@@ -6,10 +6,8 @@ import { Chart } from "./components/Chart"
 
 import styles from "./App.module.css"
 import { ResizeContainer } from "./components/ResizeContainer"
-import { ControlMethod, Mode, TimeWindow } from "./types"
+import { ControlMethod, Mode, TimeWindow, assertTimeWindow } from "./types"
 import { ControlBar } from "./components/ControlBar"
-import { ShotTimer } from "./components/ShotTimer"
-import { Dialog } from "./components/Dialog"
 
 const BUFFER_SIZE = 3_000
 
@@ -37,11 +35,10 @@ function App() {
     )
     const [mode, setMode] = createSignal<Mode>("idle")
     const [targetTemp, setTargetTemp] = createSignal<number>(-1000)
-    const [timeWindow, setTimeWindow] = createSignal<Millis>(
-        TimeWindow.TenMinutes,
-    )
+    const [timeWindow, setTimeWindow] = createSignal<Millis>(0)
     const [controlMethod, setControlMethod] =
         createSignal<ControlMethod>("None")
+    const [yAxisMax, setYAxisMax] = createSignal<number>(120)
 
     const [isLoadingHistory, setIsLoadingHistory] = createSignal<boolean>(false)
 
@@ -69,7 +66,16 @@ function App() {
 
             switch (topic) {
                 case "gesha/mode": {
-                    setMode(value as Mode)
+                    const mode = value as Mode
+
+                    setMode(mode)
+
+                    let newYAxisMax = mode === "steam" ? 150 : 120
+
+                    if (newYAxisMax !== yAxisMax()) {
+                        setYAxisMax(newYAxisMax)
+                    }
+
                     break
                 }
                 case "gesha/control_method": {
@@ -114,6 +120,15 @@ function App() {
                     )
                     break
                 }
+                case "gesha/config/ui_time_window": {
+                    try {
+                        assertTimeWindow(+value)
+                        handleRetainedWindowSizeChange(+value)
+                    } catch {
+                        console.log("ui_time_window setting is invalid")
+                    }
+                    break
+                }
             }
         }
 
@@ -123,6 +138,10 @@ function App() {
     })
 
     const handleRetainedWindowSizeChange = async (newTimeWindow: number) => {
+        if (newTimeWindow === timeWindow()) {
+            return
+        }
+
         setTimeWindow(newTimeWindow)
         setIsLoadingHistory(true)
         const to = Date.now()
@@ -177,7 +196,17 @@ function App() {
                 onModeChange={(mode: Mode) => {
                     client.publish("gesha/mode/set", mode, { retain: false })
                 }}
-                onRetainedWindowSizeChange={handleRetainedWindowSizeChange}
+                onRetainedWindowSizeChange={async (newTimeWindow) => {
+                    handleRetainedWindowSizeChange(newTimeWindow)
+                    await client.publishAsync(
+                        "gesha/config/set",
+                        JSON.stringify({
+                            key: "ui_time_window",
+                            value: String(newTimeWindow),
+                        }),
+                        { retain: false },
+                    )
+                }}
                 onTargetTempChange={(targetTemp: number) => {
                     client.publish(
                         "gesha/temperature/target/set",
@@ -189,8 +218,6 @@ function App() {
                 }}
                 onShotToggle={async () => {
                     const newMode = mode() === "active" ? "brew" : "active"
-
-                    console.log(newMode)
 
                     await client.publishAsync("gesha/mode/set", newMode, {
                         retain: false,
@@ -214,6 +241,7 @@ function App() {
                         width={width}
                         height={height}
                         timeWindow={timeWindow}
+                        yAxisMax={yAxisMax}
                     />
                 )}
             </ResizeContainer>
