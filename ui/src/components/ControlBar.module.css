@@ -1,4 +1,9 @@
 .container {
+    display: flex;
+    flex-direction: column;
+}
+
+.controlBar {
     background-color: #c6aada;
     border-bottom: 1px solid #aaa;
     padding: 2px 10px 2px 10px;
@@ -52,9 +57,47 @@
     cursor: pointer;
     font-variant-numeric: tabular-nums;
     min-width: 100px;
+    transition: 100ms border-color ease-in-out;
+}
+
+@media (hover: hover) {
+    .brewButton:hover {
+        border-color: rgb(27, 141, 141);
+    }
 }
 
 .brewButtonBrewing {
     composes: brewButton;
     background-color: aquamarine;
+}
+
+.progressBarContainer {
+    background-color: #331c43;
+    height: 2px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.progressBar {
+    background-color: #3b82f6;
+    position: absolute;
+    bottom: 0;
+    top: 0;
+    width: 20%;
+
+    animation-duration: 2s;
+    animation-iteration-count: infinite;
+    animation-name: indeterminate-progress-bar;
+}
+
+@keyframes indeterminate-progress-bar {
+    from {
+        left: -50%;
+        width: 20%;
+    }
+    to {
+        left: 100%;
+        width: 50%;
+    }
 }

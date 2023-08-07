@@ -59,170 +59,188 @@ export function ControlBar(props: ControlBarProps) {
     })
 
     return (
-        <form class={styles.container} onSubmit={(e) => e.preventDefault()}>
-            <label class={styles.verticalLabel}>
-                <span class={styles.verticalLabelKey}>Mode</span>
-                <select
-                    value={props.mode()}
-                    onChange={(e) => props.onModeChange(e.target.value as Mode)}
-                >
-                    <option disabled value="offline">
-                        Offline
-                    </option>
-                    <option value="idle">Idle</option>
-                    <option value="active">Active</option>
-                    <option value="brew">Brew</option>
-                    <option value="steam">Steam</option>
-                </select>
-            </label>
-            <label class={styles.verticalLabel}>
-                <span class={styles.verticalLabelKey}>Control</span>
-                <select
-                    value={props.controlMethod()}
-                    onChange={(e) =>
-                        props.onControlMethodChange(
-                            e.target.value as ControlMethod,
-                        )
-                    }
-                >
-                    <option value="None">Manual</option>
-                    <option value="Threshold">Threshold</option>
-                    <option value="PID">PID</option>
-                    <option value="MPC">MPC</option>
-                </select>
-            </label>
-            <label class={styles.verticalLabel}>
-                <span class={styles.verticalLabelKey}>Time window</span>
-                <select
-                    value={props.timeWindow()}
-                    onChange={(e) =>
-                        props.onRetainedWindowSizeChange(+e.target.value)
-                    }
-                >
-                    <For
-                        each={Object.values(TimeWindow).filter(
-                            (value) => typeof value === "number",
-                        )}
-                    >
-                        {(value) => (
-                            <option value={value}>
-                                <Switch>
-                                    <Match when={value === TimeWindow.OneHour}>
-                                        1 hour
-                                    </Match>
-                                    <Match
-                                        when={
-                                            value === TimeWindow.ThirtyMinutes
-                                        }
-                                    >
-                                        30 minutes
-                                    </Match>
-                                    <Match
-                                        when={value === TimeWindow.TenMinutes}
-                                    >
-                                        10 minutes
-                                    </Match>
-                                    <Match
-                                        when={value === TimeWindow.FiveMinutes}
-                                    >
-                                        5 minutes
-                                    </Match>
-                                    <Match
-                                        when={value === TimeWindow.OneMinute}
-                                    >
-                                        1 minute
-                                    </Match>
-                                </Switch>
-                            </option>
-                        )}
-                    </For>
-                </select>
-            </label>
-            <label class={styles.verticalLabel}>
-                <span class={styles.verticalLabelKey}>Target temp</span>
-                <span class={styles.verticalLabelValue}>
-                    <input
-                        type="number"
-                        value={props.targetTemp()}
-                        step={0.5}
-                        style={{
-                            width: "50px",
-                            appearance: "none",
-                            background: "transparent",
-                            border: "none",
-                            "font-weight": "bold",
-                        }}
-                        onChange={(e) => {
-                            props.onTargetTempChange(+e.target.value)
-                            e.preventDefault()
-                        }}
-                    />
-                </span>
-            </label>
-            <Show when={props.controlMethod() == "None"}>
+        <div class={styles.container}>
+            <form
+                class={styles.controlBar}
+                onSubmit={(e) => e.preventDefault()}
+            >
                 <label class={styles.verticalLabel}>
-                    <span class={styles.verticalLabelKey}>Heat level</span>
-                    <input
-                        disabled={props.mode() === "idle"}
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        onChange={(e) => {
-                            props.onHeatLevelChange(+e.target.value)
-                            e.preventDefault()
-                        }}
-                        value={props.boilerLevels().last?.y}
-                    />
+                    <span class={styles.verticalLabelKey}>Mode</span>
+                    <select
+                        tabIndex={-1}
+                        value={props.mode()}
+                        onChange={(e) =>
+                            props.onModeChange(e.target.value as Mode)
+                        }
+                    >
+                        <option disabled value="offline">
+                            Offline
+                        </option>
+                        <option value="idle">Idle</option>
+                        <option value="active">Active</option>
+                        <option value="brew">Brew</option>
+                        <option value="steam">Steam</option>
+                    </select>
                 </label>
-            </Show>
-            <label class={styles.verticalLabel}>
-                <span class={styles.verticalLabelKey}>Heat</span>
-                <span class={styles.verticalLabelValue}>
-                    {formatHeat(props.boilerLevels().last?.y)}
-                </span>
-            </label>
-            <Show when={props.isLoadingHistory()}>
-                <label
-                    class={styles.verticalLabel}
-                    style={{ "margin-left": "auto" }}
-                >
+                <label class={styles.verticalLabel}>
+                    <span class={styles.verticalLabelKey}>Control</span>
+                    <select
+                        tabIndex={-1}
+                        value={props.controlMethod()}
+                        onChange={(e) =>
+                            props.onControlMethodChange(
+                                e.target.value as ControlMethod,
+                            )
+                        }
+                    >
+                        <option value="None">Manual</option>
+                        <option value="Threshold">Threshold</option>
+                        <option value="PID">PID</option>
+                        <option value="MPC">MPC</option>
+                    </select>
+                </label>
+                <label class={styles.verticalLabel}>
+                    <span class={styles.verticalLabelKey}>Time window</span>
+                    <select
+                        tabIndex={-1}
+                        value={props.timeWindow()}
+                        onChange={(e) =>
+                            props.onRetainedWindowSizeChange(+e.target.value)
+                        }
+                    >
+                        <For
+                            each={Object.values(TimeWindow).filter(
+                                (value) => typeof value === "number",
+                            )}
+                        >
+                            {(value) => (
+                                <option value={value}>
+                                    <Switch>
+                                        <Match
+                                            when={value === TimeWindow.OneHour}
+                                        >
+                                            1 hour
+                                        </Match>
+                                        <Match
+                                            when={
+                                                value ===
+                                                TimeWindow.ThirtyMinutes
+                                            }
+                                        >
+                                            30 minutes
+                                        </Match>
+                                        <Match
+                                            when={
+                                                value === TimeWindow.TenMinutes
+                                            }
+                                        >
+                                            10 minutes
+                                        </Match>
+                                        <Match
+                                            when={
+                                                value === TimeWindow.FiveMinutes
+                                            }
+                                        >
+                                            5 minutes
+                                        </Match>
+                                        <Match
+                                            when={
+                                                value === TimeWindow.OneMinute
+                                            }
+                                        >
+                                            1 minute
+                                        </Match>
+                                    </Switch>
+                                </option>
+                            )}
+                        </For>
+                    </select>
+                </label>
+                <label class={styles.verticalLabel}>
+                    <span class={styles.verticalLabelKey}>Target temp</span>
                     <span class={styles.verticalLabelValue}>
-                        <progress />
+                        <input
+                            tabIndex={-1}
+                            type="number"
+                            value={props.targetTemp()}
+                            step={0.5}
+                            style={{
+                                width: "50px",
+                                appearance: "none",
+                                background: "transparent",
+                                border: "none",
+                                "font-weight": "bold",
+                            }}
+                            onChange={(e) => {
+                                props.onTargetTempChange(+e.target.value)
+                                e.preventDefault()
+                            }}
+                        />
                     </span>
                 </label>
-            </Show>
-            <p
-                class={
-                    (props.boilerTemperatures().last?.x ?? 0) - Date.now() >
-                    2_000
-                        ? styles.streamStateOffline
-                        : styles.streamStateOnline
-                }
-            >
-                <span class={styles.verticalLabelKey}>Last measurement</span>
-                <span class={styles.verticalLabelValue}>
-                    {(() => {
-                        let d = props.boilerTemperatures().last?.x
-                        if (d) {
-                            return new Date(d).toLocaleTimeString(
-                                navigator.language,
-                                {
-                                    hour: "numeric",
-                                    minute: "numeric",
-                                    second: "numeric",
-                                    fractionalSecondDigits: true,
-                                } as Intl.DateTimeFormatOptions,
-                            )
-                        } else {
-                            return "error"
-                        }
-                    })()}
-                </span>
-            </p>
-            <button class={styles.brewButton} onClick={props.onShotToggle}>
-                {shotTimer() ?? "Brew"}
-            </button>
-        </form>
+                <Show when={props.controlMethod() == "None"}>
+                    <label class={styles.verticalLabel}>
+                        <span class={styles.verticalLabelKey}>Heat level</span>
+                        <input
+                            tabIndex={-1}
+                            disabled={props.mode() === "idle"}
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            onChange={(e) => {
+                                props.onHeatLevelChange(+e.target.value)
+                                e.preventDefault()
+                            }}
+                            value={props.boilerLevels().last?.y}
+                        />
+                    </label>
+                </Show>
+                <label class={styles.verticalLabel}>
+                    <span class={styles.verticalLabelKey}>Heat</span>
+                    <span class={styles.verticalLabelValue}>
+                        {formatHeat(props.boilerLevels().last?.y)}
+                    </span>
+                </label>
+                <p
+                    class={
+                        (props.boilerTemperatures().last?.x ?? 0) - Date.now() >
+                        2_000
+                            ? styles.streamStateOffline
+                            : styles.streamStateOnline
+                    }
+                >
+                    <span class={styles.verticalLabelKey}>
+                        Last measurement
+                    </span>
+                    <span class={styles.verticalLabelValue}>
+                        {(() => {
+                            let d = props.boilerTemperatures().last?.x
+                            if (d) {
+                                return new Date(d).toLocaleTimeString(
+                                    navigator.language,
+                                    {
+                                        hour: "numeric",
+                                        minute: "numeric",
+                                        second: "numeric",
+                                        fractionalSecondDigits: true,
+                                    } as Intl.DateTimeFormatOptions,
+                                )
+                            } else {
+                                return "error"
+                            }
+                        })()}
+                    </span>
+                </p>
+                <button class={styles.brewButton} onClick={props.onShotToggle}>
+                    {shotTimer() ?? "Brew"}
+                </button>
+            </form>
+            <div class={styles.progressBarContainer}>
+                <Show when={props.isLoadingHistory()}>
+                    <div class={styles.progressBar} />
+                </Show>
+            </div>
+        </div>
     )
 }

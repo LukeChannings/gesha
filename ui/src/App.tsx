@@ -153,6 +153,8 @@ function App() {
             bucketSize: 5_000,
         })
 
+        setIsLoadingHistory(false)
+
         setBoilerTemperatures(boilerTemperatures().load(history.boilerTemp))
         setGroupheadTemperatures(
             groupheadTemperatures().load(history.groupheadTemp),
@@ -161,8 +163,6 @@ function App() {
             thermofilterTemperatures().load(history.thermofilterTemp),
         )
         setBoilerLevels(boilerLevels().load(history.boilerLevel))
-
-        setIsLoadingHistory(false)
     }
 
     handleRetainedWindowSizeChange(TimeWindow.TenMinutes)

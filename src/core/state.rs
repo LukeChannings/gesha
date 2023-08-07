@@ -219,6 +219,7 @@ impl State {
                 self.db.flush_measurements()?;
             }
             Event::TemperatureHistoryRequest {
+                id,
                 from,
                 to,
                 limit,
@@ -231,7 +232,10 @@ impl State {
 
                 let json_result = serde_json::to_string(&result)?;
 
-                mqtt_messages.push(MqttOutgoingMessage::TemperatureHistoryResponse(json_result))
+                mqtt_messages.push(MqttOutgoingMessage::TemperatureHistoryResponse(
+                    id,
+                    json_result,
+                ))
             }
             Event::TemperatureReadError(message) => {
                 error!("Temperature read error: {message}")
@@ -245,11 +249,16 @@ impl State {
 
                 mqtt_messages.push(MqttOutgoingMessage::ConfigUpdate(vec![config_item]));
             }
-            Event::ShotHistoryRequest { from, to, limit } => {
+            Event::ShotHistoryRequest {
+                id,
+                from,
+                to,
+                limit,
+            } => {
                 let shots = self.db.read_shots(from, to, limit).await?;
                 let json_result = serde_json::to_string(&shots)?;
 
-                mqtt_messages.push(MqttOutgoingMessage::ShotHistoryResponse(json_result));
+                mqtt_messages.push(MqttOutgoingMessage::ShotHistoryResponse(id, json_result));
             }
             _ => {}
         }
@@ -310,12 +319,14 @@ pub enum Event {
     ModeChange(Mode),
     FlushTemperatureMeasurementBufferRequest,
     TemperatureHistoryRequest {
+        id: String,
         from: i64,
         to: i64,
         limit: Option<i64>,
         bucket_size: Option<i64>,
     },
     ShotHistoryRequest {
+        id: String,
         from: i64,
         to: i64,
         limit: Option<i64>,

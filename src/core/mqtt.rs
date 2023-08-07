@@ -44,11 +44,11 @@ pub enum MqttOutgoingMessage {
     ModeUpdate(Mode),
     BoilerStatusUpdate(f32),
     TemperatureUpdate(TemperatureMeasurement),
-    TemperatureHistoryResponse(String),
+    TemperatureHistoryResponse(String, String),
     TargetTemperatureUpdate(f32),
     ControlMethodUpdate(ControlMethod),
     PowerRelayStatus(PowerState),
-    ShotHistoryResponse(String),
+    ShotHistoryResponse(String, String),
     ConfigUpdate(Vec<ConfigItem>),
 }
 
@@ -73,20 +73,22 @@ impl TryInto<StateEvent> for Publish {
             TOPIC_TEMPERATURE_HISTORY_REQUEST => {
                 #[derive(Deserialize)]
                 #[serde(rename_all = "camelCase")]
-                struct Range {
+                struct TemperatureHistoryRequest {
+                    id: String,
                     from: i64,
                     to: i64,
                     limit: Option<i64>,
                     bucket_size: Option<i64>,
                 }
 
-                let range: Range = serde_json::from_slice(&self.payload)?;
+                let request: TemperatureHistoryRequest = serde_json::from_slice(&self.payload)?;
 
                 Ok(StateEvent::TemperatureHistoryRequest {
-                    from: range.from,
-                    to: range.to,
-                    limit: range.limit,
-                    bucket_size: range.bucket_size,
+                    id: request.id,
+                    from: request.from,
+                    to: request.to,
+                    limit: request.limit,
+                    bucket_size: request.bucket_size,
                 })
             }
             TOPIC_EXTERN_POWER_STATE_CHANGE => {
@@ -115,6 +117,25 @@ impl TryInto<StateEvent> for Publish {
                         "Refusing to set a config entry that isn't prefixed with 'ui_'."
                     ))
                 }
+            }
+            TOPIC_SHOT_HISTORY_REQUEST => {
+                #[derive(Deserialize)]
+                #[serde(rename_all = "camelCase")]
+                struct ShotHistoryRequest {
+                    id: String,
+                    from: i64,
+                    to: i64,
+                    limit: Option<i64>,
+                }
+
+                let request: ShotHistoryRequest = serde_json::from_slice(&self.payload)?;
+
+                Ok(StateEvent::ShotHistoryRequest {
+                    id: request.id,
+                    from: request.from,
+                    to: request.to,
+                    limit: request.limit,
+                })
             }
             _ => Err(anyhow!(
                 "There is no incoming message for the topic {}",
@@ -302,14 +323,16 @@ impl Mqtt {
                 .to_string(),
                 false,
             )),
-            MqttOutgoingMessage::TemperatureHistoryResponse(result) => events.push((
-                format!("gesha/temperature/history"),
+            MqttOutgoingMessage::TemperatureHistoryResponse(id, result) => events.push((
+                format!("gesha/temperature/history/{id}"),
                 result.to_string(),
                 false,
             )),
-            MqttOutgoingMessage::ShotHistoryResponse(result) => {
-                events.push((format!("gesha/shot/history"), result.to_string(), false))
-            }
+            MqttOutgoingMessage::ShotHistoryResponse(id, result) => events.push((
+                format!("gesha/shot/history/{id}"),
+                result.to_string(),
+                false,
+            )),
             MqttOutgoingMessage::ConfigUpdate(entries) => {
                 for entry in entries {
                     // I only want to broadcast UI config entries, not internal ones.

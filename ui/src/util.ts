@@ -121,8 +121,10 @@ export const getHistory = (
     }: { from: number; to: number; limit?: number; bucketSize?: number },
 ): Promise<Record<string, Series>> =>
     new Promise<Measurement[]>((resolve) => {
+        const id = String(Math.round(Math.random() * 1_000_000))
+
         const callback = (topic: string, payload: Buffer) => {
-            if (topic === "gesha/temperature/history") {
+            if (topic === `gesha/temperature/history/${id}`) {
                 client.off("message", callback)
 
                 resolve(JSON.parse(payload.toString()))
@@ -133,7 +135,7 @@ export const getHistory = (
 
         client.publish(
             "gesha/temperature/history/command",
-            JSON.stringify({ from, to, limit, bucketSize }),
+            JSON.stringify({ id, from, to, limit, bucketSize }),
             { retain: false, qos: 2 },
         )
     }).then((measurements) => {
