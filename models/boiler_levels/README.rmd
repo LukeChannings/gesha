@@ -1,0 +1,280 @@
+# Heat level temperature response analysis
+
+```{r, echo=F, warning=F, error=F, message=F}
+library(anytime)
+library(ggplot2)
+library(dplyr)
+
+heat_1 <- read.csv("./measurement-history-heat-level-1.csv")
+heat_2 <- read.csv("./measurement-history-heat-level-2.csv")
+heat_3 <- read.csv("./measurement-history-heat-level-3.csv")
+heat_4 <- read.csv("./measurement-history-heat-level-4.csv")
+heat_5 <- read.csv("./measurement-history-heat-level-5.csv")
+heat_6 <- read.csv("./measurement-history-heat-level-6.csv")
+heat_7 <- read.csv("./measurement-history-heat-level-7.csv")
+heat_8 <- read.csv("./measurement-history-heat-level-8.csv")
+heat_9 <- read.csv("./measurement-history-heat-level-9.csv")
+heat_10 <- read.csv("./measurement-history-heat-level-10.csv")
+
+heat_1$time <- (heat_1$time - heat_1$time[1]) / 1000
+heat_1$heatLevel <- as.factor(heat_1$heatLevel)
+
+heat_2$heatLevel <- as.factor(heat_2$heatLevel)
+heat_2$time <- (heat_2$time - heat_2$time[1]) / 1000
+
+heat_3$heatLevel <- as.factor(heat_3$heatLevel)
+heat_3$time <- (heat_3$time - heat_3$time[1]) / 1000
+
+heat_4$heatLevel <- as.factor(heat_4$heatLevel)
+heat_4$time <- (heat_4$time - heat_4$time[1]) / 1000
+
+heat_5$heatLevel <- as.factor(heat_5$heatLevel)
+heat_5$time <- (heat_5$time - heat_5$time[1]) / 1000
+
+heat_6$heatLevel <- as.factor(heat_6$heatLevel)
+heat_6$time <- (heat_6$time - heat_6$time[1]) / 1000
+
+heat_7$heatLevel <- as.factor(heat_7$heatLevel)
+heat_7$time <- (heat_7$time - heat_7$time[1]) / 1000
+
+heat_8$heatLevel <- as.factor(heat_8$heatLevel)
+heat_8$time <- (heat_8$time - heat_8$time[1]) / 1000
+
+heat_9$heatLevel <- as.factor(heat_9$heatLevel)
+heat_9$time <- (heat_9$time - heat_9$time[1]) / 1000
+
+heat_10$heatLevel <- as.factor(heat_10$heatLevel)
+heat_10$time <- (heat_10$time - heat_10$time[1]) / 1000
+
+max_temp_time_10 <- heat_1$time[which.max(heat_1$boilerTempC)]
+heat_stop_time_10 <- filter(heat_1, heatLevel == 0)$time[1]
+
+max_temp_time_20 <- heat_2$time[which.max(heat_2$boilerTempC)]
+heat_stop_time_20 <- filter(heat_2, heatLevel == 0)$time[1]
+
+max_temp_time_30 <- heat_3$time[which.max(heat_3$boilerTempC)]
+heat_stop_time_30 <- filter(heat_3, heatLevel == 0)$time[1]
+
+max_temp_time_40 <- heat_4$time[which.max(heat_4$boilerTempC)]
+heat_stop_time_40 <- filter(heat_4, heatLevel == 0)$time[1]
+
+max_temp_time_50 <- heat_5$time[which.max(heat_5$boilerTempC)]
+heat_stop_time_50 <- filter(heat_5, heatLevel == 0)$time[1]
+
+max_temp_time_60 <- heat_6$time[which.max(heat_6$boilerTempC)]
+heat_stop_time_60 <- filter(heat_6, heatLevel == 0)$time[1]
+
+max_temp_time_70 <- heat_7$time[which.max(heat_7$boilerTempC)]
+heat_stop_time_70 <- filter(heat_7, heatLevel == 0)$time[1]
+
+max_temp_time_80 <- heat_8$time[which.max(heat_8$boilerTempC)]
+heat_stop_time_80 <- filter(heat_8, heatLevel == 0)$time[1]
+
+max_temp_time_90 <- heat_9$time[which.max(heat_9$boilerTempC)]
+heat_stop_time_90 <- filter(heat_9, heatLevel == 0)$time[1]
+
+max_temp_time_100 <- heat_10$time[which.max(heat_10$boilerTempC)]
+heat_stop_time_100 <- filter(heat_10, heatLevel == 0)$time[1]
+
+heat_summary <- data.frame(
+    levels = c("0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0"),
+    rise = c(
+        max(heat_1$boilerTempC) - min(heat_1$boilerTempC),
+        max(heat_2$boilerTempC) - min(heat_2$boilerTempC),
+        max(heat_3$boilerTempC) - min(heat_3$boilerTempC),
+        max(heat_4$boilerTempC) - min(heat_4$boilerTempC),
+        max(heat_5$boilerTempC) - min(heat_5$boilerTempC),
+        max(heat_6$boilerTempC) - min(heat_6$boilerTempC),
+        max(heat_7$boilerTempC) - min(heat_7$boilerTempC),
+        max(heat_8$boilerTempC) - min(heat_8$boilerTempC),
+        max(heat_9$boilerTempC) - min(heat_9$boilerTempC),
+        max(heat_10$boilerTempC) - min(heat_10$boilerTempC)
+    ),
+    max = c(
+        max(heat_1$boilerTempC),
+        max(heat_2$boilerTempC),
+        max(heat_3$boilerTempC),
+        max(heat_4$boilerTempC),
+        max(heat_5$boilerTempC),
+        max(heat_6$boilerTempC),
+        max(heat_7$boilerTempC),
+        max(heat_8$boilerTempC),
+        max(heat_9$boilerTempC),
+        max(heat_10$boilerTempC)
+    ),
+    lag = c(
+        max_temp_time_10 - heat_stop_time_10,
+        max_temp_time_20 - heat_stop_time_20,
+        max_temp_time_30 - heat_stop_time_30,
+        max_temp_time_40 - heat_stop_time_40,
+        max_temp_time_50 - heat_stop_time_50,
+        max_temp_time_60 - heat_stop_time_60,
+        max_temp_time_70 - heat_stop_time_70,
+        max_temp_time_80 - heat_stop_time_80,
+        max_temp_time_90 - heat_stop_time_90,
+        max_temp_time_100 - heat_stop_time_100
+    )
+)
+```
+
+```{r, echo=F}
+ggplot(heat_summary, aes(levels, rise)) +
+    geom_col() +
+    geom_text(aes(label = rise), colour = "white", vjust = 2, fontface = "bold")
+```
+
+```{r, echo=F}
+ggplot(heat_summary, aes(levels, lag)) +
+    geom_col() +
+    geom_text(aes(label = format(lag)), colour = "white", vjust = 2, fontface = "bold")
+```
+
+```{r, echo=F}
+ggplot(heat_summary, aes(levels, max)) +
+    geom_col() +
+    geom_text(aes(label = paste(max, " \u00B0C")), colour = "white", vjust = 2, fontface = "bold")
+```
+
+### 10ms pulse width
+
+- Heat duration: **`r format(heat_stop_time_10 - heat_1$time[1])`**
+- Starting temperature: **`r heat_1$boilerTempC[1]` &deg;C**
+- Maximum temperature: **`r max(heat_1$boilerTempC)` &deg;C**
+- Time to reach maximum temperature: **`r format(max_temp_time_10 - heat_stop_time_10)`**
+- Temperature rise: **`r max(heat_1$boilerTempC) - min(heat_1$boilerTempC)` &deg; C**
+
+```{r, echo=FALSE, warning=F}
+ggplot(heat_1, aes(time, boilerTempC, colour = factor(heatLevel))) +
+    ylim(34.5, 45) +
+    geom_count(size = 0.1)
+```
+
+### 20ms pulse width
+
+
+- Heat duration: **`r format(heat_stop_time_20 - heat_2$time[1])`**
+- Starting temperature: **`r heat_2$boilerTempC[1]` &deg;C**
+- Maximum temperature: **`r max(heat_2$boilerTempC)` &deg;C**
+- Time to reach maximum temperature: **`r format(max_temp_time_20 - heat_stop_time_20)`**
+- Temperature rise: **`r max(heat_2$boilerTempC) - min(heat_2$boilerTempC)` &deg; C**
+
+```{r, echo=FALSE, warning=F}
+ggplot(heat_2, aes(time, boilerTempC, colour = heatLevel)) +
+    ylim(34.5, 45) +
+    geom_count(size = 0.1)
+```
+
+### 30ms pulse width
+
+
+- Heat duration: **`r format(heat_stop_time_30 - heat_3$time[1])`**
+- Starting temperature: **`r heat_3$boilerTempC[1]` &deg;C**
+- Maximum temperature: **`r max(heat_3$boilerTempC)` &deg;C**
+- Time to reach maximum temperature: **`r format(max_temp_time_30 - heat_stop_time_30)`**
+- Temperature rise: **`r max(heat_3$boilerTempC) - min(heat_3$boilerTempC)` &deg; C**
+
+```{r, echo=FALSE, warning=F}
+ggplot(heat_3, aes(time, boilerTempC, colour = factor(heatLevel))) +
+    ylim(34.5, 45) +
+    geom_count(size = 0.1)
+```
+
+### 40ms pulse width
+
+- Heat duration: **`r format(heat_stop_time_40 - heat_4$time[1])`**
+- Starting temperature: **`r heat_4$boilerTempC[1]` &deg;C**
+- Maximum temperature: **`r max(heat_4$boilerTempC)` &deg;C**
+- Time to reach maximum temperature: **`r format(max_temp_time_40 - heat_stop_time_40)`**
+- Temperature rise: **`r max(heat_4$boilerTempC) - min(heat_4$boilerTempC)` &deg; C**
+
+```{r, echo=FALSE, warning=F}
+ggplot(heat_4, aes(time, boilerTempC, colour = factor(heatLevel))) +
+    ylim(34.5, 45) +
+    geom_count(size = 0.1)
+```
+
+### 50ms pulse width
+
+- Heat duration: **`r format(heat_stop_time_50 - heat_5$time[1])`**
+- Starting temperature: **`r heat_5$boilerTempC[1]` &deg;C**
+- Maximum temperature: **`r max(heat_5$boilerTempC)` &deg;C**
+- Time to reach maximum temperature: **`r format(max_temp_time_50 - heat_stop_time_50)`**
+- Temperature rise: **`r max(heat_5$boilerTempC) - min(heat_5$boilerTempC)` &deg; C**
+
+```{r, echo=FALSE, warning=F}
+ggplot(heat_5, aes(time, boilerTempC, colour = factor(heatLevel))) +
+    ylim(34.5, 45) +
+    geom_count(size = 0.1)
+```
+
+### 60ms pulse width
+
+- Heat duration: **`r format(heat_stop_time_60 - heat_6$time[1])`**
+- Starting temperature: **`r heat_6$boilerTempC[1]` &deg;C**
+- Maximum temperature: **`r max(heat_6$boilerTempC)` &deg;C**
+- Time to reach maximum temperature: **`r format(max_temp_time_60 - heat_stop_time_60)`**
+- Temperature rise: **`r max(heat_6$boilerTempC) - min(heat_6$boilerTempC)` &deg; C**
+
+```{r, echo=FALSE, warning=F}
+ggplot(heat_6, aes(time, boilerTempC, colour = factor(heatLevel))) +
+    ylim(34.5, 55) +
+    geom_count(size = 0.1)
+```
+
+### 70ms pulse width
+
+- Heat duration: **`r format(heat_stop_time_70 - heat_7$time[1])`**
+- Starting temperature: **`r heat_7$boilerTempC[1]` &deg;C**
+- Maximum temperature: **`r max(heat_7$boilerTempC)` &deg;C**
+- Time to reach maximum temperature: **`r format(max_temp_time_70 - heat_stop_time_70)`**
+- Temperature rise: **`r max(heat_7$boilerTempC) - min(heat_7$boilerTempC)` &deg; C**
+
+```{r, echo=FALSE, warning=F}
+ggplot(heat_7, aes(time, boilerTempC, colour = factor(heatLevel))) +
+    ylim(34.5, 55) +
+    geom_count(size = 0.1)
+```
+
+### 80ms pulse width
+
+- Heat duration: **`r format(heat_stop_time_80 - heat_8$time[1])`**
+- Starting temperature: **`r heat_8$boilerTempC[1]` &deg;C**
+- Maximum temperature: **`r max(heat_8$boilerTempC)` &deg;C**
+- Time to reach maximum temperature: **`r format(max_temp_time_80 - heat_stop_time_80)`**
+- Temperature rise: **`r max(heat_8$boilerTempC) - min(heat_8$boilerTempC)` &deg; C**
+
+```{r, echo=FALSE, warning=F}
+ggplot(heat_8, aes(time, boilerTempC, colour = factor(heatLevel))) +
+    ylim(34.5, 55) +
+    geom_count(size = 0.1)
+```
+
+
+### 90ms pulse width
+
+- Heat duration: **`r format(heat_stop_time_90 - heat_9$time[1])`**
+- Starting temperature: **`r heat_9$boilerTempC[1]` &deg;C**
+- Maximum temperature: **`r max(heat_9$boilerTempC)` &deg;C**
+- Time to reach maximum temperature: **`r format(max_temp_time_90 - heat_stop_time_90)`**
+- Temperature rise: **`r max(heat_9$boilerTempC) - min(heat_9$boilerTempC)` &deg; C**
+
+```{r, echo=FALSE, warning=F}
+ggplot(heat_9, aes(time, boilerTempC, colour = factor(heatLevel))) +
+    ylim(34.5, 55) +
+    geom_count(size = 0.1)
+```
+
+
+### 100ms pulse width
+
+- Heat duration: **`r format(heat_stop_time_100 - heat_10$time[1])`**
+- Starting temperature: **`r heat_10$boilerTempC[1]` &deg;C**
+- Maximum temperature: **`r max(heat_10$boilerTempC)` &deg;C**
+- Time to reach maximum temperature: **`r format(max_temp_time_100 - heat_stop_time_100)`**
+- Temperature rise: **`r max(heat_10$boilerTempC) - min(heat_10$boilerTempC)` &deg; C**
+
+```{r, echo=FALSE, warning=F}
+ggplot(heat_10, aes(time, boilerTempC, colour = factor(heatLevel))) +
+    ylim(34.5, 55) +
+    geom_count(size = 0.1)
+```

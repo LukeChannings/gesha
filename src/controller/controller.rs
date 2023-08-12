@@ -17,7 +17,7 @@ use tokio_util::sync::CancellationToken;
 use super::{MpcController, PidController, ThresholdController};
 use crate::{
     core::state::Mode,
-    state::{Event as StateEvent, PowerState},
+    core::state::{Event as StateEvent, PowerState},
 };
 
 pub trait Controller: Send + Sync {

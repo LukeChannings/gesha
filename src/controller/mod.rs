@@ -8,5 +8,5 @@ pub(self) use controller::Controller;
 pub(self) use mpc::MpcController;
 pub(self) use threshold::ThresholdController;
 
-pub(crate) use controller::ControlMethod;
-pub(crate) use controller::ControllerManager;
+pub use controller::ControlMethod;
+pub use controller::ControllerManager;

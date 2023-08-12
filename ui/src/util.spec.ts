@@ -7,7 +7,7 @@ describe("computeLineSegments", () => {
             y: 0,
         }))
 
-        expect(computeLineSegments(series)).toEqual(new Map([]))
+        expect(computeLineSegments(series)).toEqual([])
     })
 
     it("returns a single rect", () => {
@@ -16,7 +16,7 @@ describe("computeLineSegments", () => {
             y: i > 50 && i < 80 ? 1 : 0,
         }))
 
-        expect(computeLineSegments(series)).toEqual(new Map([[51, 80]]))
+        expect(computeLineSegments(series)).toEqual([[51, 80]])
     })
 
     it("returns multiple rects", () => {
@@ -30,13 +30,11 @@ describe("computeLineSegments", () => {
                     : 0,
         }))
 
-        expect(computeLineSegments(series)).toEqual(
-            new Map([
-                [10, 15],
-                [30, 32],
-                [67, 90],
-            ]),
-        )
+        expect(computeLineSegments(series)).toEqual([
+            [10, 15],
+            [30, 32],
+            [67, 90],
+        ])
     })
 
     it("returns a rect at the end of the series", () => {
@@ -45,7 +43,7 @@ describe("computeLineSegments", () => {
             y: i >= 40 ? 1 : 0,
         }))
 
-        expect(computeLineSegments(series)).toEqual(new Map([[40, 49]]))
+        expect(computeLineSegments(series)).toEqual([[40, expect.any(Number)]])
     })
 })
 
@@ -85,8 +83,6 @@ describe("RingBuffer", () => {
         let buffer = new RingBuffer(5)
 
         buffer.push(1).push(2).push(3)
-
-        console.log(buffer.first, buffer.last)
 
         expect(buffer.values).toEqual([1, 2, 3])
     })

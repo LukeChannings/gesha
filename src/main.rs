@@ -1,13 +1,13 @@
-mod controller;
-mod core;
-
-use crate::core::{
-    config,
-    mqtt::{self, MqttOutgoingMessage},
-    state::{self, Event, Mode},
-    thermocouple::ThermocouplePoller,
-};
 use clap::Parser;
+use gesha::{
+    controller,
+    core::{
+        config,
+        mqtt::{self, MqttOutgoingMessage},
+        state::{self, Event, Mode},
+        thermocouple::ThermocouplePoller,
+    },
+};
 use log::{debug, error, info, trace};
 use pretty_env_logger;
 use std::error::Error;

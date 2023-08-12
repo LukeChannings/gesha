@@ -19,8 +19,10 @@ build thing="app":
         cd ui; npm run build
     elif [[ "{{thing}}" == "db" ]]; then
         cargo sqlx prepare --database-url sqlite:gesha.db
+    elif [[ "{{thing}}" == "thermofilter" ]]; then
+        cargo build --release --bin thermofilter
     else
-        cargo build --release
+        cargo build --release --bin gesha
     fi
 
 test thing="app":
@@ -48,6 +50,8 @@ deploy service="gesha": (build service)
         ssh silvia.iot "sudo systemctl stop gesha"
         scp target/arm-unknown-linux-gnueabihf/release/gesha silvia.iot:/opt/gesha/bin/gesha
         ssh silvia.iot "sudo systemctl start gesha"
+    elif [[ "{{service}}" == "thermofilter" ]]; then
+        scp target/arm-unknown-linux-gnueabihf/release/thermofilter aux-silvia.iot:~
     elif [[ "{{service}}" == "ui" ]]; then
         scp -r ui/dist/* silvia.iot:/opt/gesha/web/
     fi
@@ -81,6 +85,9 @@ init silvia:
     sudo mkdir -p /opt/gesha/{etc,bin}
     sudo chown -R luke:sudo /opt/gesha
     EOF
+
+download-db:
+    scp silvia.iot:/opt/gesha/var/db/gesha.db .
 
 export-diagrams:
     /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 0 -f png --width 1500 -o docs/diagrams/silvia-e-electrical-diagram.png docs/diagrams/silvia-e-diagrams.drawio

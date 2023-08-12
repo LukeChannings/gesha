@@ -12,3 +12,4 @@ gesha.db
 *.log
 *.synctex.gz
 *.fls
+node_modules

@@ -1,13 +1,14 @@
 from time import sleep, time
 from gesha_api import Gesha
 
-HEAT_TIME_SECONDS = 30
+HEAT_TIME_SECONDS = 15
 HEAT_LAG_WAIT_SECONDS = 60
+
 
 def main():
     gesha = Gesha()
 
-    # wait a sec for temperature values to come in.
+    # wait a sec for temperature values to come in.
     sleep(1)
 
     starting_boiler_temperature = gesha.get_latest_temp("boiler")
@@ -37,14 +38,20 @@ def main():
         b_temp = gesha.get_latest_temp("boiler")
 
         print(f"After {HEAT_LAG_WAIT_SECONDS}s the temperature is {b_temp}")
-        print(f"The starting temperature for {level} was {a_temp}. Diff: {b_temp - a_temp} degrees C")
-        print("Note: this is *not* the maximum. Dump the measurement history for further analysis.")
+        print(
+            f"The starting temperature for {level} was {a_temp}. Diff: {b_temp - a_temp} degrees C"
+        )
+        print(
+            "Note: this is *not* the maximum. Dump the measurement history for further analysis."
+        )
 
         # Wait for the temperature to return to the starting temp
-        gesha.wait_for_temp_le('boiler', starting_boiler_temperature)
+        gesha.wait_for_temp_le("boiler", starting_boiler_temperature)
 
         print(f"TEMPERATURE NORMAL, {int(time() * 1000)}, {level}")
 
     gesha.set_mode("idle")
 
-if __name__ == "__main__": main()
+
+if __name__ == "__main__":
+    main()

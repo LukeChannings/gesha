@@ -78,7 +78,12 @@ export function ControlBar(props: ControlBarProps) {
                         </option>
                         <option value="idle">Idle</option>
                         <option value="active">Active</option>
-                        <option value="brew">Brew</option>
+                        <option
+                            value="brew"
+                            disabled={props.mode() !== "active"}
+                        >
+                            Brew
+                        </option>
                         <option value="steam">Steam</option>
                     </select>
                 </label>
@@ -232,7 +237,11 @@ export function ControlBar(props: ControlBarProps) {
                         })()}
                     </span>
                 </p>
-                <button class={styles.brewButton} onClick={props.onShotToggle}>
+                <button
+                    class={styles.brewButton}
+                    onClick={props.onShotToggle}
+                    type="button"
+                >
                     {shotTimer() ?? "Brew"}
                 </button>
             </form>

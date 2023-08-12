@@ -182,6 +182,7 @@ function App() {
                 onControlMethodChange={(controlMethod: ControlMethod) => {
                     client.publish("gesha/control_method/set", controlMethod, {
                         retain: false,
+                        qos: 2,
                     })
                 }}
                 onHeatLevelChange={(heatLevel: number) => {
@@ -190,11 +191,15 @@ function App() {
                         heatLevel.toString(),
                         {
                             retain: false,
+                            qos: 2,
                         },
                     )
                 }}
                 onModeChange={(mode: Mode) => {
-                    client.publish("gesha/mode/set", mode, { retain: false })
+                    client.publish("gesha/mode/set", mode, {
+                        retain: false,
+                        qos: 2,
+                    })
                 }}
                 onRetainedWindowSizeChange={async (newTimeWindow) => {
                     handleRetainedWindowSizeChange(newTimeWindow)
@@ -204,7 +209,7 @@ function App() {
                             key: "ui_time_window",
                             value: String(newTimeWindow),
                         }),
-                        { retain: false },
+                        { retain: false, qos: 2 },
                     )
                 }}
                 onTargetTempChange={(targetTemp: number) => {
@@ -213,6 +218,7 @@ function App() {
                         targetTemp.toString(),
                         {
                             retain: false,
+                            qos: 2,
                         },
                     )
                 }}

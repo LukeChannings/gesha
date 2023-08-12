@@ -12,10 +12,8 @@ use tokio::{
     task::{self, JoinHandle},
 };
 
-use crate::config::Spi;
-
 use super::{
-    config::Config,
+    config::{Config, Spi},
     state::{Event as StateEvent, Mode, TemperatureMeasurement},
 };
 

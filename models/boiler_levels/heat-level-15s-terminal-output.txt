@@ -1,0 +1,61 @@
+EXPERIMENT BEGINS
+HEAT ON, 1691509346385, 0.1
+HEAT OFF, 1691509361391, 0.1
+After 60s the temperature is 53.5
+The starting temperature for 0.1 was 54.0. Diff: -0.5 degrees C
+Note: this is *not* the maximum. Dump the measurement history for further analysis.
+TEMPERATURE NORMAL, 1691509421395, 0.1
+HEAT ON, 1691509421395, 0.2
+HEAT OFF, 1691509436395, 0.2
+After 60s the temperature is 54.5
+The starting temperature for 0.2 was 53.5. Diff: 1.0 degrees C
+Note: this is *not* the maximum. Dump the measurement history for further analysis.
+TEMPERATURE NORMAL, 1691509594569, 0.2
+HEAT ON, 1691509594569, 0.3
+HEAT OFF, 1691509609570, 0.3
+After 60s the temperature is 55.75
+The starting temperature for 0.3 was 53.5. Diff: 2.25 degrees C
+Note: this is *not* the maximum. Dump the measurement history for further analysis.
+TEMPERATURE NORMAL, 1691509893573, 0.3
+HEAT ON, 1691509893573, 0.4
+HEAT OFF, 1691509908577, 0.4
+After 60s the temperature is 57.0
+The starting temperature for 0.4 was 53.5. Diff: 3.5 degrees C
+Note: this is *not* the maximum. Dump the measurement history for further analysis.
+TEMPERATURE NORMAL, 1691510322250, 0.4
+HEAT ON, 1691510322250, 0.5
+HEAT OFF, 1691510337254, 0.5
+After 60s the temperature is 58.25
+The starting temperature for 0.5 was 53.5. Diff: 4.75 degrees C
+Note: this is *not* the maximum. Dump the measurement history for further analysis.
+TEMPERATURE NORMAL, 1691510894928, 0.5
+HEAT ON, 1691510894928, 0.6
+HEAT OFF, 1691510909930, 0.6
+After 60s the temperature is 59.25
+The starting temperature for 0.6 was 53.5. Diff: 5.75 degrees C
+Note: this is *not* the maximum. Dump the measurement history for further analysis.
+TEMPERATURE NORMAL, 1691511584562, 0.6
+HEAT ON, 1691511584562, 0.7
+HEAT OFF, 1691511599573, 0.7
+After 60s the temperature is 60.5
+The starting temperature for 0.7 was 53.5. Diff: 7.0 degrees C
+Note: this is *not* the maximum. Dump the measurement history for further analysis.
+TEMPERATURE NORMAL, 1691512411742, 0.7
+HEAT ON, 1691512411742, 0.8
+HEAT OFF, 1691512426752, 0.8
+After 60s the temperature is 61.5
+The starting temperature for 0.8 was 53.5. Diff: 8.0 degrees C
+Note: this is *not* the maximum. Dump the measurement history for further analysis.
+TEMPERATURE NORMAL, 1691513362647, 0.8
+HEAT ON, 1691513362647, 0.9
+HEAT OFF, 1691513377652, 0.9
+After 60s the temperature is 62.25
+The starting temperature for 0.9 was 53.5. Diff: 8.75 degrees C
+Note: this is *not* the maximum. Dump the measurement history for further analysis.
+TEMPERATURE NORMAL, 1691514406413, 0.9
+HEAT ON, 1691514406413, 1.0
+HEAT OFF, 1691514421418, 1.0
+After 60s the temperature is 63.5
+The starting temperature for 1.0 was 53.5. Diff: 10.0 degrees C
+Note: this is *not* the maximum. Dump the measurement history for further analysis.
+TEMPERATURE NORMAL, 1691515570391, 1.0
