@@ -25,12 +25,7 @@ def group_measurements(measurements: DataFrame) -> List[DataFrame]:
             "boiler_temp_c"
         ].min() > (80 - 30)
 
-        # The measurements take place over a time period of at least 4 hours
-        time_period_condition = group["time"].max() - group["time"].min() > timedelta(
-            hours=4
-        )
-
-        if temperature_condition and time_period_condition:
+        if temperature_condition:
             # Crop the dataframe to only include datapoints that slope downward.
             # Without this, some dataframes include a peak and then a steady drop.
             peak = max(
