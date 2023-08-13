@@ -1,5 +1,5 @@
 from pandas import DataFrame
-from visualisation import compare_plot
+from visualisation import line_chart
 from thermal_loss.model_glm import train_model, predict_series
 import matplotlib.pyplot as plt
 
@@ -40,5 +40,5 @@ def main():
 
     print(df)
 
-    fig = compare_plot(df, "5T", x_col="time", y_cols=["boiler_temp_c_pred", "grouphead_temp_c_pred"])
+    fig = line_chart(df, "5T", x_col="time", y_cols=["boiler_temp_c_pred", "grouphead_temp_c_pred"])
     plt.show()

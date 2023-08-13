@@ -94,3 +94,6 @@ export-diagrams:
     /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 1 -f png --width 1500 -o docs/diagrams/silvia-shelly-electrical-diagram.png docs/diagrams/silvia-e-diagrams.drawio
     /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 2 -f png --width 1500 -o docs/diagrams/silvia-shelly-pi-electrical-diagram.png docs/diagrams/silvia-e-diagrams.drawio
     /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 3 -f png --width 1500 -o docs/diagrams/pi-zero-pinout.png docs/diagrams/silvia-e-diagrams.drawio
+
+model something:
+    cd models; poetry run {{something}}
