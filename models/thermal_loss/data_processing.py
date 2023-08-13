@@ -4,6 +4,7 @@
 # The measurements are considered contiguous if they occur within 3 seconds of one another.
 # Records are normally recorded at most 1 second apart, so a 3x error margin should be appropriate.
 
+from math import ceil
 from typing import List
 from numpy import concatenate, diff, hstack
 from pandas import DataFrame
@@ -41,7 +42,7 @@ def group_measurements(measurements: DataFrame) -> List[DataFrame]:
     return groups
 
 
-def resample_data(data: DataFrame, resample_time: str) -> DataFrame:
+def resample(data: DataFrame, resample_time: str) -> DataFrame:
     df = data.set_index("time").resample(resample_time).last()
 
     for is_nan in df.isna().any():
@@ -53,9 +54,33 @@ def resample_data(data: DataFrame, resample_time: str) -> DataFrame:
     return df
 
 
+def get_resample_time(data: DataFrame, resample_time: str) -> str:
+    return (
+        f"{ceil(get_largest_timediff(data).total_seconds())}S"
+        if resample_time == "min"
+        else resample_time
+    )
+
+
 def get_largest_timediff(data: DataFrame):
     return data["time"].diff().max()
 
+
+def get_mean_timediff(data: DataFrame):
+    return data["time"].diff().mean()
+
+
+def get_smallest_timediff(data: DataFrame):
+    return data["time"].diff().min()
+
+def add_diff_cols(df: DataFrame, cols: List[str]) -> DataFrame:
+    # Creating a diff requires removing the first row
+    df_ = df.iloc[1:].copy()
+
+    for col in cols:
+        df_[f"{col}_diff"] = diff(df[col])
+
+    return df_
 
 # Prepares a list of training data into X and y
 def prepare(data_frames: List[DataFrame]):

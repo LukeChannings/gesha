@@ -13,3 +13,5 @@ gesha.db
 *.synctex.gz
 *.fls
 node_modules
+__pycache__
+models/__pycache__/visualisation.cpython-311.pyc

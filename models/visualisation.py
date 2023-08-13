@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 
-def graph(groups: List[DataFrame], title: str):
+def graph(groups: List[DataFrame], title: str) -> plt:
     sns.set(style="whitegrid")
 
     fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(15, 10))
@@ -29,12 +29,12 @@ def graph(groups: List[DataFrame], title: str):
 
             ax.tick_params(axis="x", rotation=45)
 
-    plt.tight_layout()
+    fig.tight_layout()
 
-    plt.show()
+    return fig
 
 
-def graph_predicted(groups: List[DataFrame], title: str):
+def graph_predicted(groups: List[DataFrame], title: str,  x_col: str, y_cols: List[str]) -> plt:
     sns.set(style="whitegrid")
 
     fig, axes = plt.subplots(nrows=2, ncols=4, figsize=(15, 10))
@@ -45,8 +45,8 @@ def graph_predicted(groups: List[DataFrame], title: str):
         if i < len(groups):
             df = groups[i]
 
-            sns.lineplot(data=df, x="time", y="boiler_temp_c_change_actual", color="blue", ax=ax)
-            sns.lineplot(data=df, x="time", y="boiler_temp_c_pred", color="red", ax=ax)
+            for y_col in y_cols:
+                sns.lineplot(x=x_col, y=y_col, data=df, label=y_col, ax=ax)
 
             ax.set_title(f"{df['time'].min().strftime('%A, %e %b')}")
             ax.set_xlabel("Time")
@@ -58,11 +58,10 @@ def graph_predicted(groups: List[DataFrame], title: str):
 
             ax.tick_params(axis="x", rotation=45)
 
-    plt.tight_layout()
+    fig.tight_layout()
+    return fig
 
-    plt.show()
-
-def compare_plot(df: DataFrame, title: str, x_col: str, y_cols: List[str]):
+def compare_plot(df: DataFrame, title: str, x_col: str, y_cols: List[str]) -> plt:
     fig, ax = plt.subplots(figsize=(10, 6))
 
     sns.set(style="whitegrid")
@@ -78,4 +77,4 @@ def compare_plot(df: DataFrame, title: str, x_col: str, y_cols: List[str]):
     ax.xaxis.set_major_locator(mdates.AutoDateLocator())
 
     ax.legend()
-    plt.show()
+    return fig
