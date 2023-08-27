@@ -3,8 +3,8 @@ use gesha::{
     controller,
     core::{
         config,
-        mqtt::{self, MqttOutgoingMessage},
-        state::{self, Event, Mode},
+        mqtt::Mqtt,
+        state::{self, Event},
         thermocouple::ThermocouplePoller,
     },
 };
@@ -37,11 +37,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     trace!("Using config:\n {:#?}", config);
 
-    let mut state = state::State::new().await?;
+    let (tx, mut rx) = broadcast::channel::<Event>(10_000);
 
-    let (tx, mut rx) = broadcast::channel::<Event>(100);
+    let mut state = state::State::new(tx.clone()).await?;
 
-    let mut mqtt = mqtt::Mqtt::new(
+    let mut mqtt = Mqtt::new(
         config.mqtt_url.expect("No MQTT server configured").as_ref(),
         tx.clone(),
     )?;
@@ -66,60 +66,37 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut hangup_signal = signal(SignalKind::hangup())?;
     let mut interrupt_signal = signal(SignalKind::interrupt())?;
 
-    mqtt.publish(&MqttOutgoingMessage::ControlMethodUpdate(
-        state.control_method.clone(),
-    ))
-    .await?;
-
-    mqtt.publish(&MqttOutgoingMessage::ModeUpdate(state.mode.clone()))
-        .await?;
-
-    mqtt.publish(&MqttOutgoingMessage::TargetTemperatureUpdate(
-        state.target_temperature,
-    ))
-    .await?;
-
-    tx.send(Event::ReadConfig)?;
-
     loop {
         select! {
             Ok(event) = rx.recv() => {
-
                 match &event {
-                    Event::TemperatureChange(_) => {}
+                    // The state is not updated by outgoing MQTT messages,
+                    // they're use to update external devices to state changes that
+                    // have already happened. We don't want to handle these events in the state.
+                    Event::OutgoingMqttMessage(message) => {
+                        mqtt.publish(&message).await?;
+                    }
                     event => {
-                        info!("Event: {:?}", event);
-                    }
-                }
 
-                if let Event::ModeChange(mode) = &event {
-                    if state.mode == Mode::Steam && mode != &Mode::Steam {
-                        controller_manager.set_target_temperature(state.target_temperature);
-                        controller_manager.set_controller(&state.control_method).await?;
-                    } else if mode == &Mode::Steam {
-                        controller_manager.set_target_temperature(130.0);
-                        controller_manager.set_controller(&controller::ControlMethod::Threshold).await?;
-                    }
-                }
+                        // Log all events except temperature changes -
+                        // they can happen every 100ms and would spam the logs.
+                        if !matches!(event, Event::TemperatureChanged(_)) {
+                            info!("Received event: {:?}", event);
+                        }
 
-                match state.handle_event(event).await {
-                    Ok(mqtt_messages) => {
-                        for message in mqtt_messages.iter() {
-                            if let MqttOutgoingMessage::ControlMethodUpdate(control_method) = message {
-                                controller_manager.set_controller(control_method).await?;
+                        match state.handle_event(event).await {
+                            Ok(events) => {
+                                for event in events.iter() {
+                                    tx.send(event.clone())?;
+                                }
                             }
-
-                            if let MqttOutgoingMessage::ModeUpdate(mode) = message {
-                                thermocouples.update_mode(mode.clone()).await?;
+                            Err(err) => {
+                                error!("Error updating state: {}", err);
                             }
-
-                            mqtt.publish(&message).await?;
                         }
                     }
-                    Err(err) => {
-                        error!("Error updating state: {}", err);
-                    }
                 }
+
             },
             _ = interrupt_signal.recv() => {
                 debug!("SIGINT received");
@@ -138,9 +115,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     info!("Shutting down");
 
-    state.close()?;
     mqtt.stop().await?;
     controller_manager.stop().await?;
+    state.stop().await?;
+
+    drop(tx);
+
+    let _ = rx.recv().await;
 
     Ok(())
 }

@@ -1,10 +1,13 @@
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+// This is the software for the standalone thermofilter.
+// It outputs the temperature to stdout and also publishes it to MQTT.
+use std::time::{Duration, SystemTime};
 
 use anyhow::Result;
 use clap::Parser;
-use gesha::core::{config::Spi, thermocouple::Thermocouple};
+use gesha::core::{config::Spi, thermocouple::Thermocouple, util, mqtt::ValueChange};
 use rumqttc::v5::{AsyncClient, MqttOptions};
 use tokio::{select, task};
+use serde_json;
 
 #[derive(Parser, Debug, Clone)]
 struct Args {
@@ -35,20 +38,37 @@ async fn main() -> Result<()> {
         }
     });
 
+    let mut current_temp: Option<f32> = None;
+
     loop {
-        let temp = thermocouple.read()?;
-        let time = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis() as u64;
+        let temp: f32 = thermocouple.read()?;
 
-        client
-            .publish(
-                "gesha/temperature/thermofilter",
-                rumqttc::v5::mqttbytes::QoS::AtLeastOnce,
-                true,
-                temp.to_string(),
-            )
-            .await?;
+        let is_changed = match current_temp {
+            Some(current) => current != temp,
+            None => true,
+        };
 
-        println!("{time}, {temp}");
+        if is_changed {
+            let time = util::get_unix_timestamp(SystemTime::now())?;
+
+            let change = ValueChange {
+                timestamp: time,
+                value: temp,
+            };
+
+            client
+                .publish(
+                    "gesha/temperature/thermofilter",
+                    rumqttc::v5::mqttbytes::QoS::AtLeastOnce,
+                    true,
+                    serde_json::to_string(&change)?,
+                )
+                .await?;
+
+            println!("{time},{temp}");
+        }
+
+        current_temp = Some(temp);
 
         select! {
             _ = interval.tick() => { },

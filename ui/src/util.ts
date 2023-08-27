@@ -121,7 +121,7 @@ export const getHistory = (
     }: { from: number; to: number; limit?: number; bucketSize?: number },
 ): Promise<Record<string, Series>> =>
     new Promise<Measurement[]>((resolve) => {
-        const id = String(Math.round(Math.random() * 1_000_000))
+        const id = String(Date.now())
 
         const callback = (topic: string, payload: Buffer) => {
             if (topic === `gesha/temperature/history/${id}`) {
@@ -170,3 +170,21 @@ export const getHistory = (
 
         return { boilerTemp, groupheadTemp, thermofilterTemp, boilerLevel }
     })
+
+interface ValueChange {
+    value: number
+    timestamp: number
+}
+
+export function assertValueChange(value: unknown): asserts value is ValueChange {
+    if (typeof value !== "object" || value === null) {
+        throw new Error(`Value is not an object: ${JSON.stringify(value)}`)
+    }
+
+    if (
+        !('value' in value && typeof value.value === "number") ||
+        !('timestamp' in value && typeof value.timestamp === "number")
+    ) {
+        throw new Error(`value is not a ValueChange: ${JSON.stringify(value)}`)
+    }
+}

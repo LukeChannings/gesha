@@ -1,7 +1,13 @@
 import { OnMessageCallback, connect } from "mqtt"
 import { createEffect, createSignal, onCleanup } from "solid-js"
 
-import { Datum, Millis, RingBuffer, getHistory } from "./util"
+import {
+    Datum,
+    Millis,
+    RingBuffer,
+    assertValueChange,
+    getHistory,
+} from "./util"
 import { Chart } from "./components/Chart"
 
 import styles from "./App.module.css"
@@ -9,7 +15,7 @@ import { ResizeContainer } from "./components/ResizeContainer"
 import { ControlMethod, Mode, TimeWindow, assertTimeWindow } from "./types"
 import { ControlBar } from "./components/ControlBar"
 
-const BUFFER_SIZE = 3_000
+const BUFFER_SIZE = 5_000
 
 const {
     GESHA_MQTT_HOST,
@@ -50,19 +56,12 @@ function App() {
     client.subscribe("ms-silvia-switch/switch/power/state")
 
     createEffect(() => {
-        let lastT: number
-
         const callback: OnMessageCallback = (topic, msg) => {
             let value = msg.toString()
 
             try {
                 value = JSON.parse(value)
             } catch {}
-
-            if (topic === "gesha/temperature/last_updated") {
-                lastT = +value
-                return
-            }
 
             switch (topic) {
                 case "gesha/mode": {
@@ -88,36 +87,61 @@ function App() {
                 }
             }
 
-            if (typeof lastT !== "number") {
-                return
-            }
-
             switch (topic) {
                 case "gesha/temperature/boiler": {
-                    setBoilerTemperatures(
-                        boilerTemperatures().push({ x: lastT, y: +value }),
-                    )
+                    try {
+                        assertValueChange(value)
+                        setBoilerTemperatures(
+                            boilerTemperatures().push({
+                                x: value.timestamp,
+                                y: value.value,
+                            }),
+                        )
+                    } catch (err) {
+                        console.log("gesha/temperature/boiler", err)
+                    }
                     break
                 }
                 case "gesha/temperature/grouphead": {
-                    setGroupheadTemperatures(
-                        groupheadTemperatures().push({ x: lastT, y: +value }),
-                    )
+                    try {
+                        assertValueChange(value)
+                        setGroupheadTemperatures(
+                            groupheadTemperatures().push({
+                                x: value.timestamp,
+                                y: value.value,
+                            }),
+                        )
+                    } catch (err) {
+                        console.log("gesha/temperature/grouphead", err)
+                    }
                     break
                 }
                 case "gesha/temperature/thermofilter": {
-                    setThermofilterTemperatures(
-                        thermofilterTemperatures().push({
-                            x: lastT,
-                            y: +value,
-                        }),
-                    )
+                    try {
+                        assertValueChange(value)
+                        setThermofilterTemperatures(
+                            thermofilterTemperatures().push({
+                                x: value.timestamp,
+                                y: value.value,
+                            }),
+                        )
+                    } catch (err) {
+                        console.log("gesha/temperature/thermofilter", err)
+                    }
                     break
                 }
                 case "gesha/boiler_level": {
-                    setBoilerLevels(
-                        boilerLevels().push({ x: lastT, y: +value }),
-                    )
+                    try {
+                        assertValueChange(value)
+                        setBoilerLevels(
+                            boilerLevels().push({
+                                x: value.timestamp,
+                                y: value.value,
+                            }),
+                        )
+                    } catch (err) {
+                        console.log("gesha/boiler_level", err)
+                    }
                     break
                 }
                 case "gesha/config/ui_time_window": {
@@ -147,7 +171,7 @@ function App() {
         const to = Date.now()
         const from = to - newTimeWindow
 
-        const history = await getHistory(client, {
+        const measurementHistory = await getHistory(client, {
             from,
             to,
             bucketSize: 5_000,
@@ -155,14 +179,25 @@ function App() {
 
         setIsLoadingHistory(false)
 
-        setBoilerTemperatures(boilerTemperatures().load(history.boilerTemp))
-        setGroupheadTemperatures(
-            groupheadTemperatures().load(history.groupheadTemp),
-        )
-        setThermofilterTemperatures(
-            thermofilterTemperatures().load(history.thermofilterTemp),
-        )
-        setBoilerLevels(boilerLevels().load(history.boilerLevel))
+        if (measurementHistory.boilerTemp.length) {
+            setBoilerTemperatures(boilerTemperatures().load(measurementHistory.boilerTemp))
+        }
+
+        if (measurementHistory.groupheadTemp.length) {
+            setGroupheadTemperatures(
+                groupheadTemperatures().load(measurementHistory.groupheadTemp),
+            )
+        }
+
+        if (measurementHistory.thermofilterTemp.length) {
+            setThermofilterTemperatures(
+                thermofilterTemperatures().load(measurementHistory.thermofilterTemp),
+            )
+        }
+
+        if (measurementHistory.boilerLevel.length) {
+            setBoilerLevels(boilerLevels().load(measurementHistory.boilerLevel))
+        }
     }
 
     handleRetainedWindowSizeChange(TimeWindow.TenMinutes)

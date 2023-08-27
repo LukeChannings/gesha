@@ -60,8 +60,15 @@
     transition: 100ms border-color ease-in-out;
 }
 
+.brewButton[disabled] {
+    border: 3px solid rgb(93, 159, 159);
+    background-color: rgb(93, 159, 159);
+    color: rgb(43, 74, 74);
+    cursor: default;
+}
+
 @media (hover: hover) {
-    .brewButton:hover {
+    .brewButton:not([disabled]):hover {
         border-color: rgb(27, 141, 141);
     }
 }

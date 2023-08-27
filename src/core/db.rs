@@ -1,15 +1,25 @@
-use std::{collections::VecDeque, fs::OpenOptions, path::Path};
+use std::{
+    collections::{HashMap, VecDeque},
+    fs::OpenOptions,
+    path::Path,
+    sync::Arc,
+    time::Duration,
+};
 
 use anyhow::{anyhow, Result};
-use log::{debug, error, info};
+use log::{error, info};
 use serde::{Deserialize, Serialize};
 use sqlx::{migrate, query, query_as, Pool, QueryBuilder, Sqlite, SqlitePool};
-use tokio::task;
+use tokio::{select, sync::RwLock, time};
+use tokio_util::sync::CancellationToken;
 
-#[derive(Clone)]
+use super::mqtt::Range;
+
 pub struct Db {
     handle: Pool<Sqlite>,
-    measurement_write_queue: VecDeque<Measurement>,
+    measurement_write_queue: Arc<RwLock<VecDeque<Measurement>>>,
+    measurement_interval_cancel: CancellationToken,
+    measurement_interval_handle: Option<tokio::task::JoinHandle<()>>,
 }
 
 impl Db {
@@ -26,16 +36,24 @@ impl Db {
 
         Ok(Db {
             handle: pool,
-            measurement_write_queue: VecDeque::new(),
+            measurement_write_queue: Arc::new(RwLock::new(VecDeque::new())),
+            measurement_interval_cancel: CancellationToken::new(),
+            measurement_interval_handle: None,
         })
     }
 
-    pub async fn read_config(&self) -> Result<Vec<ConfigItem>> {
-        let result = query_as!(ConfigItem, "SELECT key, value FROM config")
+    pub async fn read_config(&self) -> Result<HashMap<String, String>> {
+        let results = query_as!(ConfigItem, "SELECT key, value FROM config")
             .fetch_all(&self.handle)
             .await?;
 
-        Ok(result)
+        let mut configs = HashMap::new();
+
+        for result in results {
+            configs.insert(result.key, result.value);
+        }
+
+        Ok(configs)
     }
 
     pub async fn write_config(&self, config_item: &ConfigItem) -> Result<()> {
@@ -56,54 +74,105 @@ impl Db {
         Ok(())
     }
 
-    pub fn write_measurement_queue(&mut self, measurement: Measurement) -> Result<()> {
-        self.measurement_write_queue.push_front(measurement);
+    pub async fn write_measurement_queue(&mut self, measurement: Measurement) -> Result<()> {
+        let mut queue = self.measurement_write_queue.write().await;
+        queue.push_back(measurement);
 
         Ok(())
     }
 
-    pub fn write_measurements(&self, measurements: Vec<Measurement>) -> Result<()> {
-        if measurements.len() > 0 {
-            let pool = self.handle.clone();
+    pub fn start_measurement_writer_interval(&mut self, duration: Duration) {
+        let queue = self.measurement_write_queue.clone();
+        let handle = self.handle.clone();
 
-            debug!("Writing {} measurements to the DB", measurements.len());
+        let abort = self.measurement_interval_cancel.clone();
 
-            task::spawn(async move {
-                let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
-                    "INSERT INTO measurement (time, target_temp_c, boiler_temp_c, grouphead_temp_c, thermofilter_temp_c, power, heat_level, pull, steam) "
-                );
+        self.measurement_interval_handle = Some(tokio::spawn(async move {
+            let mut interval = time::interval(duration);
+            interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
 
-                query_builder.push_values(measurements, |mut b, measurement| {
-                    b.push_bind(measurement.time)
-                        .push_bind(measurement.target_temp_c)
-                        .push_bind(measurement.boiler_temp_c)
-                        .push_bind(measurement.grouphead_temp_c)
-                        .push_bind(measurement.thermofilter_temp_c)
-                        .push_bind(measurement.power)
-                        .push_bind(measurement.heat_level)
-                        .push_bind(measurement.pull)
-                        .push_bind(measurement.steam);
-                });
+            async fn drain_measurements(
+                handle: &Pool<Sqlite>,
+                queue: &Arc<RwLock<VecDeque<Measurement>>>,
+            ) {
+                let mut measurement_queue = queue.write().await;
 
-                let query = query_builder.build();
+                let measurements: Vec<Measurement> =
+                    measurement_queue.drain(..).collect::<VecDeque<_>>().into();
 
-                if let Err(err) = query.execute(&pool).await {
-                    error!("Error writing measurements to the DB: {err}")
-                };
-            });
+                if measurements.len() > 0 {
+                    if let Err(err) = Db::write_measurements(handle, measurements).await {
+                        error!("Failed to write measurements: {}", err);
+                    }
+                } else {
+                    info!("No measurements to write");
+                }
+            }
+
+            loop {
+                select! {
+                    _ = interval.tick() => {
+                        drain_measurements(&handle, &queue).await;
+                    },
+                    _ = abort.cancelled() => {
+                        info!("Stopping measurement writer interval");
+                        drain_measurements(&handle, &queue).await;
+                        break;
+                    }
+                }
+            }
+        }));
+    }
+
+    pub async fn stop_measurement_writer_interval(&mut self) -> Result<()> {
+        if let Some(handle) = self.measurement_interval_handle.take() {
+            self.measurement_interval_cancel.cancel();
+            handle.await?;
         }
 
         Ok(())
     }
 
-    pub async fn read_measurements(
-        &self,
-        from: i64,
-        to: i64,
-        limit: Option<i64>,
-        bucket_size: Option<i64>,
-    ) -> Result<Vec<Measurement>> {
-        let limit = limit.unwrap_or(-1);
+    pub async fn write_measurements(
+        pool: &Pool<Sqlite>,
+        measurements: Vec<Measurement>,
+    ) -> Result<()> {
+        info!("Writing {} measurements to the DB", measurements.len());
+
+        let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
+            "INSERT INTO measurement (time, target_temp_c, boiler_temp_c, grouphead_temp_c, thermofilter_temp_c, power, heat_level, pull, steam) "
+        );
+
+        query_builder.push_values(measurements, |mut b, measurement| {
+            b.push_bind(measurement.time)
+                .push_bind(measurement.target_temp_c)
+                .push_bind(measurement.boiler_temp_c)
+                .push_bind(measurement.grouphead_temp_c)
+                .push_bind(measurement.thermofilter_temp_c)
+                .push_bind(measurement.power)
+                .push_bind(measurement.heat_level)
+                .push_bind(measurement.pull)
+                .push_bind(measurement.steam);
+        });
+
+        let query = query_builder.build();
+
+        if let Err(err) = query.execute(pool).await {
+            return Err(anyhow!("Error writing measurements to the DB: {err}"));
+        }
+
+        Ok(())
+    }
+
+    pub async fn read_measurements(&self, range: &Range) -> Result<Vec<Measurement>> {
+        let Range {
+            from,
+            to,
+            bucket_size,
+            ..
+        } = range;
+
+        let limit = range.limit.unwrap_or(-1);
 
         let mut measurements: Vec<Measurement> = query_as!(
             Measurement,
@@ -120,17 +189,20 @@ impl Db {
             LIMIT ?"#,
             from,
             to,
-            limit
+            limit,
         )
         .fetch_all(&self.handle)
         .await?;
 
-        measurements.extend(
-            self.measurement_write_queue
-                .clone()
-                .into_iter()
-                .filter(|measurement| measurement.time >= from && measurement.time <= to),
-        );
+        let current_measurements = self
+            .measurement_write_queue
+            .read()
+            .await
+            .clone()
+            .into_iter()
+            .filter(|measurement| measurement.time >= *from && measurement.time <= *to);
+
+        measurements.extend(current_measurements);
 
         if measurements.len() == 0 {
             log::error!("There were no measurements in the range {from}-{to}");
@@ -181,9 +253,15 @@ impl Db {
     }
 
     pub async fn write_shot(&self, start_time: i64, end_time: i64) -> Result<()> {
-        let measurements = self
-            .read_measurements(start_time, end_time, None, None)
-            .await?;
+        let range = Range {
+            id: "".to_string(),
+            from: start_time,
+            to: end_time,
+            bucket_size: None,
+            limit: None,
+        };
+
+        let measurements = self.read_measurements(&range).await?;
 
         let measurement_count = measurements.len() as f32;
 
@@ -221,8 +299,8 @@ impl Db {
         Ok(())
     }
 
-    pub async fn read_shots(&self, from: i64, to: i64, limit: Option<i64>) -> Result<Vec<Shot>> {
-        let limit = limit.unwrap_or(-1);
+    pub async fn read_shots(&self, range: &Range) -> Result<Vec<Shot>> {
+        let limit = range.limit.unwrap_or(-1);
 
         let shots: Vec<Shot> = query_as!(
             Shot,
@@ -232,26 +310,14 @@ impl Db {
             WHERE start_time > ? AND start_time < ?
             ORDER BY start_time DESC
             LIMIT ?"#,
-            from,
-            to,
+            range.from,
+            range.to,
             limit
         )
         .fetch_all(&self.handle)
         .await?;
 
         Ok(shots)
-    }
-
-    pub fn flush_measurements(&mut self) -> Result<()> {
-        let measurements: Vec<Measurement> = self
-            .measurement_write_queue
-            .drain(..)
-            .collect::<VecDeque<_>>()
-            .into();
-
-        self.write_measurements(measurements)?;
-
-        Ok(())
     }
 }
 
@@ -284,3 +350,6 @@ pub struct ConfigItem {
     pub key: String,
     pub value: String,
 }
+
+pub const DB_KEY_TARGET_TEMPERATURE: &str = "TargetTemperature";
+pub const DB_KEY_CONTROL_METHOD: &str = "ControlMethod";

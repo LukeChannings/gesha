@@ -15,6 +15,10 @@
         sans-serif;
 }
 
+body {
+    overflow: hidden;
+}
+
 .app {
     background-color: #f8f9fa;
     display: grid;

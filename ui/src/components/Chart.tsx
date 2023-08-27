@@ -102,11 +102,45 @@ export function Chart({
     return (
         <>
             <svg
+                xmlns="http://www.w3.org/2000/svg"
                 width={width}
                 height={height}
                 viewBox={`0 0 ${width} ${height}`}
                 class={styles.chart}
             >
+                <style>
+                    {`
+.chart {
+    background-color: #f8f9fa;
+
+    --datavis-boiler-color: #6929c4;
+    --datavis-grouphead-color: #005d5d;
+    --datavis-thermofilter-color: #012749;
+}
+
+.line {
+    mix-blend-mode: hard-light;
+    stroke-width: 3px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.xAxisGroup line {
+    stroke-dasharray: 5;
+    stroke: #aaa;
+}
+
+.xAxisGroup text {
+    font-weight: bold;
+}
+
+.legendTemp {
+    font-size: 12px;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+}
+                    `}
+                </style>
                 <For each={heatSeries()}>
                     {([from, to]) => {
                         const a = xAxis()(+from - Date.now())

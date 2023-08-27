@@ -36,8 +36,6 @@ export function ControlBar(props: ControlBarProps) {
     createEffect(() => {
         const brewStartTime = props.shotStartTime()
 
-        console.log(brewStartTime)
-
         if (brewStartTime === null) {
             if (shotTimerInterval) {
                 clearInterval(shotTimerInterval)
@@ -69,9 +67,10 @@ export function ControlBar(props: ControlBarProps) {
                     <select
                         tabIndex={-1}
                         value={props.mode()}
-                        onChange={(e) =>
+                        onChange={(e) => {
                             props.onModeChange(e.target.value as Mode)
-                        }
+                            e.preventDefault()
+                        }}
                     >
                         <option disabled value="offline">
                             Offline
@@ -92,11 +91,12 @@ export function ControlBar(props: ControlBarProps) {
                     <select
                         tabIndex={-1}
                         value={props.controlMethod()}
-                        onChange={(e) =>
+                        onChange={(e) => {
                             props.onControlMethodChange(
                                 e.target.value as ControlMethod,
                             )
-                        }
+                            e.preventDefault()
+                        }}
                     >
                         <option value="None">Manual</option>
                         <option value="Threshold">Threshold</option>
@@ -109,9 +109,10 @@ export function ControlBar(props: ControlBarProps) {
                     <select
                         tabIndex={-1}
                         value={props.timeWindow()}
-                        onChange={(e) =>
+                        onChange={(e) => {
                             props.onRetainedWindowSizeChange(+e.target.value)
-                        }
+                            e.preventDefault()
+                        }}
                     >
                         <For
                             each={Object.values(TimeWindow).filter(
@@ -239,6 +240,7 @@ export function ControlBar(props: ControlBarProps) {
                 </p>
                 <button
                     class={styles.brewButton}
+                    disabled={props.mode() !== "active"}
                     onClick={props.onShotToggle}
                     type="button"
                 >

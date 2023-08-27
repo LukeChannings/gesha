@@ -9,7 +9,7 @@ use max31855::Max31855;
 use rppal::{gpio, spi};
 use tokio::{
     sync::broadcast::Sender,
-    task::{self, JoinHandle},
+    task::{self, JoinHandle}, select, time,
 };
 
 use super::{
@@ -131,130 +131,54 @@ impl ThermocouplePoller {
             .map(|spi| spi.try_into().unwrap());
 
         let poller_tx = self.event_tx.clone();
+        let mut poller_rx = self.event_tx.subscribe();
 
-        let interval = self.get_interval();
+        let mut interval = time::interval(Self::get_interval(&self.mode) / 10);
 
-        info!("Thermocouple polling interval is {interval:#?}");
+        interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+
+        info!("Thermocouple polling interval is {:#?}", Self::get_interval(&self.mode));
 
         let poller = task::spawn(async move {
+
+            let mut temperature_samples: Vec<(f32, f32, Option<f32>)> = vec![];
+
             loop {
-                let mut smoothing_interval = tokio::time::interval(interval / 10);
-
-                let mut boiler_temp_samples: Vec<f32> = vec![];
-                let mut grouphead_temp_samples: Vec<f32> = vec![];
-                let mut thermofilter_temp_samples: Vec<f32> = vec![];
-
-                // Sample 5 times for the given `interval` period and only emit the median reading.
-                // This smooths out fluctuations in readings.
-                for _i in 0..10 {
-                    if let Ok(boiler_temp) = boiler.read() {
-                        boiler_temp_samples.push(boiler_temp);
+                select! {
+                    Ok(StateEvent::ModeChanged(mode)) = poller_rx.recv() => {
+                        info!("Thermocouple poller received mode change event: {:?}", mode);
+                        interval = time::interval(Self::get_interval(&mode) / 10);
+                        interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+                        info!("Thermocouple polling interval is {:#?}", Self::get_interval(&mode));
                     }
+                    _ = interval.tick() => {
+                        if temperature_samples.len() == 10 {
 
-                    if let Ok(grouphead_temp) = grouphead.read() {
-                        grouphead_temp_samples.push(grouphead_temp);
-                    }
+                            let (boiler_temp, grouphead_temp, thermofilter_temp) = temperature_samples
+                                .get(temperature_samples.len() / 2)
+                                .expect("Failed to get the median temperature sample");
 
-                    let thermofilter_temp = thermofilter.as_mut().map(|thermofilter| {
-                        let temp = thermofilter.read();
-                        if temp.is_err() {
-                            0.0
+                            match poller_tx.send(StateEvent::TemperatureChanged(TemperatureMeasurement {
+                                boiler_temp: *boiler_temp,
+                                grouphead_temp: *grouphead_temp,
+                                thermofilter_temp: *thermofilter_temp,
+                                timestamp: SystemTime::now(),
+                            })) {
+                                Ok(_) => {}
+                                Err(err) => {
+                                    error!("Error sending temperature change event: {}", err);
+                                }
+                            }
+
+                            temperature_samples.clear();
                         } else {
-                            temp.unwrap()
+                            let boiler_temp = boiler.read().unwrap_or(0.0);
+                            let grouphead_temp = grouphead.read().unwrap_or(0.0);
+                            let thermofilter_temp = thermofilter.as_mut().map(|thermofilter| thermofilter.read().unwrap_or(0.0));
+
+                            temperature_samples.push((boiler_temp, grouphead_temp, thermofilter_temp));
                         }
-                    });
-
-                    if let Some(thermofilter_temp) = thermofilter_temp {
-                        thermofilter_temp_samples.push(thermofilter_temp);
                     }
-
-                    smoothing_interval.tick().await;
-                }
-
-                if boiler_temp_samples.len() < 2 || grouphead_temp_samples.len() < 2 {
-                    if boiler_temp_samples.len() < 2 {
-                        let _ = poller_tx.send(StateEvent::TemperatureReadError(String::from(
-                            format!(
-                                "Error reading the boiler temperature. Got {} / 10 samples",
-                                boiler_temp_samples.len()
-                            ),
-                        )));
-                    }
-
-                    if grouphead_temp_samples.len() < 2 {
-                        let _ = poller_tx.send(StateEvent::TemperatureReadError(String::from(
-                            format!(
-                                "Error reading the boiler temperature. Got {} / 10 samples",
-                                grouphead_temp_samples.len()
-                            ),
-                        )));
-                    }
-
-                    continue;
-                }
-
-                boiler_temp_samples.sort_by(|a, b| a.partial_cmp(b).unwrap());
-
-                if (boiler_temp_samples.first().unwrap() - boiler_temp_samples.last().unwrap())
-                    .abs()
-                    > 5.0
-                {
-                    info!(
-                        "Temperature swing detected in boiler samples: {:#?}",
-                        boiler_temp_samples
-                    );
-                }
-
-                let boiler_temp = boiler_temp_samples
-                    .get(boiler_temp_samples.len() / 2)
-                    .expect("Failed to get the median boiler temp");
-
-                grouphead_temp_samples.sort_by(|a, b| a.partial_cmp(b).unwrap());
-                let grouphead_temp = grouphead_temp_samples
-                    .get(grouphead_temp_samples.len() / 2)
-                    .expect("Failed to get the median grouphead temp");
-
-                let mut thermofilter_temp: Option<f32> = None;
-
-                if thermofilter_temp_samples.len() != 0 {
-                    thermofilter_temp_samples.sort_by(|a, b| a.partial_cmp(b).unwrap());
-                    let filtered_thermofilter_temp_samples = thermofilter_temp_samples
-                        .into_iter()
-                        .filter(|v| v > &0.0)
-                        .collect::<Vec<_>>();
-
-                    if filtered_thermofilter_temp_samples.len() > 2 {
-                        thermofilter_temp = filtered_thermofilter_temp_samples
-                            .get(filtered_thermofilter_temp_samples.len() / 2)
-                            .copied();
-                    }
-                }
-
-                if let Err(err) =
-                    poller_tx.send(StateEvent::TemperatureChange(TemperatureMeasurement {
-                        boiler_temp: *boiler_temp,
-                        grouphead_temp: *grouphead_temp,
-                        thermofilter_temp,
-                        timestamp: SystemTime::now(),
-                    }))
-                {
-                    error!("Error sending temperature update: {}", err);
-                };
-            }
-        });
-
-        let flush_tx = self.event_tx.clone();
-
-        task::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_secs(60));
-
-            loop {
-                interval.tick().await;
-
-                if let Err(err) =
-                    flush_tx.send(StateEvent::FlushTemperatureMeasurementBufferRequest)
-                {
-                    error!("Error sending flush event: {err}");
                 }
             }
         });
@@ -264,22 +188,8 @@ impl ThermocouplePoller {
         Ok(())
     }
 
-    pub async fn update_mode(&mut self, mode: Mode) -> Result<()> {
-        if mode != self.mode {
-            self.mode = mode;
-
-            if let Some(poller) = self.poller.take() {
-                poller.abort();
-                let _ = poller.await;
-                self.poll()?;
-            }
-        }
-
-        Ok(())
-    }
-
-    fn get_interval(&self) -> Duration {
-        Duration::from_millis(match self.mode {
+    fn get_interval(mode: &Mode) -> Duration {
+        Duration::from_millis(match mode {
             Mode::Idle => 1_000,
             Mode::Active => 100,
             Mode::Brew => 100,

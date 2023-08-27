@@ -11,7 +11,7 @@ impl MpcController {
 }
 
 impl Controller for MpcController {
-    fn sample(&mut self, _boiler_temp: f32, _group_head_temp: f32) -> f32 {
+    fn sample(&mut self, _boiler_temp: f32, _grouphead_temp: f32) -> f32 {
         0.0
     }
 

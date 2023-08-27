@@ -20,7 +20,7 @@ impl PidController {
 }
 
 impl Controller for PidController {
-    fn sample(&mut self, boiler_temp: f32, _group_head_temp: f32) -> f32 {
+    fn sample(&mut self, boiler_temp: f32, _grouphead_temp: f32) -> f32 {
         let output = self.pid.next_control_output(boiler_temp);
 
         let output = (output.output + 100.0) / 200.0;
