@@ -14,7 +14,7 @@ gesha
     /set
   /temperature/
     /boiler
-    /group_head
+    /grouphead
     /basket
     /basket_predicted
   /preheated=bool

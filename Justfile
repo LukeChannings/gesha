@@ -21,6 +21,8 @@ build thing="app":
         cargo sqlx prepare --database-url sqlite:gesha.db
     elif [[ "{{thing}}" == "thermofilter" ]]; then
         cargo build --release --bin thermofilter
+    elif [[ "{{thing}}" == "report" ]]; then
+        typst compile --root . ./docs/report/0-main.typ docs/Dissertation.pdf
     else
         cargo build --release --bin gesha
     fi
@@ -90,10 +92,16 @@ download-db:
     scp silvia.iot:/opt/gesha/var/db/gesha.db .
 
 export-diagrams:
-    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 0 -f png --width 1500 -o docs/diagrams/silvia-e-electrical-diagram.png docs/diagrams/silvia-e-diagrams.drawio
-    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 1 -f png --width 1500 -o docs/diagrams/silvia-shelly-electrical-diagram.png docs/diagrams/silvia-e-diagrams.drawio
-    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 2 -f png --width 1500 -o docs/diagrams/silvia-shelly-pi-electrical-diagram.png docs/diagrams/silvia-e-diagrams.drawio
-    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 3 -f png --width 1500 -o docs/diagrams/pi-zero-pinout.png docs/diagrams/silvia-e-diagrams.drawio
+    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 0 -f svg -o docs/diagrams/silvia-e-electrical-diagram.svg docs/diagrams/diagrams.drawio
+    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 1 -f svg -o docs/diagrams/silvia-shelly-electrical-diagram.svg docs/diagrams/diagrams.drawio
+    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 2 -f svg -o docs/diagrams/silvia-shelly-pi-electrical-diagram.svg docs/diagrams/diagrams.drawio
+    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 3 -f svg -o docs/diagrams/pi-zero-pinout.svg docs/diagrams/diagrams.drawio
+    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 4 -f svg -o docs/diagrams/software-architecture.svg docs/diagrams/diagrams.drawio
+    /Applications/draw.io.app/Contents/MacOS/draw.io --export -p 5 -f svg -o docs/diagrams/software-event-example.svg docs/diagrams/diagrams.drawio
+    sed -i '' -e 's|<text text-anchor="middle" font-size="10px" x="50%" y="100%">Text is not SVG - cannot display</text>||g' docs/diagrams/*.svg
 
-model something:
-    cd models; poetry run {{something}}
+model something *args:
+    cd models; poetry run {{something}} -- {{args}}
+
+api *args:
+    cd models; poetry run api {{args}}

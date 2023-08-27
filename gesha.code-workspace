@@ -1,0 +1,20 @@
+{
+    "folders": [
+        {
+            "path": "."
+        },
+        {
+            "path": "models"
+        },
+        {
+            "path": "ui"
+        }
+    ],
+    "settings": {
+        "jestrunner.disableCodeLens": true,
+        "git.ignoreLimitWarning": true,
+        "python.languageServer": "Pylance",
+        "rust-analyzer.check.overrideCommand": null,
+        "cSpell.enableFiletypes": ["typst"]
+    }
+}

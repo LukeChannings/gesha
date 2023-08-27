@@ -10,7 +10,7 @@
         "editor.defaultFormatter": "rust-lang.rust-analyzer",
         "editor.formatOnSave": true
     },
-    "cSpell.enableFiletypes": ["rmd"],
+    "cSpell.enableFiletypes": ["rmd", "typst"],
     "python.analysis.typeCheckingMode": "off",
     "git.ignoreLimitWarning": true,
     "[python]": {

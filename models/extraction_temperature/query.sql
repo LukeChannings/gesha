@@ -1,8 +1,12 @@
-SELECT [time],
-    boiler_temp_c,
-    grouphead_temp_c,
-    heat_level,
-    pull
-FROM measurement
-WHERE [time] >= 1691527299412
-    AND [time] <= 1691587236817;
+SELECT
+    m.[time],
+    s.start_time,
+    s.end_time,
+    m.boiler_temp_c,
+    m.grouphead_temp_c,
+    m.heat_level
+FROM shot s
+JOIN measurement m
+    ON m.[time] >= s.start_time AND m.[time] <= s.end_time
+WHERE
+    s.start_time >= 1692128756946;
