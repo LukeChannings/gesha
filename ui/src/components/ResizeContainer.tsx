@@ -12,10 +12,7 @@ interface ResizeContainerProps
     children: (width: number, height: number) => JSXElement
 }
 
-export const ResizeContainer = ({
-    children,
-    ...props
-}: ResizeContainerProps) => {
+export const ResizeContainer = (props: ResizeContainerProps) => {
     const [width, setWidth] = createSignal(0)
     const [height, setHeight] = createSignal(0)
     let container: HTMLDivElement
@@ -40,7 +37,7 @@ export const ResizeContainer = ({
 
     return (
         <div {...props} ref={(el) => (container = el)}>
-            {children(width(), height())}
+            {props.children(width(), height())}
         </div>
     )
 }

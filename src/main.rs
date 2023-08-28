@@ -9,7 +9,6 @@ use gesha::{
     },
 };
 use log::{debug, error, info, trace};
-use pretty_env_logger;
 use std::error::Error;
 use tokio::{
     select,
@@ -96,7 +95,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         }
                     }
                 }
-
             },
             _ = interrupt_signal.recv() => {
                 debug!("SIGINT received");

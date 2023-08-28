@@ -33,7 +33,8 @@
     "dependencies": {
         "d3": "^7.8.5",
         "mqtt": "^5.0.1",
-        "solid-js": "^1.7.7"
+        "solid-js": "^1.7.7",
+        "typescript-event-target": "^1.0.5"
     },
     "prettier": {
         "printWidth": 80,

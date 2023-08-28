@@ -1,76 +1,72 @@
 import { scaleLinear, select, axisBottom, axisLeft, line, scaleSqrt } from "d3"
-import type { Datum, RingBuffer, Series } from "../util"
 import { Accessor, For, createEffect, createSignal, onCleanup } from "solid-js"
-import { Millis, computeLineSegments, formatMillis } from "../util"
+import {
+    Millis,
+    computeLineSegments,
+    createAnimationLoop,
+    formatMillis,
+    last,
+} from "../util"
 import styles from "./Chart.module.css"
+import { ValueChange } from "../geshaClient"
 
 export interface BarChartProps {
-    width: number
-    height: number
-    marginLeft?: number
-    marginTop?: number
-    marginBottom?: number
-    marginRight?: number
-    boilerTemperatures: Accessor<RingBuffer<Datum>>
-    groupheadTemperatures: Accessor<RingBuffer<Datum>>
-    thermofilterTemperatures: Accessor<RingBuffer<Datum>>
-    boilerLevels: Accessor<RingBuffer<Datum>>
-    targetTemp: Accessor<number>
+    boilerTemperatures: Accessor<ValueChange[]>
+    groupheadTemperatures: Accessor<ValueChange[]>
+    thermofilterTemperatures: Accessor<ValueChange[]>
+    boilerLevels: Accessor<ValueChange[]>
+    targetTemp: Accessor<number | undefined>
     timeWindow: Accessor<Millis>
-    yAxisMax: Accessor<number>
 }
 
-export function Chart({
-    boilerTemperatures,
-    groupheadTemperatures,
-    thermofilterTemperatures,
-    boilerLevels,
-    targetTemp,
-    width,
-    height,
-    marginLeft = 50,
-    marginBottom = 20,
-    marginRight = 10,
-    marginTop = 20,
-    timeWindow,
-    yAxisMax,
-}: BarChartProps) {
-    const yAxis = () =>
-        scaleLinear([20, yAxisMax()], [height - marginBottom, marginTop])
-
-    const xAxis = () =>
-        scaleSqrt([-timeWindow(), 0], [marginLeft, width - marginRight])
-
-    const createLine = line<{ x: number; y: number }>()
-        .x((d) => xAxis()(d.x))
-        .y((d) => yAxis()(d.y))
-
-    const epochToRelativeMillis = (
-        { x, y }: { x: number; y: number },
-        index: number,
-        list: Series,
-    ) => ({
-        x: index === list.length - 1 ? 0 : x - Date.now(),
-        y,
-    })
-
-    const [heatSeries, setHeatSeries] = createSignal<Array<[number, number]>>(
-        [],
-    )
-
-    createEffect(function () {
-        let interval = setInterval(() => {
-            setHeatSeries(computeLineSegments(boilerLevels().values))
-        }, 100)
-
-        onCleanup(() => clearTimeout(interval))
-    })
-
+export function Chart(_: BarChartProps) {
+    let svgRef: SVGSVGElement
     let xAxisRef: SVGGElement
     let yAxisRef: SVGGElement
 
+    const [width, setWidth] = createSignal<number>(0)
+    const [height, setHeight] = createSignal<number>(0)
+
+    const margin = { left: 60, right: 20, top: 30, bottom: 30 }
+
+    createEffect(() => {
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const { width, height } = entry.contentRect
+                setWidth(width)
+                setHeight(height)
+            }
+        })
+
+        resizeObserver.observe(svgRef)
+
+        setWidth(svgRef.getBoundingClientRect().width)
+        setHeight(svgRef.getBoundingClientRect().height)
+
+        onCleanup(() => resizeObserver.disconnect())
+    })
+
+    const [yAxisMax, setYAxisMax] = createSignal<number>(120)
+
+    const yAxis = () =>
+        scaleLinear([20, yAxisMax()], [height() - margin.bottom, margin.top])
+
+    const xAxis = () =>
+        scaleSqrt([-_.timeWindow(), 0], [margin.left, width() - margin.right])
+
+    const createLine = line<{ timestamp: number; value: number }>()
+        .x((d, i, ds) => {
+            const x = Math.max(
+                -_.timeWindow(),
+                i === ds.length - 1 ? 0 : d.timestamp - Date.now(),
+            )
+            return xAxis()(x)
+        })
+        .y((d) => yAxis()(d.value))
+
     createEffect(function updateYAxis() {
         select(yAxisRef)
+            .call((el) => el.selectAll("*").remove())
             .call(
                 axisLeft(yAxis())
                     .ticks(10)
@@ -78,7 +74,7 @@ export function Chart({
             )
             .call((g) => g.select(".domain").remove())
             .call((g) => {
-                g.selectAll(".tick line").attr("x2", width)
+                g.selectAll(".tick line").attr("x2", "100%")
                 g.select(".tick line").remove()
             })
     })
@@ -87,9 +83,9 @@ export function Chart({
         select(xAxisRef).call(
             axisBottom(xAxis())
                 .tickValues([
-                    -timeWindow(),
-                    -(timeWindow() / 2),
-                    -(timeWindow() / 5),
+                    -_.timeWindow(),
+                    -(_.timeWindow() / 2),
+                    -(_.timeWindow() / 5),
                     -60 * 1_000,
                     -30 * 1_000,
                     -10 * 1_000,
@@ -99,187 +95,188 @@ export function Chart({
         )
     })
 
+    const [heatSeries, setHeatSeries] = createSignal<Array<[number, number]>>(
+        [],
+    )
+
+    const [boilerTemperaturePath, setBoilerTemperaturePath] =
+        createSignal<string>("")
+
+    const [groupheadTemperaturePath, setGroupheadTemperaturePath] =
+        createSignal<string>("")
+    const [thermofilterTemperaturePath, setThermofilterTemperaturePath] =
+        createSignal<string>("")
+
+    const cancelAnimationLoop = createAnimationLoop(() => {
+        setHeatSeries(computeLineSegments(_.boilerLevels()))
+
+        const boilerTemperatures = _.boilerTemperatures()
+        const groupheadTemperatures = _.groupheadTemperatures()
+        const thermofilterTemperatures = _.thermofilterTemperatures()
+
+        const max = Math.max(
+            ...boilerTemperatures
+                .concat(groupheadTemperatures)
+                .concat(thermofilterTemperatures)
+                .map((d) => d.value),
+        )
+
+        if (max > 120) {
+            setYAxisMax(Math.ceil(max + 10))
+        } else if (yAxisMax() !== 120) {
+            setYAxisMax(120)
+        }
+
+        setBoilerTemperaturePath(
+            createLine(
+                boilerTemperatures.concat(last(boilerTemperatures) ?? []),
+            ) ?? "",
+        )
+
+        setGroupheadTemperaturePath(
+            createLine(
+                groupheadTemperatures.concat(last(groupheadTemperatures) ?? []),
+            ) ?? "",
+        )
+
+        if (thermofilterTemperatures.length) {
+            setThermofilterTemperaturePath(
+                createLine(
+                    thermofilterTemperatures.concat(
+                        last(thermofilterTemperatures) ?? [],
+                    ),
+                ) ?? "",
+            )
+        }
+    })
+
+    onCleanup(cancelAnimationLoop)
+
     return (
-        <>
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width={width}
-                height={height}
-                viewBox={`0 0 ${width} ${height}`}
-                class={styles.chart}
-            >
-                <style>
-                    {`
-.chart {
-    background-color: #f8f9fa;
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="100%"
+            height="100%"
+            class={styles.chart}
+            ref={(el) => (svgRef = el)}
+        >
+            <For each={heatSeries()}>
+                {([from, to]) => {
+                    const a = xAxis()(+from - Date.now())
+                    const b = xAxis()(to - Date.now())
 
-    --datavis-boiler-color: #6929c4;
-    --datavis-grouphead-color: #005d5d;
-    --datavis-thermofilter-color: #012749;
-}
-
-.line {
-    mix-blend-mode: hard-light;
-    stroke-width: 3px;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.xAxisGroup line {
-    stroke-dasharray: 5;
-    stroke: #aaa;
-}
-
-.xAxisGroup text {
-    font-weight: bold;
-}
-
-.legendTemp {
-    font-size: 12px;
-    font-weight: bold;
-    font-variant-numeric: tabular-nums;
-}
-                    `}
-                </style>
-                <For each={heatSeries()}>
-                    {([from, to]) => {
-                        const a = xAxis()(+from - Date.now())
-                        const b = xAxis()(to - Date.now())
-
-                        return (
-                            <g
-                                data-from={from}
-                                data-to={to}
-                                transform={`translate(${a}, 0)`}
-                            >
-                                <rect
-                                    y="0"
-                                    x="0"
-                                    height={height}
-                                    width={b - a}
-                                    fill="rgba(255, 0, 0, 0.5)"
-                                />
-                                {to - from > 500 && (
-                                    <text
-                                        x={b - a - 10}
-                                        y="10"
-                                        font-size="10"
-                                        font-weight="bold"
-                                        fill="rgba(255, 0, 0, 0.7)"
-                                    >
-                                        {formatMillis(to - +from)}
-                                    </text>
-                                )}
-                            </g>
-                        )
-                    }}
-                </For>
-                <line
-                    x1={0}
-                    x2={width}
-                    y1={yAxis()(targetTemp())}
-                    y2={yAxis()(targetTemp())}
-                    stroke="cyan"
-                    stroke-width={2}
-                />
-                <g
-                    data-name="xAxis"
-                    transform={`translate(0, ${height - marginBottom})`}
-                    ref={(el) => (xAxisRef = el)}
-                ></g>
-                <g
-                    data-name="yAxis"
-                    transform={`translate(${marginLeft - 10}, 0)`}
-                    class={styles.xAxisGroup}
-                    ref={(el) => (yAxisRef = el)}
-                />
-                <path
-                    fill="none"
-                    stroke="var(--datavis-boiler-color)"
-                    class={styles.line}
-                    d={
-                        createLine(
-                            boilerTemperatures().values.map(
-                                epochToRelativeMillis,
-                            ),
-                        ) ?? ""
-                    }
-                />
-                <path
-                    fill="none"
-                    stroke="var(--datavis-grouphead-color)"
-                    class={styles.line}
-                    d={
-                        createLine(
-                            groupheadTemperatures().values.map(
-                                epochToRelativeMillis,
-                            ),
-                        ) ?? ""
-                    }
-                />
-                <path
-                    fill="none"
-                    stroke="var(--datavis-thermofilter-color)"
-                    class={styles.line}
-                    d={
-                        createLine(
-                            thermofilterTemperatures().values.map(
-                                epochToRelativeMillis,
-                            ),
-                        ) ?? ""
-                    }
-                />
-                <g
-                    data-name="legend"
-                    transform={`translate(${width - 160}, 0)`}
-                >
-                    <rect fill="#fff" stroke="#aaa" width="160" height="60" />
-                    <For
-                        each={
-                            [
-                                ["Boiler", boilerTemperatures().last?.y ?? 0],
-                                [
-                                    "Grouphead",
-                                    groupheadTemperatures().last?.y ?? 0,
-                                ],
-                                [
-                                    "Thermofilter",
-                                    thermofilterTemperatures().last?.y ?? 0,
-                                ],
-                            ] as Array<[string, number]>
-                        }
-                    >
-                        {([name, temp], index) => (
-                            <g
-                                transform={`translate(10, ${
-                                    10 + index() * 15
-                                })`}
-                            >
-                                <rect
-                                    width="10"
-                                    height="10"
-                                    fill={`var(--datavis-${name.toLowerCase()}-color)`}
-                                    stroke="#333"
-                                    style="mix-blend-mode: hard-light"
-                                />
-                                <text x="15" y="10" font-size="12">
-                                    {name}
-                                </text>
-                                <text x="15" y="10" font-size="12">
-                                    {name}
-                                </text>
+                    return (
+                        <g
+                            data-from={from}
+                            data-to={to}
+                            transform={`translate(${a}, 0)`}
+                        >
+                            <rect
+                                y="0"
+                                x="0"
+                                height={height()}
+                                width={b - a}
+                                fill="rgba(255, 0, 0, 0.5)"
+                            />
+                            {to - from > 500 && (
                                 <text
-                                    x={150 - 60}
+                                    x={b - a - 10}
                                     y="10"
-                                    class={styles.legendTemp}
+                                    font-size="10"
+                                    font-weight="bold"
+                                    fill="rgba(255, 0, 0, 0.7)"
                                 >
-                                    {`${temp.toFixed(2)} ℃`}
+                                    {formatMillis(to - +from)}
                                 </text>
-                            </g>
-                        )}
-                    </For>
-                </g>
-            </svg>
-        </>
+                            )}
+                        </g>
+                    )
+                }}
+            </For>
+            <line
+                x1={0}
+                x2={width()}
+                y1={yAxis()(_.targetTemp() ?? 0)}
+                y2={yAxis()(_.targetTemp() ?? 0)}
+                stroke="cyan"
+                stroke-width={2}
+            />
+            <g
+                data-name="xAxis"
+                transform={`translate(0, ${height() - margin.bottom})`}
+                ref={(el) => (xAxisRef = el)}
+            ></g>
+            <g
+                data-name="yAxis"
+                transform={`translate(${margin.left - 10}, 0)`}
+                class={styles.xAxisGroup}
+                ref={(el) => (yAxisRef = el)}
+            />
+            <path
+                fill="none"
+                stroke="var(--datavis-boiler-color)"
+                class={styles.line}
+                d={boilerTemperaturePath()}
+            />
+            <path
+                fill="none"
+                stroke="var(--datavis-grouphead-color)"
+                class={styles.line}
+                d={groupheadTemperaturePath()}
+            />
+            <path
+                fill="none"
+                stroke="var(--datavis-thermofilter-color)"
+                class={styles.line}
+                d={thermofilterTemperaturePath()}
+            />
+            <g
+                data-name="legend"
+                transform={`translate(${width() - 160 - margin.right}, ${
+                    margin.top
+                })`}
+            >
+                <rect fill="#fff" stroke="#aaa" width="160" height="60" />
+                <For
+                    each={
+                        [
+                            [
+                                "Boiler",
+                                last(_.boilerTemperatures())?.value ?? 0,
+                            ],
+                            [
+                                "Grouphead",
+                                last(_.groupheadTemperatures())?.value ?? 0,
+                            ],
+                            [
+                                "Thermofilter",
+                                last(_.thermofilterTemperatures())?.value ?? 0,
+                            ],
+                        ] as Array<[string, number]>
+                    }
+                >
+                    {([name, temp], index) => (
+                        <g transform={`translate(10, ${10 + index() * 15})`}>
+                            <rect
+                                width="10"
+                                height="10"
+                                fill={`var(--datavis-${name.toLowerCase()}-color)`}
+                                stroke="#333"
+                                style="mix-blend-mode: hard-light"
+                            />
+                            <text x="15" y="10" font-size="12">
+                                {name}
+                            </text>
+                            <text x="15" y="10" font-size="12">
+                                {name}
+                            </text>
+                            <text x={150 - 60} y="10" class={styles.legendTemp}>
+                                {`${temp.toFixed(2)} ℃`}
+                            </text>
+                        </g>
+                    )}
+                </For>
+            </g>
+        </svg>
     )
 }

@@ -30,19 +30,6 @@
     font-size: 0.8rem;
 }
 
-.streamStateOnline {
-    composes: verticalLabel;
-    padding: 0 1rem;
-    font-variant-numeric: tabular-nums;
-    margin-left: auto;
-}
-
-.streamStateOffline {
-    composes: streamStateOnline;
-    background-color: rgb(192, 25, 25);
-    color: #fff;
-}
-
 .brewButton {
     appearance: none;
     border: 3px solid cyan;
@@ -54,6 +41,7 @@
     padding: 2px 8px;
     border-radius: 8px;
     margin: 3px 0;
+    margin-left: auto;
     cursor: pointer;
     font-variant-numeric: tabular-nums;
     min-width: 100px;

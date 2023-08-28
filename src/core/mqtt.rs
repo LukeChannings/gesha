@@ -187,6 +187,11 @@ impl Mqtt {
         }
 
         let (topic, payload, retain) = match message {
+            MqttOutgoingMessage::ExternRelayPowerStateSetCmd(power_status) => (
+                TOPIC_EXTERN_POWER_COMMAND.to_string(),
+                (if *power_status { "ON" } else { "OFF" }).to_string(),
+                false,
+            ),
             MqttOutgoingMessage::ModeUpdate(status) => (
                 String::from("gesha/mode"),
                 serde_json::to_string(status)?,
@@ -211,11 +216,6 @@ impl Mqtt {
                 format!("gesha/control_method"),
                 serde_json::to_string(control_method)?,
                 true,
-            ),
-            MqttOutgoingMessage::ExternRelayPowerStateSetCmd(power_status) => (
-                TOPIC_EXTERN_POWER_COMMAND.to_string(),
-                (if *power_status { "ON" } else { "OFF" }).to_string(),
-                false,
             ),
             MqttOutgoingMessage::TemperatureHistoryResponse(id, result) => (
                 format!("gesha/temperature/history/{id}"),

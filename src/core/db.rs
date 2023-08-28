@@ -272,9 +272,9 @@ impl Db {
         let (brew_temp_sum_c, grouphead_temp_sum_c) =
             measurements
                 .into_iter()
-                .fold((0.0, 0.0), |(brew, grouphead), measurement| {
+                .fold((0.0, 0.0), |(boiler, grouphead), measurement| {
                     (
-                        brew + measurement.grouphead_temp_c,
+                        boiler + measurement.boiler_temp_c,
                         grouphead + measurement.grouphead_temp_c,
                     )
                 });

@@ -15,6 +15,7 @@
         "git.ignoreLimitWarning": true,
         "python.languageServer": "Pylance",
         "rust-analyzer.check.overrideCommand": null,
-        "cSpell.enableFiletypes": ["typst"]
+        "cSpell.enableFiletypes": ["typst"],
+        "cSpell.words": ["Gesha"]
     }
 }

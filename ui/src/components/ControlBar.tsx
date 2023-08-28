@@ -8,42 +8,43 @@ import {
     createSignal,
 } from "solid-js"
 import styles from "./ControlBar.module.css"
-import { ControlMethod, Mode, TimeWindow } from "../types"
-import { Datum, RingBuffer, formatHeat } from "../util"
+import { TimeWindow } from "../types"
+import { formatHeat } from "../util"
+import { ControlMethod, Mode, ValueChange } from "../geshaClient"
 
 export interface ControlBarProps {
-    mode: Accessor<Mode>
-    controlMethod: Accessor<ControlMethod>
+    mode: Accessor<Mode | undefined>
+    controlMethod: Accessor<ControlMethod | undefined>
     onControlMethodChange: (controlMethod: ControlMethod) => void
-    boilerLevels: Accessor<RingBuffer<Datum>>
+    currentBoilerLevel: Accessor<ValueChange | undefined>
     onHeatLevelChange: (heatLevel: number) => void
     onModeChange: (mode: Mode) => void
-    targetTemp: Accessor<number>
+    currentTargetTemperature: Accessor<number | undefined>
     timeWindow: Accessor<number>
     onRetainedWindowSizeChange: (windowSize: TimeWindow) => void
-    boilerTemperatures: Accessor<RingBuffer<Datum>>
+    currentBoilerTemperature: Accessor<ValueChange | undefined>
     onTargetTempChange: (targetTemp: number) => void
     isLoadingHistory: Accessor<boolean>
     onShotToggle: () => void
     shotStartTime: Accessor<number | null>
 }
 
-export function ControlBar(props: ControlBarProps) {
+export function ControlBar(_: ControlBarProps) {
     const [shotTimer, setShotTimer] = createSignal<null | string>(null)
 
-    let shotTimerInterval: NodeJS.Timer | null = null
+    let shotTimerInterval: number | null = null
 
     createEffect(() => {
-        const brewStartTime = props.shotStartTime()
+        const brewStartTime = _.shotStartTime()
 
         if (brewStartTime === null) {
             if (shotTimerInterval) {
-                clearInterval(shotTimerInterval)
+                window.clearInterval(shotTimerInterval)
                 shotTimerInterval = null
             }
             setShotTimer(null)
         } else {
-            shotTimerInterval = setInterval(() => {
+            shotTimerInterval = window.setInterval(() => {
                 const t = Date.now() - brewStartTime
                 const s = Math.floor(t / 1000)
                 const ms = Math.floor((t % 1000) / 10)
@@ -62,13 +63,13 @@ export function ControlBar(props: ControlBarProps) {
                 class={styles.controlBar}
                 onSubmit={(e) => e.preventDefault()}
             >
-                <label class={styles.verticalLabel}>
+                <label class={styles.verticalLabel} data-value={_.mode() ?? "unknown"}>
                     <span class={styles.verticalLabelKey}>Mode</span>
                     <select
                         tabIndex={-1}
-                        value={props.mode()}
+                        value={_.mode()}
                         onChange={(e) => {
-                            props.onModeChange(e.target.value as Mode)
+                            _.onModeChange(e.target.value as Mode)
                             e.preventDefault()
                         }}
                     >
@@ -79,7 +80,7 @@ export function ControlBar(props: ControlBarProps) {
                         <option value="active">Active</option>
                         <option
                             value="brew"
-                            disabled={props.mode() !== "active"}
+                            disabled={_.mode() !== "active"}
                         >
                             Brew
                         </option>
@@ -90,9 +91,9 @@ export function ControlBar(props: ControlBarProps) {
                     <span class={styles.verticalLabelKey}>Control</span>
                     <select
                         tabIndex={-1}
-                        value={props.controlMethod()}
+                        value={_.controlMethod()}
                         onChange={(e) => {
-                            props.onControlMethodChange(
+                            _.onControlMethodChange(
                                 e.target.value as ControlMethod,
                             )
                             e.preventDefault()
@@ -108,9 +109,9 @@ export function ControlBar(props: ControlBarProps) {
                     <span class={styles.verticalLabelKey}>Time window</span>
                     <select
                         tabIndex={-1}
-                        value={props.timeWindow()}
+                        value={_.timeWindow()}
                         onChange={(e) => {
-                            props.onRetainedWindowSizeChange(+e.target.value)
+                            _.onRetainedWindowSizeChange(+e.target.value)
                             e.preventDefault()
                         }}
                     >
@@ -168,7 +169,7 @@ export function ControlBar(props: ControlBarProps) {
                         <input
                             tabIndex={-1}
                             type="number"
-                            value={props.targetTemp()}
+                            value={_.currentTargetTemperature()}
                             step={0.5}
                             style={{
                                 width: "50px",
@@ -178,77 +179,47 @@ export function ControlBar(props: ControlBarProps) {
                                 "font-weight": "bold",
                             }}
                             onChange={(e) => {
-                                props.onTargetTempChange(+e.target.value)
+                                _.onTargetTempChange(+e.target.value)
                                 e.preventDefault()
                             }}
                         />
                     </span>
                 </label>
-                <Show when={props.controlMethod() == "None"}>
+                <Show when={_.controlMethod() == "None"}>
                     <label class={styles.verticalLabel}>
                         <span class={styles.verticalLabelKey}>Heat level</span>
                         <input
                             tabIndex={-1}
-                            disabled={props.mode() === "idle"}
+                            disabled={_.mode() === "idle"}
                             type="range"
                             min="0"
                             max="1"
                             step="0.1"
                             onChange={(e) => {
-                                props.onHeatLevelChange(+e.target.value)
+                                _.onHeatLevelChange(+e.target.value)
                                 e.preventDefault()
                             }}
-                            value={props.boilerLevels().last?.y}
+                            value={_.currentBoilerLevel()?.value}
                         />
                     </label>
                 </Show>
                 <label class={styles.verticalLabel}>
                     <span class={styles.verticalLabelKey}>Heat</span>
                     <span class={styles.verticalLabelValue}>
-                        {formatHeat(props.boilerLevels().last?.y)}
+                        {formatHeat(_.currentBoilerLevel()?.value)}
                     </span>
                 </label>
-                <p
-                    class={
-                        (props.boilerTemperatures().last?.x ?? 0) - Date.now() >
-                        2_000
-                            ? styles.streamStateOffline
-                            : styles.streamStateOnline
-                    }
-                >
-                    <span class={styles.verticalLabelKey}>
-                        Last measurement
-                    </span>
-                    <span class={styles.verticalLabelValue}>
-                        {(() => {
-                            let d = props.boilerTemperatures().last?.x
-                            if (d) {
-                                return new Date(d).toLocaleTimeString(
-                                    navigator.language,
-                                    {
-                                        hour: "numeric",
-                                        minute: "numeric",
-                                        second: "numeric",
-                                        fractionalSecondDigits: true,
-                                    } as Intl.DateTimeFormatOptions,
-                                )
-                            } else {
-                                return "error"
-                            }
-                        })()}
-                    </span>
-                </p>
                 <button
                     class={styles.brewButton}
-                    disabled={props.mode() !== "active"}
-                    onClick={props.onShotToggle}
+                    disabled={_.mode() !== "active"}
+                    onClick={_.onShotToggle}
                     type="button"
                 >
                     {shotTimer() ?? "Brew"}
                 </button>
             </form>
             <div class={styles.progressBarContainer}>
-                <Show when={props.isLoadingHistory()}>
+                <Show when={_.isLoadingHistory()}>
                     <div class={styles.progressBar} />
                 </Show>
             </div>
