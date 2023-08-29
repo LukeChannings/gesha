@@ -237,10 +237,9 @@ impl State {
                 }
                 MqttIncomingMessage::TemperatureTargetSet(new_target_temp) => {
                     let config_item = self.set_target_temperature(*new_target_temp).await?;
+
                     Ok(vec![
-                        Event::OutgoingMqttMessage(MqttOutgoingMessage::TargetTemperatureUpdate(
-                            *new_target_temp,
-                        )),
+                        Event::TargetTemperatureChanged(*new_target_temp),
                         Event::OutgoingMqttMessage(MqttOutgoingMessage::ConfigUpdate(config_item)),
                     ])
                 }
