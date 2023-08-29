@@ -170,7 +170,7 @@ export function ControlBar(_: ControlBarProps) {
                             tabIndex={-1}
                             type="number"
                             value={_.currentTargetTemperature()}
-                            step={0.5}
+                            step={1}
                             style={{
                                 width: "50px",
                                 appearance: "none",
@@ -211,7 +211,7 @@ export function ControlBar(_: ControlBarProps) {
                 </label>
                 <button
                     class={styles.brewButton}
-                    disabled={_.mode() !== "active"}
+                    disabled={_.mode() !== "active" && _.mode() !== "brew"}
                     onClick={_.onShotToggle}
                     type="button"
                 >

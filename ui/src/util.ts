@@ -52,12 +52,16 @@ export const last = <T>(list: T[]): T | undefined => {
     return list.length > 0 ? list[list.length - 1] : undefined
 }
 
+export const clampSeries = (list: Series, minUnixTime: number, offset: number = -1): Series => {
+    const minIndex = list.findIndex(({ timestamp }) => timestamp >= minUnixTime)
+    return list.slice(minIndex + offset)
+}
 
 type FN<Arguments extends unknown[], Return extends unknown = void> = (
     ...args: Arguments
 ) => Return
 
-type MaybeAccessor<T = unknown> = Accessor<T> | T
+export type MaybeAccessor<T = unknown> = Accessor<T> | T
 
 const isFunction = (value: unknown): value is (...args: unknown[]) => unknown =>
     typeof value === "function"

@@ -5,6 +5,7 @@ import styles from "./App.module.css"
 import { MainScreen } from "./screens/MainScreen"
 import { ShotScreen } from "./screens/ShotScreen"
 import { GeshaClient } from "./geshaClient"
+import { ExploreScreen } from "./screens/Explore"
 
 export function App() {
     const [screen, setScreen] = createSignal("main")
@@ -25,6 +26,9 @@ export function App() {
                 <NavItem active={isActive("shot")} onClick={() => setScreen("shot")}>
                     Shots
                 </NavItem>
+                <NavItem active={isActive("explore")} onClick={() => setScreen("explore")}>
+                    Explore
+                </NavItem>
             </nav>
             <section class={styles.screen}>
                 <Switch>
@@ -33,6 +37,9 @@ export function App() {
                     </Match>
                     <Match when={screen() === "shot"}>
                         <ShotScreen client={client} />
+                    </Match>
+                    <Match when={screen() === "explore"}>
+                        <ExploreScreen client={client} />
                     </Match>
                 </Switch>
             </section>

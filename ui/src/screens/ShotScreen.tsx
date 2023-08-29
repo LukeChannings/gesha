@@ -3,7 +3,7 @@ import { GeshaClient, Shot } from "../geshaClient"
 
 import styles from "./ShotScreen.module.css"
 import { formatMillis } from "../util"
-import { ShotChart } from "../components/ShotChart"
+import { MeasurementChart } from "../components/MeasurementChart"
 
 export interface ShotScreenProps {
     client: GeshaClient
@@ -80,7 +80,10 @@ const ShotEntry = ({ shot }: { shot: Shot }) => {
                 </summary>
                 <Show when={isOpen()}>
                     <div style={{ width: "100%", height: "50vh", "margin-top": "20px" }}>
-                        <ShotChart shot={shot} />
+                        <MeasurementChart queryOptions={{
+                            from: shot.startTime,
+                            to: shot.endTime,
+                        }} />
                     </div>
                 </Show>
             </details>

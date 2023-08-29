@@ -2,6 +2,7 @@ import { scaleLinear, select, axisBottom, axisLeft, line, scaleSqrt } from "d3"
 import { Accessor, For, createEffect, createSignal, onCleanup } from "solid-js"
 import {
     Millis,
+    clampSeries,
     computeLineSegments,
     createAnimationLoop,
     formatMillis,
@@ -30,20 +31,8 @@ export function Chart(_: BarChartProps) {
     const margin = { left: 60, right: 20, top: 30, bottom: 30 }
 
     createEffect(() => {
-        const resizeObserver = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                const { width, height } = entry.contentRect
-                setWidth(width)
-                setHeight(height)
-            }
-        })
-
-        resizeObserver.observe(svgRef)
-
         setWidth(svgRef.getBoundingClientRect().width)
         setHeight(svgRef.getBoundingClientRect().height)
-
-        onCleanup(() => resizeObserver.disconnect())
     })
 
     const [yAxisMax, setYAxisMax] = createSignal<number>(120)
@@ -56,10 +45,12 @@ export function Chart(_: BarChartProps) {
 
     const createLine = line<{ timestamp: number; value: number }>()
         .x((d, i, ds) => {
-            const x = Math.max(
-                -_.timeWindow(),
-                i === ds.length - 1 ? 0 : d.timestamp - Date.now(),
-            )
+            let x: number;
+
+            if (i === 0) x = -_.timeWindow()
+            else if (i === ds.length - 1) x = 0
+            else x = d.timestamp - Date.now()
+
             return xAxis()(x)
         })
         .y((d) => yAxis()(d.value))
@@ -110,9 +101,11 @@ export function Chart(_: BarChartProps) {
     const cancelAnimationLoop = createAnimationLoop(() => {
         setHeatSeries(computeLineSegments(_.boilerLevels()))
 
-        const boilerTemperatures = _.boilerTemperatures()
-        const groupheadTemperatures = _.groupheadTemperatures()
-        const thermofilterTemperatures = _.thermofilterTemperatures()
+        const onlyAfter = Date.now() - _.timeWindow()
+
+        const boilerTemperatures = clampSeries(_.boilerTemperatures(), onlyAfter)
+        const groupheadTemperatures = clampSeries(_.groupheadTemperatures(), onlyAfter)
+        const thermofilterTemperatures = clampSeries(_.thermofilterTemperatures(), onlyAfter)
 
         const max = Math.max(
             ...boilerTemperatures
@@ -157,6 +150,7 @@ export function Chart(_: BarChartProps) {
             xmlns="http://www.w3.org/2000/svg"
             width="100%"
             height="100%"
+            viewBox={`0 0 ${width()} ${height()}`}
             class={styles.chart}
             ref={(el) => (svgRef = el)}
         >
@@ -193,14 +187,6 @@ export function Chart(_: BarChartProps) {
                     )
                 }}
             </For>
-            <line
-                x1={0}
-                x2={width()}
-                y1={yAxis()(_.targetTemp() ?? 0)}
-                y2={yAxis()(_.targetTemp() ?? 0)}
-                stroke="cyan"
-                stroke-width={2}
-            />
             <g
                 data-name="xAxis"
                 transform={`translate(0, ${height() - margin.bottom})`}
@@ -211,6 +197,15 @@ export function Chart(_: BarChartProps) {
                 transform={`translate(${margin.left - 10}, 0)`}
                 class={styles.xAxisGroup}
                 ref={(el) => (yAxisRef = el)}
+            />
+            <line
+                x1={xAxis()(-_.timeWindow())}
+                x2={xAxis()(0)}
+                y1={yAxis()(_.targetTemp() ?? 0)}
+                y2={yAxis()(_.targetTemp() ?? 0)}
+                stroke="red"
+                stroke-width="2px"
+                stroke-dasharray="5 5"
             />
             <path
                 fill="none"
