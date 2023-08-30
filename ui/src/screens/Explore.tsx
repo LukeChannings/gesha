@@ -2,6 +2,8 @@ import { For, createSignal } from "solid-js"
 import { GeshaClient } from "../geshaClient"
 import { MeasurementChart } from "../components/MeasurementChart"
 
+import styles from "./Explore.module.css"
+
 export interface ExploreScreenProps {
     client: GeshaClient
 }
@@ -25,14 +27,10 @@ export const ExploreScreen = (_: ExploreScreenProps) => {
 
     return (
         <div
-            style={{
-                display: "flex",
-                "flex-direction": "column",
-                width: "100%",
-                height: "100%",
-            }}
+            class={styles.container}
         >
             <form
+                class={styles.form}
                 onChange={(e) => {
                     e.preventDefault()
 
@@ -58,7 +56,7 @@ export const ExploreScreen = (_: ExploreScreenProps) => {
                     }
                 }}
             >
-                <label>
+                <label class={styles.label}>
                     From:
                     <input
                         name="from"
@@ -67,6 +65,7 @@ export const ExploreScreen = (_: ExploreScreenProps) => {
                     ></input>
                     (
                     <input
+                        class={styles.unixTimeInput}
                         name="from-unix"
                         type="text"
                         value={options().from}
@@ -75,6 +74,7 @@ export const ExploreScreen = (_: ExploreScreenProps) => {
                     <For each={timeOptions}>
                         {([label, timeDiff]) => (
                             <button
+                                class={styles.adjustmentButton}
                                 type="button"
                                 onClick={() =>
                                     setOptions((o) => ({
@@ -88,17 +88,18 @@ export const ExploreScreen = (_: ExploreScreenProps) => {
                         )}
                     </For>
                 </label>
-                <label>
+                <label class={styles.label}>
                     To:{" "}
                     <input
                         name="to"
                         type="datetime-local"
                         value={isoDate(options().to)}
                     ></input>
-                    (<input name="to-unix" type="text" value={options().to} />)
+                    (<input class={styles.unixTimeInput} name="to-unix" type="text" value={options().to} />)
                     <For each={timeOptions}>
                         {([label, timeDiff]) => (
                             <button
+                                class={styles.adjustmentButton}
                                 type="button"
                                 onClick={() =>
                                     setOptions((o) => ({
@@ -113,6 +114,7 @@ export const ExploreScreen = (_: ExploreScreenProps) => {
                     </For>
                 </label>
                 <button
+                    class={styles.downloadButton}
                     type="button"
                     onClick={(e) => {
                         e.preventDefault()
