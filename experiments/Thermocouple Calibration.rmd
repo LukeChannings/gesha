@@ -1,6 +1,6 @@
 # Thermocouple calibration
 
-In order to build an accurate model of the relationship between the temperatures of the boiler, group head, and thermofilter I must first ensure that the thermocouples are calibrated.
+In order to build an accurate model of the relationship between the temperatures of the boiler, grouphead, and thermofilter I must first ensure that the thermocouples are calibrated.
 
 ## Initial temperature responses
 

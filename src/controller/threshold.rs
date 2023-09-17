@@ -11,7 +11,7 @@ impl ThresholdController {
 }
 
 impl Controller for ThresholdController {
-    fn sample(&mut self, boiler_temp: f32, _grouphead_temp: f32) -> f32 {
+    fn sample(&mut self, boiler_temp: f32, _grouphead_temp: f32, _q: f32) -> f32 {
         if boiler_temp < self.target_temperature {
             1.0
         } else {

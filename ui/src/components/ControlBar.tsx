@@ -102,7 +102,7 @@ export function ControlBar(_: ControlBarProps) {
                         <option value="None">Manual</option>
                         <option value="Threshold">Threshold</option>
                         <option value="PID">PID</option>
-                        <option value="MPC">MPC</option>
+                        <option value="Predictive">Predictive</option>
                     </select>
                 </label>
                 <label class={styles.verticalLabel}>

@@ -1,6 +1,30 @@
 # Gesha
 
-## Cross-compiling for Pi Zero
+![Gesha main tab](./docs/diagrams/gesha-main.png)
+
+This repository contains the source code for the Gesha project - a platform for providing stable and consistent temperatures when brewing espresso.
+
+The project contains the following:
+
+- [`src/`](./src/) - the main application (Rust)
+- [`ui/`](./ui/) / [`src-tauri`](./src-tauri/) - the UI source code (TypeScript)
+- [`models`](./models/) - projects for modelling some aspect of the machine's behaviour (Python + SQL)
+- [`docs/`](./docs/) - the source files for my project proposal and dissertation report (Rmarkdown / Typst)
+
+## Usage
+
+Make sure you have the following installed:
+
+- Rust
+- Just
+- Python3 + Poetry
+- Node.js + NPM
+
+The project is managed with a [`Justfile`](./Justfile), run `just --list` for a list of recipes, or look at the Justfile.
+
+The main Rust app cannot be run on devices that aren't the Raspberry Pi because of the `rppal` dependency. Ideally this module should be stubbed for local compiling and testing. For now the native compile target is `arm-unknown-linux-gnueabihf`.
+
+## Setup
 
 ### macOS
 

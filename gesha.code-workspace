@@ -16,6 +16,7 @@
         "python.languageServer": "Pylance",
         "rust-analyzer.check.overrideCommand": null,
         "cSpell.enableFiletypes": ["typst"],
-        "cSpell.words": ["Gesha"]
+        "cSpell.words": ["Gesha", "portafilter", "setpoint"],
+        "rust-analyzer.linkedProjects": ["./Cargo.toml"]
     }
 }

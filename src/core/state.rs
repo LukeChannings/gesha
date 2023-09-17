@@ -1,4 +1,4 @@
-use std::time::{SystemTime, Duration};
+use std::time::{Duration, SystemTime};
 
 use anyhow::{anyhow, Result};
 use log::{error, info};
@@ -8,6 +8,7 @@ use tokio::sync::broadcast::Sender;
 use crate::{
     controller::ControlMethod,
     core::db::{DB_KEY_CONTROL_METHOD, DB_KEY_TARGET_TEMPERATURE},
+    models,
 };
 
 use super::{
@@ -27,6 +28,7 @@ pub struct State {
     pub target_temperature_steam: f32,
     pub shot_state: Shot,
     db: Db,
+    model: models::PredictiveModels,
 }
 
 pub enum Shot {
@@ -62,6 +64,7 @@ impl State {
             target_temperature_steam: 130.0,
             shot_state: Shot::NotPulling,
             db,
+            model: models::PredictiveModels::new()?,
         };
 
         for event in vec![
@@ -112,7 +115,10 @@ impl State {
                     self.power_relay_available = *relay_is_available;
 
                     if !relay_is_available && self.mode != Mode::Idle {
-                        let mut events: Vec<Event> = vec![Event::ModeChanged(Mode::Idle)];
+                        let mut events: Vec<Event> = vec![
+                            Event::ModeChanged(Mode::Idle),
+                            Event::PowerStateChanged(false),
+                        ];
 
                         if self.mode == Mode::Brew {
                             self.toggle_brew_mode().await?;
@@ -121,8 +127,6 @@ impl State {
                         if self.mode == Mode::Steam {
                             self.add_steam_mode_events(false, &mut events);
                         }
-
-                        self.add_power_mode_events(false, &mut events);
 
                         self.power_state = false;
                         self.mode = Mode::Idle;
@@ -322,21 +326,37 @@ impl State {
                 }
 
                 if change_events.len() > 0 {
-                    self.db.write_measurement_queue(Measurement {
-                        time: timestamp,
-                        target_temp_c: if self.mode == Mode::Steam {
-                            self.target_temperature_steam
-                        } else {
-                            self.target_temperature
-                        },
-                        boiler_temp_c: temp.boiler_temp,
-                        grouphead_temp_c: temp.grouphead_temp,
-                        thermofilter_temp_c: temp.thermofilter_temp,
-                        power: self.power_state,
-                        heat_level: Some(self.boiler_state),
-                        pull: self.mode == Mode::Brew,
-                        steam: self.mode == Mode::Steam,
-                    }).await?;
+                    if let Ok(extraction_temp_pred) =
+                        self.model.predict_extraction_temperature(temp.grouphead_temp, temp.boiler_temp)
+                    {
+                        change_events.push(Event::OutgoingMqttMessage(
+                            MqttOutgoingMessage::TemperatureUpdate(
+                                "thermofilter_predicted".to_string(),
+                                ValueChange {
+                                    value: extraction_temp_pred,
+                                    timestamp,
+                                },
+                            ),
+                        ));
+                    }
+
+                    self.db
+                        .write_measurement_queue(Measurement {
+                            time: timestamp,
+                            target_temp_c: if self.mode == Mode::Steam {
+                                self.target_temperature_steam
+                            } else {
+                                self.target_temperature
+                            },
+                            boiler_temp_c: temp.boiler_temp,
+                            grouphead_temp_c: temp.grouphead_temp,
+                            thermofilter_temp_c: temp.thermofilter_temp,
+                            power: self.power_state,
+                            heat_level: Some(self.boiler_state),
+                            pull: self.mode == Mode::Brew,
+                            steam: self.mode == Mode::Steam,
+                        })
+                        .await?;
                 }
 
                 self.current_temperature = Some(temp.clone());

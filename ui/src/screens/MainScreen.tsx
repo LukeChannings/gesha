@@ -15,14 +15,21 @@ export const MainScreen = (_: MainScreenProps) => {
         "temperature/boiler",
         "temperature/boiler/history",
     )
+
     const groupheadTemperatures = _.client.createValueChangeListSignal(
         "temperature/grouphead",
         "temperature/grouphead/history",
     )
+
     const thermofilterTemperatures = _.client.createValueChangeListSignal(
         "temperature/thermofilter",
         "temperature/thermofilter/history",
     )
+
+    const predictedThermofilterTemperatures = _.client.createValueChangeListSignal(
+        "temperature/thermofilter_predicted"
+    )
+
     const boilerLevels = _.client.createValueChangeListSignal(
         "boiler_level",
         "boiler_level/history",
@@ -54,7 +61,6 @@ export const MainScreen = (_: MainScreenProps) => {
 
         setIsLoadingHistory(false)
     })
-
 
     const [shotStartTime, setShotStartTime] = createSignal<number | null>(null)
 
@@ -98,6 +104,7 @@ export const MainScreen = (_: MainScreenProps) => {
                 boilerTemperatures={boilerTemperatures}
                 groupheadTemperatures={groupheadTemperatures}
                 thermofilterTemperatures={thermofilterTemperatures}
+                predictedThermofilterTemperatures={predictedThermofilterTemperatures}
                 boilerLevels={boilerLevels}
                 targetTemp={targetTemp}
                 timeWindow={timeWindow}

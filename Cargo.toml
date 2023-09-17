@@ -19,7 +19,6 @@ serde_json = "1.0.100"
 serde_plain = "1.0.1"
 tokio = { version = "1.28.2", features = ["full"] }
 tokio-util = "0.7.8"
-embedded-hal = "0.2.7"
 max31855 = "0.1.0"
 clap = { version = "4.3.8", features = ["derive"] }
 rumqttc = { version = "0.22.0", features = ["url"] }
@@ -27,6 +26,9 @@ pretty_env_logger = "0.5.0"
 bytes = "1.4.0"
 sqlx = { version = "0.7.1", features = ["sqlite", "runtime-tokio"] }
 pid = "4.0.0"
+tract-core = "0.20.18"
+tract-onnx = "0.20.18"
+embedded-hal = "0.2.7"
 
 [target.'cfg(all(target_arch = "arm", target_os = "linux"))'.dependencies]
-rppal = { version = "0.14.1", features = ["hal-unproven"] }
+rppal = { version = "0.14.1", features = ["hal", "hal-unproven"] }

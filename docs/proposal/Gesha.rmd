@@ -37,7 +37,7 @@ I call the software **Gesha**, after the region in Ethiopia known for producing 
 Espresso is both a method of brewing coffee and the name of the resulting beverage.
 Espresso is made by forcing hot pressurised water through a basket of finely ground coffee. The result is a concentrated and syrup-like liquid, which is often used as the base of drinks such as the Americano, Cappuccino, Cortado, etc. it is also consumed as-is.
 
-Technical parameters for making "certified Italian espresso" are published by the Italian Espresso National Institute [@instituto-nazionale-espresso-italiano-no-date], and specify 6.5-7.5g of *ground coffee* (also called the *dose*), an *extraction temperature* &mdash; the temperature of the water at the point where it comes into contact with the ground coffee &mdash; between 86-90&deg;C, a *pressure* of 8-10 bars (101.5-130.5 psi), 
+Technical parameters for making "certified Italian espresso" are published by the Italian Espresso National Institute [@instituto-nazionale-espresso-italiano-no-date], and specify 6.5-7.5g of *ground coffee* (also called the *dose*), an *extraction temperature* &mdash; the temperature of the water at the point where it comes into contact with the ground coffee &mdash; between 86-90&deg;C, a *pressure* of 8-10 bars (101.5-130.5 psi),
 *brew time* of 20-30 seconds, and an output volume of 22.5-27.5ml, which is often referred to as *yield*, and usually measured in weight (grams), not volume.
 
 The third wave of coffee has seen a move away from traditional Italian espresso, emphasising higher standards for coffee quality and traceability [@specialty-coffee]. Lighter roasts and higher doses are now common in both home and commercial espresso.
@@ -52,10 +52,10 @@ An espresso machine, when powered on and "idle" (i.e. not brewing coffee) will m
 
 When the *shot switch* is in the "on", the machine is in "brewing" mode, and will activate the *vibration pump*, which pumps water from the *water tank* into the boiler. This pressurises the water within the machine.
 
-Water flows from the boiler into the *group head*, which is where the *portafilter* (portable filter), which contains a *basket* of finely ground coffee is secured. 
-When the water exits the group head it hits a *shower screen*, which disperses the water evenly over the surface of the coffee basket.
+Water flows from the boiler into the *grouphead*, which is where the *portafilter* (portable filter), which contains a *basket* of finely ground coffee is secured.
+When the water exits the grouphead it hits a *shower screen*, which disperses the water evenly over the surface of the coffee basket.
 
-Coffee ground for espresso is very finely ground, creating resistance for the pressurised water. The water will flow through more coarsely ground coffee faster than more finely ground coffee. The process of tuning the grind level is called "dialling in" the coffee.
+Coffee ground for espresso is very finely ground, creating resistance for the pressurised water. The water will flow through more coarsely ground coffee faster than more finely ground coffee. The process of tuning the grind size is called "dialling in" the coffee.
 
 Finely ground coffee can create high pressure in the machine, and the *over pressure valve* (OPV) connected to the boiler protects the machine from the pressure getting too high. Out of the box, most machines of this class will be set to 10-11 bars. It's common to adjust the OPV and lower the pressure to 8-9 bars.
 
@@ -67,7 +67,7 @@ Espresso is normally extracted between 85-95 &deg;C. Lighter roasted beans are h
 
 More soluble compounds are extracted at higher temperatures, as shown by Salamance et al [@salamanca2017extraction]. Extracting all 30% of solubles into the beverage would extract bad-tasting compounds that have been described as "bitter" and "papery" by Sandra Loofbourow [@understanding-extraction] - *under extracted*. Extracting fewer than soluble compounds produces a sour-tasting coffee, commonly called *under extracted*.
 
-Unlike dose, grind level, extraction time, etc. the extraction temperature is not under the direct control of the barista. As an aside - brew pressure is also an important variable [@andueza2002influence], with pressure profiling and flow profiling being a current topic of research [@andueza2007influence]. This is a feature of higher end commercial and "prosumer" espresso machines, however, and the water pressure for our machine will be constant. Unlike pressure profiling, extraction temperature stability can be improved without expensive hardware.
+Unlike dose, grind size, extraction time, etc. the extraction temperature is not under the direct control of the barista. As an aside - brew pressure is also an important variable [@andueza2002influence], with pressure profiling and flow profiling being a current topic of research [@andueza2007influence]. This is a feature of higher end commercial and "prosumer" espresso machines, however, and the water pressure for our machine will be constant. Unlike pressure profiling, extraction temperature stability can be improved without expensive hardware.
 
 ![Silvia unmodified boiler temperature &mdash; Eric S, home-barista.com @silvia-idle-temp](./figures/silvia-default-temp.jpg){width=90%}
 
@@ -110,13 +110,13 @@ By building a system that models the desired extraction temperature, and maintai
 
 ## 1. Model the Extraction Temperature
 
-The extraction temperature cannot be measured directly because it would require inserting a temperature probe into the basket during extraction. This would interfere with the brewing process. The *boiler temperature* and *group head temperature* can be directly measured, however.
+The extraction temperature cannot be measured directly because it would require inserting a temperature probe into the basket during extraction. This would interfere with the brewing process. The *boiler temperature* and *grouphead temperature* can be directly measured, however.
 
-The espresso machine chassis is entirely metal, which means it has a large thermal mass. If the boiler is heated to temperature from a cold start, when brewing starts the hot water will lose some of its heat as it travels between the boiler and the group head, thus the thermal saturation of the machine affects the extraction temperature.
+The espresso machine chassis is entirely metal, which means it has a large thermal mass. If the boiler is heated to temperature from a cold start, when brewing starts the hot water will lose some of its heat as it travels between the boiler and the grouphead, thus the thermal saturation of the machine affects the extraction temperature.
 
-It is not possible to derive the extraction temperature from the boiler temperature directly, since the thermal saturation affects the extraction temperature. 
+It is not possible to derive the extraction temperature from the boiler temperature directly, since the thermal saturation affects the extraction temperature.
 
-By using the group head temperature as a proxy for the thermal load of the machine, it may be possible to find an approximation for the function $f(\text{BoilerTemp}, \text{GroupHeadTemp}) = \text{ExtractionTemp}$.
+By using the grouphead temperature as a proxy for the thermal load of the machine, it may be possible to find an approximation for the function $f(\text{BoilerTemp}, \text{GroupHeadTemp}) = \text{ExtractionTemp}$.
 
 \break
 
@@ -133,8 +133,8 @@ features <- matrix(
   c(
     "Time", "UnixEpochNs", "The current time with nanosecond resolution",
     "IsPoweredOn", "Boolean", "Whether the machine is on or off",
-    "BoilerTemp", "Double", "The temperature at the boiler in celcius",
-    "GroupHeadTemp", "Double", "The temperature at the group head in celcius",
+    "BoilerTemp", "Double", "The temperature at the boiler in celsius",
+    "GroupHeadTemp", "Double", "The temperature at the grouphead in celsius",
     "IsHeating", "Boolean", "Whether the boiler is heating or not",
     "IsBrewing", "Boolean", "Whether espresso is currently being brewed - this is derived from user input"
   ),
@@ -162,7 +162,7 @@ I will implement a Model Predictive Control [@morari1988model] (MPS) system as a
 
 An MPS system can iteratively optimise a target set temperature using the predictive model to also factor in the future observed values, this allows the system to perform well with respect to negative outcomes, such as temperature overshoot.
 
-For example, because the system can predict the lag time between the boiler being shut off and the temperature stabilising, it can more precisely time the boiler power variable. This is in contrast to a PID controller, which has no predicive power, and will simply overshoot and wait for the temperature to drop. By using a predictive model with a MPC we may be able to get the espresso machine to a ready state more quickly than a PID controller.
+For example, because the system can predict the lag time between the boiler being shut off and the temperature stabilising, it can more precisely time the boiler power variable. This is in contrast to a PID controller, which has no predictive power, and will simply overshoot and wait for the temperature to drop. By using a predictive model with a MPC we may be able to get the espresso machine to a ready state more quickly than a PID controller.
 
 # Implementation
 
@@ -176,12 +176,12 @@ I will modify the machine in the following ways in order to create a platform up
 2. The brew thermocouple will be replaced with:
   - A type K thermocouple, driven by a [MAX31855](https://www.analog.com/media/en/technical-documentation/data-sheets/max31855.pdf) chip
   - A solid-state relay, such as the [Fotek SSR-40](https://cdn.sparkfun.com/datasheets/Components/General/SSR40DA.pdf), will replace the existing thermocouple's circuit
-3. A second thermocouple and MAX31855 chip will be wired to the Pi to monitor the group head temperature
+3. A second thermocouple and MAX31855 chip will be wired to the Pi to monitor the grouphead temperature
 
 All of these modifications will enable me to programmatically,
 
 - Turn off / on the machine
-- Monitor the boiler and group head temperatures
+- Monitor the boiler and grouphead temperatures
 - Turn off / on the boiler in normal brewing mode
 
 ### Wiring diagrams
@@ -190,7 +190,7 @@ Figure 3 shows the wiring diagram for the Rancilio Silvia. **T1** is the *brew t
 
 Figure 4 shows the changes I will make to the machine. I will replace T1 entirely, wiring its contacts to the solid-state relay. I will fix the thermocouple to the surface that T1 was previously mounted. This will enable software control of the boiler in idle and brewing modes.
 
-The modified diagram does not show the second thermocouple, which will be attached to the group head, because it is not a modification to te exiting wiring.
+The modified diagram does not show the second thermocouple, which will be attached to the grouphead, because it is not a modification to te exiting wiring.
 
 ![Default wiring diagram](./diagrams/default-wiring-diagram.jpg){width=80%}
 
@@ -211,7 +211,7 @@ The application will provide an interface that provides methods for performing a
 - Turning off / on the heating element. The application should implement a safety system to prevent the boiler getting too hot. Note: The Silvia also has a safety thermocouple in place, but implementing our own safety measures is still good practice.
 - Getting the status (off / on) of the heating element
 - Getting the boiler temperature
-- Getting the group head temperature
+- Getting the grouphead temperature
 - Setting the desired extraction temperature
 
 User input is required for recording when a shot is being pulled, because there is no mechanism for capturing this variable automatically without further costly modification of the machine.
@@ -220,7 +220,7 @@ I will build a web application to enable the ingestion of this user input, as we
 
 A formal specification of an API is not forthcoming because the software will be interfaced with using multiple protocols. For example, in order to receive streaming temperature data, a companion app on a tablet device will be used. The temperature data may be received via bluetooth, which will provide lower latency. However, an ethernet-based system using HTTP or MQTT may also be used.
 
-I will implement 
+I will implement
 
 # Project timeline
 
@@ -229,8 +229,8 @@ The project requires the temperature dataset in order to build a model &mdash; t
 The tasks are as follows:
 
 - Make the necessary hardware modifications to the machine
-- Implement a lightweight command line application that can gather the necessary temperature data that will be required for predicive modelling.
-- Produce a predicive model of the extraction temperature variable using the gathered boiler and group head temperature data, cross-referenced with basket temperature readings where available.
+- Implement a lightweight command line application that can gather the necessary temperature data that will be required for predictive modelling.
+- Produce a predictive model of the extraction temperature variable using the gathered boiler and grouphead temperature data, cross-referenced with basket temperature readings where available.
 - Implement a full featured application server that implements a MPS controller using an initial model. This application will need to expose an interface for programmatically interactive with the machine (see the software section for a list of required features).
 - Publish the source code, including documentation for the necessary hardware modifications, data, modelling code and models.
 - Produce a final report on the success of the project

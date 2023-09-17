@@ -8,9 +8,6 @@ HEAT_LAG_WAIT_SECONDS = 60
 def main():
     gesha = Gesha()
 
-    # wait a sec for temperature values to come in.
-    sleep(1)
-
     starting_boiler_temperature = gesha.get_latest_temp("boiler")
 
     # Move into manual control mode.

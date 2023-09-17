@@ -15,6 +15,7 @@ export interface BarChartProps {
     boilerTemperatures: Accessor<ValueChange[]>
     groupheadTemperatures: Accessor<ValueChange[]>
     thermofilterTemperatures: Accessor<ValueChange[]>
+    predictedThermofilterTemperatures: Accessor<ValueChange[]>
     boilerLevels: Accessor<ValueChange[]>
     targetTemp: Accessor<number | undefined>
     timeWindow: Accessor<Millis>
@@ -31,8 +32,18 @@ export function Chart(_: BarChartProps) {
     const margin = { left: 60, right: 20, top: 30, bottom: 30 }
 
     createEffect(() => {
-        setWidth(svgRef.getBoundingClientRect().width)
-        setHeight(svgRef.getBoundingClientRect().height)
+        const observer = new ResizeObserver(() => {
+            const rect = svgRef.getBoundingClientRect()
+
+            setWidth(rect.width)
+            setHeight(rect.height)
+        })
+
+        // Safari doesn't support ResizeObserver on SVG elements 😮‍💨
+        // https://github.com/ZeeCoder/use-resize-observer/issues/85
+        observer.observe(document.body)
+
+        onCleanup(() => observer.disconnect())
     })
 
     const [yAxisMax, setYAxisMax] = createSignal<number>(120)
@@ -45,7 +56,7 @@ export function Chart(_: BarChartProps) {
 
     const createLine = line<{ timestamp: number; value: number }>()
         .x((d, i, ds) => {
-            let x: number;
+            let x: number
 
             if (i === 0) x = -_.timeWindow()
             else if (i === ds.length - 1) x = 0
@@ -95,17 +106,36 @@ export function Chart(_: BarChartProps) {
 
     const [groupheadTemperaturePath, setGroupheadTemperaturePath] =
         createSignal<string>("")
+
     const [thermofilterTemperaturePath, setThermofilterTemperaturePath] =
         createSignal<string>("")
+
+    const [
+        predictedThermofilterTemperaturePath,
+        setPredictedThermofilterTemperaturePath,
+    ] = createSignal<string>("")
 
     const cancelAnimationLoop = createAnimationLoop(() => {
         setHeatSeries(computeLineSegments(_.boilerLevels()))
 
         const onlyAfter = Date.now() - _.timeWindow()
 
-        const boilerTemperatures = clampSeries(_.boilerTemperatures(), onlyAfter)
-        const groupheadTemperatures = clampSeries(_.groupheadTemperatures(), onlyAfter)
-        const thermofilterTemperatures = clampSeries(_.thermofilterTemperatures(), onlyAfter)
+        const boilerTemperatures = clampSeries(
+            _.boilerTemperatures(),
+            onlyAfter,
+        )
+        const groupheadTemperatures = clampSeries(
+            _.groupheadTemperatures(),
+            onlyAfter,
+        )
+        const thermofilterTemperatures = clampSeries(
+            _.thermofilterTemperatures(),
+            onlyAfter,
+        )
+        const predictedThermofilterTemperatures = clampSeries(
+            _.predictedThermofilterTemperatures(),
+            onlyAfter,
+        )
 
         const max = Math.max(
             ...boilerTemperatures
@@ -139,6 +169,12 @@ export function Chart(_: BarChartProps) {
                         last(thermofilterTemperatures) ?? [],
                     ),
                 ) ?? "",
+            )
+        }
+
+        if (_.predictedThermofilterTemperatures().length) {
+            setPredictedThermofilterTemperaturePath(
+                createLine(_.predictedThermofilterTemperatures()) ?? "",
             )
         }
     })
@@ -225,13 +261,19 @@ export function Chart(_: BarChartProps) {
                 class={styles.line}
                 d={thermofilterTemperaturePath()}
             />
+            <path
+                fill="none"
+                stroke="var(--datavis-pred-thermofilter-color)"
+                class={styles.line}
+                d={predictedThermofilterTemperaturePath()}
+            />
             <g
                 data-name="legend"
-                transform={`translate(${width() - 160 - margin.right}, ${
+                transform={`translate(${width() - 180 - margin.right}, ${
                     margin.top
                 })`}
             >
-                <rect fill="#fff" stroke="#aaa" width="160" height="60" />
+                <rect fill="#fff" stroke="#aaa" width="180" height="75" />
                 <For
                     each={
                         [
@@ -242,6 +284,11 @@ export function Chart(_: BarChartProps) {
                             [
                                 "Grouphead",
                                 last(_.groupheadTemperatures())?.value ?? 0,
+                            ],
+                            [
+                                "Thermofilter ^",
+                                last(_.predictedThermofilterTemperatures())
+                                    ?.value ?? 0,
                             ],
                             [
                                 "Thermofilter",
@@ -255,7 +302,11 @@ export function Chart(_: BarChartProps) {
                             <rect
                                 width="10"
                                 height="10"
-                                fill={`var(--datavis-${name.toLowerCase()}-color)`}
+                                fill={`var(--datavis-${
+                                    name === "Thermofilter ^"
+                                        ? "pred-thermofilter"
+                                        : name.toLowerCase()
+                                }-color)`}
                                 stroke="#333"
                                 style="mix-blend-mode: hard-light"
                             />
@@ -265,7 +316,7 @@ export function Chart(_: BarChartProps) {
                             <text x="15" y="10" font-size="12">
                                 {name}
                             </text>
-                            <text x={150 - 60} y="10" class={styles.legendTemp}>
+                            <text x={150 - 40} y="10" class={styles.legendTemp}>
                                 {`${temp.toFixed(2)} ℃`}
                             </text>
                         </g>

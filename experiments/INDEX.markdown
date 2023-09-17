@@ -6,7 +6,7 @@ Terms:
 
 - "Thermocouples" refer to the three thermocouples + MAX31855 amplifier combination, where the three are:
     1. boiler temperature
-    2. group head temperature
+    2. grouphead temperature
     3. thermofilter (temperature in the brew basket)
 
 The temperature read / response loop is set to *8 milliseconds* unless otherwise noted.

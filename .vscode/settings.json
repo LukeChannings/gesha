@@ -1,5 +1,18 @@
 {
-    "cSpell.words": ["dotenv", "Gesha", "grouphead", "Millis", "mqtt", "nanos", "sqlx", "thermofilter"],
+    "cSpell.words": [
+        "dotenv",
+        "Gesha",
+        "grouphead",
+        "Millis",
+        "mqtt",
+        "nanos",
+        "ndarray",
+        "onnx",
+        "setpoint",
+        "sqlx",
+        "thermofilter",
+        "tvec"
+    ],
     "jestrunner.disableCodeLens": true,
     "prettier.semi": false,
     "editor.fontWeight": "normal",

@@ -46,5 +46,5 @@ gesha
 
 - Temperature loss when pre-heated vs not, as measured from the basket
 - Predict when a shot is being pulled based on temperature drop
-- Predict basket temperature from boiler and group head temps
+- Predict basket temperature from boiler and grouphead temps
 

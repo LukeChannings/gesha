@@ -22,6 +22,7 @@ type GeshaClientEvents = {
     "temperature/grouphead/history": (valueChange: ValueChange[]) => void
     "temperature/thermofilter": (valueChange: ValueChange) => void
     "temperature/thermofilter/history": (valueChange: ValueChange[]) => void
+    "temperature/thermofilter_predicted": (valueChange: ValueChange) => void
     "temperature/target": (temperatureTarget: number) => void
     boiler_level: (value: ValueChange) => void
     "boiler_level/history": (value: ValueChange[]) => void
@@ -180,6 +181,7 @@ export class GeshaClient extends TypedEventEmitter<GeshaClientEvents> {
             | "temperature/boiler"
             | "temperature/grouphead"
             | "temperature/thermofilter"
+            | "temperature/thermofilter_predicted"
             | "boiler_level"
         >,
     >(
@@ -463,7 +465,7 @@ export function assertValueChange(
 
 export type Mode = "offline" | "idle" | "active" | "brew" | "steam"
 
-export type ControlMethod = "None" | "Threshold" | "PID" | "MPC"
+export type ControlMethod = "None" | "Threshold" | "PID" | "Predictive"
 
 export type Shot = {
     startTime: number

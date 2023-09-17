@@ -7,6 +7,7 @@ use anyhow::{anyhow, Result};
 use log::{error, info};
 use max31855::Max31855;
 use rppal::{gpio, spi};
+
 use tokio::{
     sync::broadcast::Sender,
     task::{self, JoinHandle}, select, time,
@@ -122,7 +123,7 @@ impl ThermocouplePoller {
         let mut grouphead: Thermocouple = self
             .config
             .grouphead_spi
-            .expect("Group head SPI is not configured")
+            .expect("grouphead SPI is not configured")
             .try_into()?;
 
         let mut thermofilter: Option<Thermocouple> = self

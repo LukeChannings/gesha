@@ -3,6 +3,7 @@ import {
     createEffect,
     createResource,
     createSignal,
+    onCleanup,
 } from "solid-js"
 import { GeshaClient } from "../geshaClient"
 import {
@@ -44,8 +45,18 @@ export const MeasurementChart = (_: MeasurementChartProps) => {
     const margin = { top: 20, right: 20, bottom: 50, left: 50 }
 
     createEffect(() => {
-        setWidth(svgRef.getBoundingClientRect().width)
-        setHeight(svgRef.getBoundingClientRect().height)
+        const observer = new ResizeObserver(() => {
+            const rect = svgRef.getBoundingClientRect()
+
+            setWidth(rect.width)
+            setHeight(rect.height)
+        })
+
+        // Safari doesn't support ResizeObserver on SVG elements 😮‍💨
+        // https://github.com/ZeeCoder/use-resize-observer/issues/85
+        observer.observe(document.body)
+
+        onCleanup(() => observer.disconnect())
     })
 
     const yDomain = () => {

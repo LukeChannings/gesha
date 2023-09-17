@@ -60,13 +60,13 @@ TEMPERATURE NORMAL, 1691034022481, 1.0
 
 RESULT COMMANDS
 
-poetry run python gesha_cli get-history 1690994557274 1690995330864 --out-csv=./measurement-history-heat-level-1.csv
-poetry run python gesha_cli get-history 1690995330864 1690997135143 --out-csv=./measurement-history-heat-level-2.csv
-poetry run python gesha_cli get-history 1690997135143 1690999946799 --out-csv=./measurement-history-heat-level-3.csv
-poetry run python gesha_cli get-history 1690999946800 1691003632064 --out-csv=./measurement-history-heat-level-4.csv
-poetry run python gesha_cli get-history 1691003632065 1691007847083 --out-csv=./measurement-history-heat-level-5.csv
-poetry run python gesha_cli get-history 1691007847083 1691012236558 --out-csv=./measurement-history-heat-level-6.csv
-poetry run python gesha_cli get-history 1691012236558 1691017142278 --out-csv=./measurement-history-heat-level-7.csv
-poetry run python gesha_cli get-history 1691017142278 1691022586929 --out-csv=./measurement-history-heat-level-8.csv
-poetry run python gesha_cli get-history 1691022586929 1691028156609 --out-csv=./measurement-history-heat-level-9.csv
-poetry run python gesha_cli get-history 1691028156610 1691034022481 --out-csv=./measurement-history-heat-level-10.csv
+just api get-history 1690994557274 1690995330864 --out-csv=./measurement-history-heat-level-1.csv
+just api get-history 1690995330864 1690997135143 --out-csv=./measurement-history-heat-level-2.csv
+just api get-history 1690997135143 1690999946799 --out-csv=./measurement-history-heat-level-3.csv
+just api get-history 1690999946800 1691003632064 --out-csv=./measurement-history-heat-level-4.csv
+just api get-history 1691003632065 1691007847083 --out-csv=./measurement-history-heat-level-5.csv
+just api get-history 1691007847083 1691012236558 --out-csv=./measurement-history-heat-level-6.csv
+just api get-history 1691012236558 1691017142278 --out-csv=./measurement-history-heat-level-7.csv
+just api get-history 1691017142278 1691022586929 --out-csv=./measurement-history-heat-level-8.csv
+just api get-history 1691022586929 1691028156609 --out-csv=./measurement-history-heat-level-9.csv
+just api get-history 1691028156610 1691034022481 --out-csv=./measurement-history-heat-level-10.csv

@@ -59,3 +59,14 @@ After 60s the temperature is 63.5
 The starting temperature for 1.0 was 53.5. Diff: 10.0 degrees C
 Note: this is *not* the maximum. Dump the measurement history for further analysis.
 TEMPERATURE NORMAL, 1691515570391, 1.0
+
+just api get-history 1691509346385 1691509421395 --out-csv=./measurement-history-heat-level-15s-1.csv
+just api get-history 1691509421395 1691509594569 --out-csv=./measurement-history-heat-level-15s-2.csv
+just api get-history 1691509594569 1691509893573 --out-csv=./measurement-history-heat-level-15s-3.csv
+just api get-history 1691509893573 1691510322250 --out-csv=./measurement-history-heat-level-15s-4.csv
+just api get-history 1691510322250 1691510894928 --out-csv=./measurement-history-heat-level-15s-5.csv
+just api get-history 1691510894928 1691511584562 --out-csv=./measurement-history-heat-level-15s-6.csv
+just api get-history 1691511584562 1691512411742 --out-csv=./measurement-history-heat-level-15s-7.csv
+just api get-history 1691512411742 1691513362647 --out-csv=./measurement-history-heat-level-15s-8.csv
+just api get-history 1691513362647 1691514406413 --out-csv=./measurement-history-heat-level-15s-9.csv
+just api get-history 1691514406413 1691515570391 --out-csv=./measurement-history-heat-level-15s-10.csv

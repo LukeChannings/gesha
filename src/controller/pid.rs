@@ -1,4 +1,5 @@
 use super::Controller;
+use log::info;
 use pid::Pid;
 
 pub struct PidController {
@@ -12,6 +13,8 @@ impl PidController {
 
         pid.p(p, 100.0).i(i, 100.0).d(d, 100.0);
 
+        info!("Created PID controller with target_temperature={:?}", target_temperature);
+
         PidController {
             pid,
             target_temperature,
@@ -20,7 +23,7 @@ impl PidController {
 }
 
 impl Controller for PidController {
-    fn sample(&mut self, boiler_temp: f32, _grouphead_temp: f32) -> f32 {
+    fn sample(&mut self, boiler_temp: f32, _grouphead_temp: f32, _q: f32) -> f32 {
         let output = self.pid.next_control_output(boiler_temp);
 
         let output = (output.output + 100.0) / 200.0;
@@ -29,6 +32,7 @@ impl Controller for PidController {
 
     fn update_target_temperature(&mut self, target_temperature: f32) {
         self.target_temperature = target_temperature;
+        info!("Updating target temperature to {}", target_temperature);
         self.pid.setpoint(target_temperature);
     }
 }

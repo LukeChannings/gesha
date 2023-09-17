@@ -18,7 +18,7 @@ from docopt import docopt
 from concurrent.futures import Future
 import json
 from time import sleep, time
-from typing import Literal
+from typing import Literal, List, TypedDict
 from os import getenv
 import paho.mqtt.client as mqtt
 from dotenv import load_dotenv
@@ -30,6 +30,12 @@ MQTT_USER = getenv("GESHA_MQTT_USER")
 MQTT_PASS = getenv("GESHA_MQTT_PASS")
 MQTT_HOST = getenv("GESHA_MQTT_HOST")
 MQTT_PORT = int(getenv("GESHA_MQTT_PORT"))
+
+
+class ValueChange(TypedDict):
+    timestamp: int
+    value: float
+
 
 def main():
     gesha = Gesha()
@@ -76,20 +82,22 @@ def main():
         else:
             print(json.dumps(measurements, indent=2))
 
+
 class Gesha:
     client: mqtt.Client
 
-    boiler_temp = []
-    grouphead_temp = []
-    thermofilter_temp = []
+    boiler_temp: List[ValueChange] = []
+    grouphead_temp: List[ValueChange] = []
+    thermofilter_temp: List[ValueChange] = []
 
-    def __init__(self) -> None:
+    def __init__(self, subscribe_topics = ["gesha/#"]) -> None:
         self.client = mqtt.Client()
 
         self.client.username_pw_set(MQTT_USER, MQTT_PASS)
         self.client.connect(MQTT_HOST, MQTT_PORT, 60)
 
-        self.client.subscribe("gesha/#")
+        for topic in subscribe_topics:
+            self.client.subscribe(topic)
 
         self.client.message_callback_add(
             "gesha/temperature/#", self.handle_temperature_messages
@@ -114,7 +122,9 @@ class Gesha:
     def set_boiler_level(self, boiler_level: float):
         self.client.publish("gesha/boiler_level/set", boiler_level)
 
-    def get_latest_temp(self, sensor: Literal["boiler", "grouphead", "thermofilter"]):
+    def get_latest_temp(
+        self, sensor: Literal["boiler", "grouphead", "thermofilter"]
+    ) -> ValueChange:
         match sensor:
             case "boiler":
                 self.wait_for_temp("boiler")
@@ -142,7 +152,7 @@ class Gesha:
         self, sensor: Literal["boiler", "grouphead", "thermofilter"], temp: float
     ):
         while True:
-            if self.get_latest_temp(sensor) <= temp:
+            if self.get_latest_temp(sensor)["value"] <= temp:
                 break
             else:
                 sleep(0.1)
@@ -151,7 +161,7 @@ class Gesha:
         self, sensor: Literal["boiler", "grouphead", "thermofilter"], temp: float
     ):
         while True:
-            if self.get_latest_temp(sensor) >= temp:
+            if self.get_latest_temp(sensor)["value"] >= temp:
                 break
             else:
                 sleep(0.1)
@@ -177,18 +187,21 @@ class Gesha:
     def get_measurement_history(self, from_: int, to: int, limit: int, bucket_size):
         promise = Future()
 
+        id = str(time())
+
         def handle_measurements(client, _userdata, message):
             client.message_callback_remove("gesha/temperature/history")
             promise.set_result(json.loads(message.payload))
 
         self.client.message_callback_add(
-            "gesha/temperature/history", handle_measurements
+            f"gesha/temperature/history/{id}", handle_measurements
         )
 
         self.client.publish(
             "gesha/temperature/history/command",
             json.dumps(
                 {
+                    "id": id,
                     "from": from_,
                     "to": to,
                     "limit": limit,
@@ -200,13 +213,11 @@ class Gesha:
         return promise
 
     def handle_temperature_messages(self, _client, _userdata, message):
+        value_change: ValueChange = json.loads(message.payload)
         match message.topic:
             case "gesha/temperature/boiler":
-                self.boiler_temp.append((int(time() * 1000), float(message.payload)))
+                self.boiler_temp.append(value_change)
             case "gesha/temperature/grouphead":
-                self.grouphead_temp.append((int(time() * 1000), float(message.payload)))
+                self.grouphead_temp.append(value_change)
             case "gesha/temperature/thermofilter":
-                self.thermofilter_temp.append(
-                    (int(time() * 1000), float(message.payload))
-                )
-
+                self.thermofilter_temp.append(value_change)
